@@ -1,0 +1,6 @@
+{
+  "name": "Rightmove Property & Area Analyzer",
+  "description": "An advanced tool to analyze Rightmove property listings, evaluating past sold prices, local area specs, pros & cons, schools, transport, and customized purchase suitability.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
