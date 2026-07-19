@@ -1,4 +1,4 @@
-export type BuyerGoal = 'First-time Buyer' | 'Buy-to-Let Investor' | 'Family Home' | 'House Flipping' | 'Retirement';
+export type BuyerGoal = 'First-time Buyer' | 'Moving Home' | 'Buy-to-Let Investor';
 
 export interface PropertyScrapeResult {
   success: boolean;

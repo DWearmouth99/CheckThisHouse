@@ -1,7 +1,66 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-brand-navy: #0b1f3a;
+  --color-brand-navy-mid: #143056;
+  --color-brand-navy-soft: #e8eef5;
+  --color-brand-green: #1f7a45;
+  --color-brand-green-mid: #259653;
+  --color-brand-green-soft: #e8f5ee;
+  --color-brand-ink: #0b1f3a;
+  --color-brand-muted: #5b6b7c;
+  --color-brand-line: #d5dde7;
+  --color-brand-paper: #f3f5f8;
+  --color-brand-cream: #fafbfc;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply bg-brand-paper text-brand-ink antialiased;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 0% -10%, rgba(31, 122, 69, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(11, 31, 58, 0.07), transparent);
+    background-attachment: fixed;
+  }
+
+  @media (max-width: 767px) {
+    body {
+      background-attachment: scroll;
+    }
+  }
+}
+
+@layer utilities {
+  .brand-card {
+    @apply bg-white border border-brand-line rounded-2xl shadow-[0_1px_0_rgba(11,31,58,0.04),0_8px_24px_rgba(11,31,58,0.04)];
+  }
+
+  /* text-base on mobile prevents iOS zoom-on-focus; desktop stays text-sm */
+  .brand-input {
+    @apply w-full bg-brand-cream border border-brand-line rounded-xl px-3.5 py-3 md:py-2.5 text-base md:text-sm text-brand-ink placeholder:text-brand-muted/60 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/15 transition;
+  }
+
+  .brand-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-muted;
+  }
+
+  .score-ring-good {
+    stroke: #1f7a45;
+  }
+  .score-ring-mid {
+    stroke: #c9891a;
+  }
+  .score-ring-low {
+    stroke: #c23b4e;
+  }
 }

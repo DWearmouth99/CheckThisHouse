@@ -1,16 +1,110 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CheckThisHouse Property & Area Analyzer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>CheckThisHouse — Full Property Buyer Report from a Listing Link</title>
+    <meta
+      name="description"
+      content="Paste a Rightmove, Zoopla or Zillow link and download a deep buyer PDF: overall score, valuation bands, capital forecasts, flood/damp/lease risks, schools & Ofsted, crime, transport, amenities, sold comps, offer strategy, viewing checklist and agent questions."
+    />
+    <meta
+      name="keywords"
+      content="property report, Rightmove report, school catchment, Ofsted ratings, crime statistics, transport links, local amenities, flood risk, valuation bands, offer strategy, viewing checklist, first time buyer, Zoopla, Zillow, house buying checklist"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="CheckThisHouse" />
+    <link rel="canonical" href="https://checkthishouse.co.uk/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CheckThisHouse" />
+    <meta property="og:title" content="CheckThisHouse — Everything you need to know before you buy" />
+    <meta
+      property="og:description"
+      content="Schools, crime, transport, amenities, risks, valuations and viewing checks — one PDF from a listing link."
+    />
+    <meta property="og:url" content="https://checkthishouse.co.uk/" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:image" content="https://checkthishouse.co.uk/checkthishouselogo.png" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="CheckThisHouse — Full property buyer reports from listing links" />
+    <meta
+      name="twitter:description"
+      content="Schools, crime, transport, amenities, risks and offer strategy in one downloadable PDF."
+    />
+
+    <link rel="icon" type="image/png" href="/checkthishouselogo.png" />
+    <link rel="apple-touch-icon" href="/checkthishouselogo.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "CheckThisHouse",
+        "url": "https://checkthishouse.co.uk/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "description": "Generate a deep multi-page buyer-protection property PDF from a Rightmove, Zoopla, Zillow or similar listing link — covering scorecard, valuations, forecasts, flood and lease risks, schools, crime, transport, amenities, sold comps, offer strategy, viewing checklist and agent questions.",
+        "offers": {
+          "@type": "Offer",
+          "price": "4.99",
+          "priceCurrency": "GBP"
+        },
+        "featureList": [
+          "Overall score and scorecard",
+          "Buying suitability verdict",
+          "Valuation bands and capital forecasts",
+          "Flood, damp, leasehold, fire and insurance risks",
+          "Schools, Ofsted, crime, transport and amenities",
+          "Comparable sales and sold history",
+          "Offer strategy, negotiation tactics, viewing checklist and agent questions",
+          "Investor yield and ROI sections for buy-to-let"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is CheckThisHouse?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "CheckThisHouse turns a property listing link into a full buyer PDF covering schools and Ofsted ratings, crime, transport, amenities, flood and damp watch-outs, valuations, comparable sales, a viewing checklist and an offer plan."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is this a RICS survey?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The report is advisory research to help you decide what to investigate. Always instruct a surveyor and solicitor before exchanging contracts."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which listing websites are supported?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Major portals including Rightmove, Zoopla, OnTheMarket, Zillow, Realtor.com and Redfin. Links from unsupported websites are rejected."
+            }
+          }
+        ]
+      }
+    </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 min-h-screen">
+  <body class="min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

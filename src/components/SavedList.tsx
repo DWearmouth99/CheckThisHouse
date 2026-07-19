@@ -1,6 +1,6 @@
 import React from 'react';
 import { SavedAnalysis } from '../types';
-import { Trash2, Home, Landmark, Calculator, TrendingUp, Heart } from 'lucide-react';
+import { Trash2, Home, Landmark, Heart } from 'lucide-react';
 
 interface SavedListProps {
   savedAnalyses: SavedAnalysis[];
@@ -15,14 +15,10 @@ export default function SavedList({ savedAnalyses, activeId, onSelect, onDelete 
     switch (goal) {
       case 'First-time Buyer':
         return <Heart className="w-4 h-4 text-rose-500" />;
+      case 'Moving Home':
+        return <Home className="w-4 h-4 text-sky-500" />;
       case 'Buy-to-Let Investor':
         return <Landmark className="w-4 h-4 text-emerald-500" />;
-      case 'Family Home':
-        return <Home className="w-4 h-4 text-violet-500" />;
-      case 'House Flipping':
-        return <Calculator className="w-4 h-4 text-amber-500" />;
-      case 'Retirement':
-        return <TrendingUp className="w-4 h-4 text-sky-500" />;
       default:
         return <Home className="w-4 h-4 text-slate-400" />;
     }
@@ -52,8 +48,8 @@ export default function SavedList({ savedAnalyses, activeId, onSelect, onDelete 
               onClick={() => onSelect(item.id)}
               className={`p-3.5 rounded-xl cursor-pointer transition-all duration-200 border text-left group flex items-start justify-between shadow-sm ${
                 isActive
-                  ? 'bg-blue-50 border-blue-500'
-                  : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  ? 'bg-brand-green-soft border-brand-green'
+                  : 'bg-white border-brand-line hover:border-brand-navy/30 hover:bg-brand-cream'
               }`}
             >
               <div className="flex-1 min-w-0 pr-2">
@@ -76,7 +72,7 @@ export default function SavedList({ savedAnalyses, activeId, onSelect, onDelete 
                   {item.address}
                 </h4>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="font-sans font-bold text-emerald-600 text-[13px]">
+                  <span className="font-sans font-bold text-brand-green text-[13px]">
                     {item.price}
                   </span>
                   <span className="text-[10px] text-slate-500 font-mono">

@@ -2,35 +2,268 @@ import express from "express";
 import path from "path";
 import dns from "dns";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { analyzeWithGemini, hasGeminiKey } from "./src/lib/geminiAnalyze";
+import { analyzeWithOpenAI, hasOpenAIKey } from "./src/lib/openaiAnalyze";
+import { isInvalidListingUrl, validateListingUrl } from "./src/lib/listingUrl";
+import { checkRateLimit, clientIp } from "./src/lib/rateLimit";
+import { buildFullReportTeaserPlan } from "./src/lib/reportContents";
+import {
+  createReportCheckoutSession,
+  formatPriceLabel,
+  getPublicBaseUrl,
+  getReportPricePence,
+  getStripePublishableKey,
+  isPaywallEnabled,
+  markCheckoutSessionUsed,
+  verifyPaidCheckoutSession,
+} from "./src/lib/stripePaywall";
 
-// Load environment variables
+// Load environment variables (.env.local overrides .env)
 dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+// Stripe webhook needs the raw body — register before JSON parser
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  async (req: express.Request, res: express.Response) => {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!secret || !isPaywallEnabled()) {
+      return res.status(200).json({ received: true, skipped: true });
+    }
+    try {
+      const { getStripe } = await import("./src/lib/stripePaywall");
+      const stripe = getStripe();
+      const sig = req.headers["stripe-signature"];
+      if (!sig || typeof sig !== "string") {
+        return res.status(400).send("Missing stripe-signature");
+      }
+      const event = stripe.webhooks.constructEvent(req.body, sig, secret);
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as { id?: string; metadata?: { listingUrl?: string } };
+        console.log("[stripe] checkout.session.completed", session.id, session.metadata?.listingUrl);
+      }
+      res.json({ received: true });
+    } catch (err: any) {
+      console.error("[stripe] webhook error", err?.message || err);
+      res.status(400).send(`Webhook Error: ${err?.message || "unknown"}`);
+    }
+  }
+);
 
 // Body parser limits elevated to allow raw HTML copy-paste fallback
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
-// Initialize GoogleGenAI client (lazy client with fallback check)
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is missing. Please add it in the Secrets panel in AI Studio UI.");
-  }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        "User-Agent": "aistudio-build",
-      },
-    },
+app.get("/api/pricing", (_req, res) => {
+  const pence = getReportPricePence();
+  const publishableKey = getStripePublishableKey();
+  res.json({
+    paywallEnabled: isPaywallEnabled(),
+    pricePence: pence,
+    priceLabel: formatPriceLabel(pence),
+    currency: "gbp",
+    publishableKey: publishableKey.startsWith("pk_") ? publishableKey : null,
   });
+});
+
+app.post("/api/checkout", async (req, res) => {
+  try {
+    if (!isPaywallEnabled()) {
+      return res.status(400).json({
+        error:
+          "Paywall is not enabled. Add STRIPE_SECRET_KEY to .env.local (or set PAYWALL_DISABLED=true only for local free testing).",
+      });
+    }
+
+    const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
+    const buyerGoal = typeof req.body?.buyerGoal === "string" ? req.body.buyerGoal : "First-time Buyer";
+    const listing = validateListingUrl(rawUrl);
+    if (isInvalidListingUrl(listing)) {
+      return res.status(400).json({ error: listing.error });
+    }
+
+    const publishableKey = getStripePublishableKey();
+    if (!publishableKey) {
+      return res.status(503).json({
+        error:
+          "On-site checkout needs STRIPE_PUBLISHABLE_KEY in .env.local. Copy the full pk_test_… key from Stripe Dashboard → Developers → API keys (not the sk_ secret, and not a placeholder with …). Uncomment the line, save, then restart the server.",
+        mode: "missing_publishable_key",
+      });
+    }
+
+    const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
+    const baseUrl = getPublicBaseUrl(req.get("host") || undefined, proto);
+    const session = await createReportCheckoutSession({
+      listingUrl: listing.url,
+      buyerGoal,
+      baseUrl,
+      uiMode: "embedded",
+    });
+
+    return res.json({
+      success: true,
+      sessionId: session.sessionId,
+      clientSecret: session.clientSecret || null,
+      mode: "embedded",
+      publishableKey,
+      priceLabel: formatPriceLabel(),
+    });
+  } catch (err: any) {
+    console.error("[stripe] checkout error", err?.message || err);
+    return res.status(500).json({ error: err?.message || "Could not start checkout." });
+  }
+});
+
+/**
+ * Free listing preview (NO AI). Rate-limited scrape of public listing basics only.
+ * Full Gemini/OpenAI analysis stays behind paid /api/analyze.
+ */
+app.post("/api/teaser", async (req, res) => {
+  try {
+    const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
+    const listing = validateListingUrl(rawUrl);
+    if (isInvalidListingUrl(listing)) {
+      return res.status(400).json({ error: listing.error });
+    }
+
+    // Serve cached preview freely (no rate-limit hit) so re-opening the same listing works
+    const cached = teaserCacheGet(listing.url);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const ip = clientIp(req);
+    // Looser limit: enough for normal testing/browsing; still blocks scrapers
+    const ipLimit = checkRateLimit({
+      key: `teaser:ip:${ip}`,
+      limit: 60,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!ipLimit.ok) {
+      res.setHeader("Retry-After", String(ipLimit.retryAfterSec));
+      return res.status(429).json({
+        error: "Too many preview requests. Please wait a few minutes and try again.",
+        code: "RATE_LIMITED",
+      });
+    }
+
+    const isRightmove = listing.host.includes("rightmove.co.uk");
+    let address: string | undefined;
+    let price: string | undefined;
+    let bedrooms: string | undefined;
+    let bathrooms: string | undefined;
+    let propertyType: string | undefined;
+    let images: string[] = [];
+    let keyFeatures: string[] = [];
+    let tenure: string | undefined;
+    let summary: string | undefined;
+    let limited = !isRightmove;
+
+    if (isRightmove) {
+      const scrap = await scrapeRightmoveUrl(listing.url);
+      if (scrap.success) {
+        address = scrap.address;
+        price = scrap.price;
+        bedrooms = scrap.bedrooms;
+        bathrooms = scrap.bathrooms;
+        propertyType = scrap.propertyType;
+        images = (scrap.images || []).filter(Boolean).slice(0, 3);
+        keyFeatures = (scrap.keyFeatures || []).slice(0, 6);
+        tenure = scrap.tenure;
+        if (scrap.description) {
+          const plain = scrap.description
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          summary = plain.slice(0, 320);
+          if (plain.length > 320) summary += "…";
+        }
+        limited = !(address || price);
+      } else {
+        limited = true;
+      }
+    }
+
+    // Cheap derived signal (no AI): price per bedroom when parseable
+    let pricePerBedroom: string | null = null;
+    if (price && bedrooms) {
+      const pence = Number(String(price).replace(/[^\d]/g, ""));
+      const beds = Number(String(bedrooms).replace(/[^\d]/g, ""));
+      if (Number.isFinite(pence) && pence > 0 && Number.isFinite(beds) && beds > 0) {
+        const each = Math.round(pence / beds);
+        pricePerBedroom = `£${each.toLocaleString("en-GB")}`;
+      }
+    }
+
+    const locationHint =
+      (address || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(-2)
+        .join(", ") || null;
+
+    const payload = {
+      success: true,
+      limited,
+      listingUrl: listing.url,
+      portal: listing.portal,
+      host: listing.host,
+      address: address || null,
+      price: price || null,
+      bedrooms: bedrooms || null,
+      bathrooms: bathrooms || null,
+      propertyType: propertyType || null,
+      images,
+      keyFeatures,
+      tenure: tenure || null,
+      summary: summary || null,
+      pricePerBedroom,
+      locationHint,
+      researchPlan: buildFullReportTeaserPlan({
+        locationHint,
+        bedrooms,
+        propertyType,
+        price,
+        tenure,
+      }),
+    };
+
+    teaserCacheSet(listing.url, payload);
+    return res.json(payload);
+  } catch (err: any) {
+    console.error("[teaser] error", err?.message || err);
+    return res.status(500).json({ error: err?.message || "Could not load preview." });
+  }
+});
+
+const TEASER_CACHE_TTL_MS = 30 * 60 * 1000;
+const teaserResponseCache = new Map<string, { expires: number; payload: Record<string, unknown> }>();
+
+function teaserCacheGet(url: string): Record<string, unknown> | null {
+  const hit = teaserResponseCache.get(url);
+  if (!hit) return null;
+  if (Date.now() > hit.expires) {
+    teaserResponseCache.delete(url);
+    return null;
+  }
+  return hit.payload;
 }
 
+function teaserCacheSet(url: string, payload: Record<string, unknown>) {
+  teaserResponseCache.set(url, { expires: Date.now() + TEASER_CACHE_TTL_MS, payload });
+  if (teaserResponseCache.size > 200) {
+    const now = Date.now();
+    for (const [k, v] of teaserResponseCache) {
+      if (now > v.expires) teaserResponseCache.delete(k);
+    }
+  }
+}
 /**
  * Basic scraper helper to try to extract property info
  * from a Rightmove URL. It mimics a modern user browser agent.
@@ -45,6 +278,8 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
   propertyType?: string;
   description?: string;
   images?: string[];
+  keyFeatures?: string[];
+  tenure?: string;
   message?: string;
 }> {
   try {
@@ -64,7 +299,7 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
       console.warn(`[scraper] HTTP status error: ${res.status}. Probably blocked by Rightmove/Cloudflare.`);
       return {
         success: false,
-        message: `Status ${res.status} returned by Rightmove. This is common due to anti-scraping protections (Cloudflare). Our AI will search the web using Gemini Search Grounding as an alternative!`,
+        message: `Status ${res.status} returned by Rightmove. This is common due to anti-scraping protections (Cloudflare). Web search research will fill gaps.`,
       };
     }
 
@@ -76,7 +311,7 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
       console.warn("[scraper] Rightmove server triggered a captcha or security block.");
       return {
         success: false,
-        message: "Rightmove blocked access via Cloudflare security. Grounding Search is enabled to bypass this!",
+        message: "Rightmove blocked access via Cloudflare security. Web search research will fill gaps.",
       };
     }
 
@@ -98,6 +333,16 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
           data.bathrooms = p.bathrooms?.toString();
           data.propertyType = p.propertyType || p.transactionType;
           data.description = p.text?.description;
+          data.tenure =
+            p.tenure?.tenureType ||
+            p.tenure?.yearsRemaining?.toString?.() ||
+            (typeof p.tenure === "string" ? p.tenure : undefined);
+          if (Array.isArray(p.keyFeatures)) {
+            data.keyFeatures = p.keyFeatures
+              .map((f: unknown) => (typeof f === "string" ? f.trim() : ""))
+              .filter(Boolean)
+              .slice(0, 8);
+          }
           
           if (p.images && Array.isArray(p.images)) {
             data.images = p.images.slice(0, 5).map((img: any) => img.url || img.src);
@@ -127,11 +372,11 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
       const currencyMeta = html.match(/<meta\s+property="og:price:currency"\s+content="([^"]+)"/i);
       if (priceMeta && priceMeta[1]) {
         const amt = priceMeta[1];
-        const cur = currencyMeta ? (currencyMeta[1] === "GBP" ? "£" : currencyMeta[1]) : "£";
+        const cur = currencyMeta ? (currencyMeta[1] === "GBP" ? "Â£" : currencyMeta[1]) : "Â£";
         data.price = `${cur}${amt}`;
       } else {
-        // Regex price matches like £350,000 or Offers over £350,000
-        const regexPrice = html.match(/£[0-9]{1,3}(?:,[0-9]{3})+/);
+        // Regex price matches like Â£350,000 or Offers over Â£350,000
+        const regexPrice = html.match(/Â£[0-9]{1,3}(?:,[0-9]{3})+/);
         if (regexPrice) {
           data.price = regexPrice[0];
         }
@@ -173,13 +418,15 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
       propertyType: data.propertyType,
       description: data.description,
       images: data.images,
+      keyFeatures: data.keyFeatures,
+      tenure: data.tenure,
       message: (data.address || data.price) ? undefined : "Fetched listing successfully, but most data was empty or structured differently.",
     };
   } catch (error: any) {
     console.error("[scraper] Fetch error:", error);
     return {
       success: false,
-      message: `Failed to connect or fetch page: ${error.message || "Timeout"}. Our AI will search the web using Gemini Search Grounding as an alternative!`,
+      message: `Failed to connect or fetch page: ${error.message || "Timeout"}. Web search research will fill gaps.`,
     };
   }
 }
@@ -187,387 +434,203 @@ async function scrapeRightmoveUrl(targetUrl: string): Promise<{
 // Ensure the dev server starts DNS searches with IPv4 first to solve local proxy address bindings
 dns.setDefaultResultOrder("ipv4first");
 
+/** Proxy listing photos so PDF export can embed them (avoids Rightmove CORS blocks). */
+app.get("/api/image-proxy", async (req: express.Request, res: express.Response) => {
+  try {
+    const raw = typeof req.query.url === "string" ? req.query.url : "";
+    if (!raw || !/^https:\/\//i.test(raw)) {
+      return res.status(400).json({ error: "Valid https image url required" });
+    }
+    const parsed = new URL(raw);
+    const host = parsed.hostname.toLowerCase();
+    const allowed =
+      host.endsWith("rightmove.co.uk") ||
+      host.endsWith("zoopla.co.uk") ||
+      host.endsWith("onthemarket.com") ||
+      host.endsWith("cloudfront.net");
+    if (!allowed) {
+      return res.status(403).json({ error: "Image host not allowed" });
+    }
+
+    const upstream = await fetch(raw, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        Referer: "https://www.rightmove.co.uk/",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!upstream.ok) {
+      return res.status(upstream.status).json({ error: "Upstream image fetch failed" });
+    }
+
+    const contentType = upstream.headers.get("content-type") || "image/jpeg";
+    const buf = Buffer.from(await upstream.arrayBuffer());
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send(buf);
+  } catch (err: any) {
+    console.error("[image-proxy]", err?.message || err);
+    res.status(500).json({ error: "Image proxy failed" });
+  }
+});
+
 // Property Scraper + AI analysis endpoint
 app.post("/api/analyze", async (req: express.Request, res: express.Response) => {
-  const { url, pastedText, buyerGoal } = req.body;
+  const { url, pastedText, buyerGoal, address, sessionId } = req.body;
+  const manualAddress = typeof address === "string" ? address.trim() : "";
+  const rawUrl = typeof url === "string" ? url.trim() : "";
+  const checkoutSessionId = typeof sessionId === "string" ? sessionId.trim() : "";
 
-  if (!url && !pastedText) {
-    return res.status(400).json({ error: "Please enter a Rightmove URL or paste the listing text content." });
+  if (!rawUrl && !pastedText && !manualAddress) {
+    return res.status(400).json({
+      error: "Please enter a supported listing URL, a property address, or paste listing text.",
+    });
+  }
+
+  let normalizedUrl = rawUrl;
+  if (rawUrl) {
+    const listing = validateListingUrl(rawUrl);
+    if (isInvalidListingUrl(listing)) {
+      return res.status(400).json({ error: listing.error });
+    }
+    normalizedUrl = listing.url;
+  }
+
+  // Public marketing reports require a paid Stripe Checkout session
+  if (isPaywallEnabled()) {
+    if (!checkoutSessionId) {
+      return res.status(402).json({
+        error: "Payment required. Complete checkout to generate your report.",
+        code: "PAYMENT_REQUIRED",
+      });
+    }
+    if (!normalizedUrl) {
+      return res.status(400).json({
+        error: "A valid listing URL is required when using a paid checkout session.",
+      });
+    }
+    try {
+      await verifyPaidCheckoutSession({
+        sessionId: checkoutSessionId,
+        listingUrl: normalizedUrl,
+      });
+    } catch (err: any) {
+      const status = typeof err?.status === "number" ? err.status : 402;
+      return res.status(status).json({ error: err?.message || "Payment verification failed." });
+    }
   }
 
   const selectedGoal = buyerGoal || "First-time Buyer";
 
   try {
-    const ai = getGeminiClient();
+    let scrapResult = {
+      success: false,
+      url: normalizedUrl || (manualAddress ? "Address lookup" : "Manual Entry"),
+      address: manualAddress || undefined,
+    } as any;
 
-    let scrapResult = { success: false, url: url || "Manual Entry" } as any;
-
-    // Scrape only if a Rightmove URL was provided
-    if (url && url.toLowerCase().includes("rightmove.co.uk")) {
-      scrapResult = await scrapeRightmoveUrl(url);
+    if (normalizedUrl && normalizedUrl.toLowerCase().includes("rightmove.co.uk")) {
+      scrapResult = await scrapeRightmoveUrl(normalizedUrl);
     }
 
-    // Clean description to avoid excessive token sizes
-    let descriptionSnippet = scrapResult.description || "No scraped description available.";
-    if (pastedText) {
-      // User pasted source override
-      descriptionSnippet = pastedText.substring(0, 15000); 
+    if (manualAddress) {
+      scrapResult = {
+        ...scrapResult,
+        success: true,
+        address: manualAddress,
+        url: scrapResult.url || "Address lookup",
+        description:
+          scrapResult.description ||
+          `Address-only property check for: ${manualAddress}. No online listing provided.`,
+      };
     }
 
-    // Build grounding instruction and prompt parameters for Gemini
-    const userPrompt = `
-      You are an expert UK Property Valuer & investment advisor.
-      Analyze the Rightmove listing at: ${url || "Manual Entry"}
-      
-      Client Purchase Profile / Goal: "${selectedGoal}"
-      
-      Below is the scraped/pasted property listing metadata:
-      - Title/Address: ${scrapResult.address || "Unknown Address (Please deduce from listing URL or pasted text)"}
-      - Asking Price: ${scrapResult.price || "Unknown Asking Price"}
-      - Bedrooms: ${scrapResult.bedrooms || "Not specified"}
-      - Bathrooms: ${scrapResult.bathrooms || "Not specified"}
-      - Property Type: ${scrapResult.propertyType || "Not specified"}
-      - Description/Features: ${descriptionSnippet}
-      
-      INSTRUCTIONS:
-      Use Google Search Grounding to find details about the exact address or street/postcode area.
-      1. Find past sold prices: Research Zoopla, Land Registry, and general UK house price databases for past transactions in that specific postcode or road. Dedicate a small section to comparable historical sales.
-      2. Evaluate specific area health (postcode or community): Include nearest highly-rated schools, average transport commute times (rail, metro, or buses to nearby centers), crime ratings (e.g. crime rate relative to UK average), amenities, and any notable local news (development, regeneration, council initiatives).
-      3. Evaluate custom Pros and Cons strictly tailored to the client's Profile ("${selectedGoal}"). e.g. First-time buyers need lower maintenance and good transport; Buy-to-Let investors look for high rental yields and high-density renting; House Flippers look for properties with structural potentials, extension permissions, or below-market-value issues.
-      4. Provide an estimate of rental yield and monthly rent matching this specific configuration in its postcode.
-      5. Formulate a complete bidding proposal plan: cheeky low offer, realistic fair offer, and standard competitive premium bid. Add negotiation tactics.
-      6. Generate 5 smart inspection points to look closely at (e.g., check Victorian roofs, cladding, leasehold years remaining, EPC energy fixes) and 4 intelligent questions to ask the estate agent to reveal the vendor's motivation.
-
-      You must return your response strictly in JSON format matching the specifications. Ensure all fields are fully populated with smart, factual data. Do not return empty fields.
-    `;
-
-    // Define the rigid JSON schema for the response
-    const analysisSchema = {
-      type: Type.OBJECT,
-      properties: {
-        title: { type: Type.STRING, description: "A catchy expert title summarizing the property's core market value (e.g., 'Solid Terraced Investment opportunity under EPC limits' or 'Attractive first-time home with school proximities')" },
-        price: { type: Type.STRING, description: "The asking price, formatted like £250,000" },
-        bedrooms: { type: Type.STRING, description: "Number of bedrooms like '3 bedrooms'" },
-        bathrooms: { type: Type.STRING, description: "Number of bathrooms like '1 bathroom' or '2 bathrooms'" },
-        propertyType: { type: Type.STRING, description: "Property physical category (e.g. Victorian End-of-Terrace)" },
-        location: {
-          type: Type.OBJECT,
-          properties: {
-            address: { type: Type.STRING, description: "Street and flat details" },
-            postcode: { type: Type.STRING, description: "UK Postcode parsed or searched" },
-            town: { type: Type.STRING, description: "Town, Area or City" }
-          },
-          required: ["address", "postcode", "town"]
-        },
-        summary: { type: Type.STRING, description: "A 3-sentence expert summary of the property condition, its general market appeal, and our advice for the given buyer profile." },
-        specs: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              label: { type: Type.STRING },
-              value: { type: Type.STRING }
-            },
-            required: ["label", "value"]
-          },
-          description: "4-5 tech key specifications: e.g. Tenure (Freehold/Leasehold & years remaining), Council Tax Band, Heating system, EPC Rating, Floor Area, Building Age, Listed Status."
-        },
-        scores: {
-          type: Type.OBJECT,
-          properties: {
-            overall: { type: Type.NUMBER, description: "Suitability score out of 100 representing standard property health matched to user goals" },
-            valueForMoney: { type: Type.NUMBER, description: "Value rating out of 100 relative to surrounding street comparables" },
-            locationRating: { type: Type.NUMBER, description: "Transit, crime, noise, amenities rating out of 100" },
-            conditionRating: { type: Type.NUMBER, description: "Structural readiness, decorative condition, and required updates rating out of 100" },
-            investmentScore: { type: Type.NUMBER, description: "Score out of 100 representing pure financial investment strength" },
-            marketScore: { type: Type.NUMBER, description: "Score out of 100 for overall area market health and demand" },
-            rentalScore: { type: Type.NUMBER, description: "Score out of 100 for rentability and tenant demand" },
-            growthPotential: { type: Type.STRING, description: "Capital Growth Outlook scale: 'Low', 'Medium', or 'High'" },
-            riskLevel: { type: Type.STRING, description: "Overall Risk Level: 'Low', 'Medium', or 'High'" },
-            confidenceScore: { type: Type.NUMBER, description: "AI Prediction Confidence percentage (e.g. 85 for 85%)" }
-          },
-          required: ["overall", "valueForMoney", "locationRating", "conditionRating", "investmentScore", "marketScore", "rentalScore", "growthPotential", "riskLevel", "confidenceScore"]
-        },
-        valuation: {
-          type: Type.OBJECT,
-          properties: {
-            conservative: { type: Type.STRING, description: "Conservative bottom-end valuation" },
-            fair: { type: Type.STRING, description: "Fair market valuation" },
-            optimistic: { type: Type.STRING, description: "Optimistic top-end valuation" },
-            forecast1y: { type: Type.STRING, description: "1-year appreciation forecast percentage" },
-            forecast3y: { type: Type.STRING, description: "3-year appreciation forecast percentage" },
-            forecast5y: { type: Type.STRING, description: "5-year appreciation forecast percentage" },
-            forecast10y: { type: Type.STRING, description: "10-year appreciation forecast percentage" }
-          },
-          required: ["conservative", "fair", "optimistic", "forecast1y", "forecast3y", "forecast5y", "forecast10y"]
-        },
-        investmentMetrics: {
-          type: Type.OBJECT,
-          properties: {
-            estimatedRent: { type: Type.STRING, description: "Est monthly rent e.g. £1,100 - £1,200/month" },
-            grossYield: { type: Type.STRING, description: "Estimated percentage gross yield e.g. 5.1%" },
-            netYield: { type: Type.STRING, description: "Estimated percentage net yield after standard costs" },
-            roi: { type: Type.STRING, description: "Return on Investment percentage" },
-            cashflow: { type: Type.STRING, description: "Estimated monthly cashflow" },
-            stampDuty: { type: Type.STRING, description: "Estimated standard UK stamp duty" },
-            breakEven: { type: Type.STRING, description: "Estimated break even timeline" },
-            irr: { type: Type.STRING, description: "Internal Rate of Return (IRR)" },
-            growthReasoning: { type: Type.STRING, description: "Justification explaining transport expansion, supply shortage, or area demographic popularity" }
-          },
-          required: ["estimatedRent", "grossYield", "netYield", "roi", "cashflow", "stampDuty", "breakEven", "irr", "growthReasoning"]
-        },
-        marketAndRental: {
-          type: Type.OBJECT,
-          properties: {
-            supplyDemand: { type: Type.STRING, description: "Supply vs demand ratio/status in this area" },
-            timeOnMarket: { type: Type.STRING, description: "Typical days on market for this property type" },
-            priceTrend: { type: Type.STRING, description: "Recent price trend direction (e.g. 'Up 3% YOY')" },
-            vacancyRates: { type: Type.STRING, description: "Local rental vacancy rate" },
-            tenantProfile: { type: Type.STRING, description: "Typical local tenant profile (e.g. 'Young Professionals')" },
-            airbnbPotential: { type: Type.STRING, description: "Viability of short-term lets here" }
-          },
-          required: ["supplyDemand", "timeOnMarket", "priceTrend", "vacancyRates", "tenantProfile", "airbnbPotential"]
-        },
-        riskAnalysis: {
-          type: Type.OBJECT,
-          properties: {
-            floodRisk: { type: Type.STRING, description: "Environmental flood risk level" },
-            subsidence: { type: Type.STRING, description: "Subsidence/soil risk" },
-            planningDevelopments: { type: Type.STRING, description: "Any nearby disruptive planning applications" },
-            leaseholdIssues: { type: Type.STRING, description: "Ground rent, service charges, short leases if applicable" },
-            fireSafety: { type: Type.STRING, description: "Cladding or fire safety concerns" },
-            insuranceRisk: { type: Type.STRING, description: "Overall property insurance risk level" }
-          },
-          required: ["floodRisk", "subsidence", "planningDevelopments", "leaseholdIssues", "fireSafety", "insuranceRisk"]
-        },
-        locationIntelligence: {
-          type: Type.OBJECT,
-          properties: {
-            plannedInfrastructure: { type: Type.STRING, description: "Major new transport/amenity links planned" },
-            populationGrowth: { type: Type.STRING, description: "Population and employment growth trend" },
-            regenerationProjects: { type: Type.STRING, description: "Any local council regeneration zones" },
-            walkability: { type: Type.STRING, description: "Walkability and local high street access" }
-          },
-          required: ["plannedInfrastructure", "populationGrowth", "regenerationProjects", "walkability"]
-        },
-        advanced: {
-          type: Type.OBJECT,
-          properties: {
-            undervaluedExplanation: { type: Type.STRING, description: "Detailed explanation of why it is under/over valued" },
-            renovationROI: { type: Type.STRING, description: "Estimated ROI for standard renovations/extensions" },
-            developmentOpportunity: { type: Type.STRING, description: "Potential for flipping, extensions, or loft conversions" }
-          },
-          required: ["undervaluedExplanation", "renovationROI", "developmentOpportunity"]
-        },
-        pros: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              desc: { type: Type.STRING },
-              category: { type: Type.STRING }
-            },
-            required: ["title", "desc", "category"]
-          },
-          description: "At least 3 strengths matching their goal"
-        },
-        cons: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              desc: { type: Type.STRING },
-              category: { type: Type.STRING }
-            },
-            required: ["title", "desc", "category"]
-          },
-          description: "At least 3 drawbacks or warnings matching their goal"
-        },
-        soldHistory: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              year: { type: Type.STRING, description: "Year of sale" },
-              price: { type: Type.STRING, description: "Price sold, e.g. £145,000" },
-              source: { type: Type.STRING, description: "Source of reference (e.g., 'Land Registry (2018)')" },
-              description: { type: Type.STRING, description: "Summary, e.g., 'Sold as new build flat', 'Capital growth of 30% since this era'" }
-            },
-            required: ["year", "price", "source", "description"]
-          },
-          description: "List of actual or derived past sales data of this specific property or street history"
-        },
-        comparableSales: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              address: { type: Type.STRING },
-              price: { type: Type.STRING },
-              soldDate: { type: Type.STRING },
-              similarity: { type: Type.STRING, description: "Explanation of how it compares (e.g. Same street, same layout, larger yard)" }
-            },
-            required: ["address", "price", "soldDate", "similarity"]
-          },
-          description: "3 nearby comparable sales"
-        },
-        areaAnalysis: {
-          type: Type.OBJECT,
-          properties: {
-            schools: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  distance: { type: Type.STRING },
-                  rating: { type: Type.STRING, description: "Ofsted score: e.g. 'Outstanding', 'Good'" }
-                },
-                required: ["name", "distance", "rating"]
-              }
-            },
-            transport: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  type: { type: Type.STRING },
-                  line: { type: Type.STRING },
-                  time: { type: Type.STRING }
-                },
-                required: ["type", "line", "time"]
-              }
-            },
-            crimeSafety: {
-              type: Type.OBJECT,
-              properties: {
-                rating: { type: Type.STRING },
-                description: { type: Type.STRING }
-              },
-              required: ["rating", "description"]
-            },
-            demographics: { type: Type.STRING, description: "Who lives here: young couples, elderly, commuter cluster" },
-            amenities: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            },
-            futureOutlook: { type: Type.STRING, description: "Underlying council investments or major development plans" }
-          },
-          required: ["schools", "transport", "crimeSafety", "demographics", "amenities", "futureOutlook"]
-        },
-        buyingSuitability: { type: Type.STRING, description: "Clear advisory verdict: buy, negotiate hard, or avoid." },
-        viewingChecks: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        },
-        offerStrategy: {
-          type: Type.OBJECT,
-          properties: {
-            lowOffer: { type: Type.STRING, description: "Cheeky bid value" },
-            fairOffer: { type: Type.STRING, description: "Fair value bid" },
-            premiumOffer: { type: Type.STRING, description: "High competition bid maximum" },
-            negotiationTips: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            }
-          },
-          required: ["lowOffer", "fairOffer", "premiumOffer", "negotiationTips"]
-        },
-        agentQuestions: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        }
-      },
-      required: [
-        "title",
-        "price",
-        "bedrooms",
-        "bathrooms",
-        "propertyType",
-        "location",
-        "summary",
-        "specs",
-        "scores",
-        "valuation",
-        "investmentMetrics",
-        "marketAndRental",
-        "riskAnalysis",
-        "locationIntelligence",
-        "advanced",
-        "pros",
-        "cons",
-        "soldHistory",
-        "comparableSales",
-        "areaAnalysis",
-        "buyingSuitability",
-        "viewingChecks",
-        "offerStrategy",
-        "agentQuestions"
-      ]
+    const scrap = {
+      url: scrapResult.url || normalizedUrl || "Address lookup",
+      address: scrapResult.address || manualAddress,
+      price: scrapResult.price,
+      bedrooms: scrapResult.bedrooms,
+      bathrooms: scrapResult.bathrooms,
+      propertyType: scrapResult.propertyType,
+      description: scrapResult.description,
     };
 
-    console.log("[ai] Submitting query to Gemini with Search Grounding enabled...");
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
-      contents: userPrompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-        responseSchema: analysisSchema,
-        systemInstruction: "You are an independent, direct, and incredibly shrewd UK Property Valuer. Evaluate the physical properties, postcodes, nearby real-estate sales, and crime levels with raw commercial honesty. Do not contain fluffy marketing. Always return structured JSON that matches the prompt parameters precisely.",
-      },
-    });
+    // Gemini is primary (works with AI Studio keys). OpenAI only if a real key is set.
+    let analysis: Record<string, unknown>;
+    let sources: { title: string; url: string }[] = [];
+    let provider: "gemini" | "openai";
 
-    let parsedText = response.text || "{}";
-    // Strip markdown formatting if the model still wrapped it
-    if (parsedText.startsWith('```json')) {
-      parsedText = parsedText.replace(/^```json\n/, '').replace(/\n```$/, '');
-    } else if (parsedText.startsWith('```')) {
-      parsedText = parsedText.replace(/^```\n/, '').replace(/\n```$/, '');
-    }
-    
-    // Also try to replace any rogue unquoted dots that might break JSON (e.g., `.` instead of `"."`)
-    // But this is risky, let's rely on the better model `gemini-2.5-pro`.
-
-    const parsedData = JSON.parse(parsedText);
-
-    // Extract search grounding URLs if present
-    const sources: { title: string; url: string }[] = [];
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks) {
-      chunks.forEach((chunk: any) => {
-        if (chunk.web && chunk.web.uri) {
-          sources.push({
-            title: chunk.web.title || "Web Reference",
-            url: chunk.web.uri,
-          });
-        }
+    if (hasGeminiKey()) {
+      console.log("[ai] Using Gemini + Google Search research pipeline...");
+      const result = await analyzeWithGemini({
+        url: normalizedUrl || undefined,
+        pastedText,
+        manualAddress: manualAddress || undefined,
+        buyerGoal: selectedGoal,
+        scrap,
+      });
+      analysis = result.analysis;
+      sources = result.sources;
+      provider = "gemini";
+    } else if (hasOpenAIKey()) {
+      console.log("[ai] GEMINI_API_KEY missing — using OpenAI + web search...");
+      const result = await analyzeWithOpenAI({
+        url: normalizedUrl || undefined,
+        pastedText,
+        buyerGoal: selectedGoal,
+        scrap,
+      });
+      analysis = result.analysis;
+      sources = result.sources;
+      provider = "openai";
+    } else {
+      return res.status(401).json({
+        error:
+          "No AI provider configured. Set GEMINI_API_KEY in .env.local (https://aistudio.google.com/apikey).",
       });
     }
 
-    parsedData.sources = sources;
-
-    // Attach imagery if extracted during listing scrape
     if (scrapResult.images && scrapResult.images.length > 0) {
-      parsedData.scrapedImages = scrapResult.images;
+      (analysis as any).scrapedImages = scrapResult.images;
+    }
+    (analysis as any).sources = sources;
+
+    if (isPaywallEnabled() && checkoutSessionId) {
+      markCheckoutSessionUsed(checkoutSessionId, normalizedUrl);
     }
 
-    res.json({
+    return res.json({
       success: true,
       scraped: scrapResult,
-      analysis: parsedData,
+      analysis,
+      provider,
     });
-
   } catch (error: any) {
     console.error("[api] Error during property analysis:", error);
-    res.status(500).json({
-      error: error.message || "An unexpected error occurred during analysis.",
-    });
+    const raw = error?.message || String(error) || "An unexpected error occurred during analysis.";
+    const isModelGone = raw.includes("no longer available");
+    const isAuthKeyIssue =
+      raw.includes("ACCESS_TOKEN_TYPE_UNSUPPORTED") ||
+      raw.includes("UNAUTHENTICATED") ||
+      raw.includes("invalid authentication credentials");
+
+    let helpful = raw;
+    if (isModelGone) {
+      helpful =
+        "Gemini model not available for this key. Set GEMINI_MODEL=gemini-3.5-flash (or gemini-3.1-pro-preview) in .env.local. Original: " +
+        raw;
+    } else if (isAuthKeyIssue) {
+      helpful =
+        "Gemini auth failed. Confirm GEMINI_API_KEY in .env.local matches a working AI Studio key. Original: " +
+        raw;
+    }
+
+    res.status(isAuthKeyIssue ? 401 : 500).json({ error: helpful });
   }
 });
-
 // Setup dev vs production environments
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

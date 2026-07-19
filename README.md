@@ -1,20 +1,20 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# CheckThisHouse
 
-# Run and deploy your AI Studio app
+Rightmove property & area analyzer with a multi-page PDF investment report.
 
-This contains everything you need to run your app locally.
+## AI provider
 
-View your app in AI Studio: https://ai.studio/apps/19a5f87c-6160-4dba-aa25-1ac1a0294616
+**Primary:** Gemini + Google Search (set `GEMINI_API_KEY` in `.env.local`)  
+Default model: `gemini-3.1-pro-preview` (override with `GEMINI_MODEL`)
 
-## Run Locally
+Analysis runs in two steps (required by the Gemini API):
+1. Google Search research brief
+2. Structured JSON valuation report
 
-**Prerequisites:**  Node.js
+**Optional fallback:** `OPENAI_API_KEY`
 
+## Run locally
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. `npm install`
+2. Copy `.env.example` → `.env.local` and set `GEMINI_API_KEY`
+3. `npm run dev` → http://localhost:3000
