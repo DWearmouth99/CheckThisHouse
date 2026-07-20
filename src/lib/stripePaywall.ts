@@ -6,6 +6,7 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const USED_SESSIONS_FILE = path.join(DATA_DIR, 'used-checkout-sessions.json');
 
 export type CheckoutMeta = {
+  /** Listing URL or `address:<normalized address>` property key */
   listingUrl: string;
   buyerGoal: string;
 };
@@ -86,17 +87,22 @@ export function getStripePublishableKey(): string {
 }
 
 export async function createReportCheckoutSession(opts: {
-  listingUrl: string;
+  /** Listing URL or `address:<normalized address>` — stored in Stripe metadata as listingUrl */
+  propertyKey: string;
   buyerGoal: string;
   baseUrl: string;
   customerEmail?: string;
   /** embedded = on-site panel; hosted = full-page Stripe redirect */
   uiMode?: 'embedded' | 'hosted';
+  /** Optional product blurb (listing vs address) */
+  productDescription?: string;
 }): Promise<{ sessionId: string; url?: string; clientSecret?: string }> {
   const stripe = getStripe();
   const pricePence = getReportPricePence();
   const priceId = process.env.STRIPE_PRICE_ID?.trim();
   const uiMode = opts.uiMode || 'embedded';
+  const propertyKey = opts.propertyKey.trim();
+  const isAddress = propertyKey.toLowerCase().startsWith('address:');
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = priceId
     ? [{ price: priceId, quantity: 1 }]
@@ -108,14 +114,16 @@ export async function createReportCheckoutSession(opts: {
             unit_amount: pricePence,
             product_data: {
               name: 'CheckThisHouse Property Report',
-              description: 'Single listing property report',
+              description:
+                opts.productDescription ||
+                (isAddress ? 'Single address property report' : 'Single listing property report'),
             },
           },
         },
       ];
 
   const metadata = {
-    listingUrl: opts.listingUrl.slice(0, 450),
+    listingUrl: propertyKey.slice(0, 450),
     buyerGoal: opts.buyerGoal.slice(0, 100),
     product: 'property_report',
   };
@@ -167,7 +175,8 @@ export type PaidSession = {
 
 export async function verifyPaidCheckoutSession(opts: {
   sessionId: string;
-  listingUrl: string;
+  /** Listing URL or `address:<normalized address>` */
+  propertyKey: string;
 }): Promise<PaidSession> {
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.retrieve(opts.sessionId);
@@ -178,10 +187,13 @@ export async function verifyPaidCheckoutSession(opts: {
     });
   }
 
-  const paidUrl = (session.metadata?.listingUrl || '').trim();
-  if (paidUrl && paidUrl !== opts.listingUrl.trim()) {
+  const paidKey = (session.metadata?.listingUrl || '').trim();
+  const requested = opts.propertyKey.trim();
+  if (paidKey && paidKey !== requested) {
     throw Object.assign(
-      new Error('This payment was for a different listing link. Start checkout again for this property.'),
+      new Error(
+        'This payment was for a different property. Start checkout again for this listing or address.'
+      ),
       { status: 403 }
     );
   }
@@ -196,7 +208,7 @@ export async function verifyPaidCheckoutSession(opts: {
 
   return {
     sessionId: session.id,
-    listingUrl: paidUrl || opts.listingUrl,
+    listingUrl: paidKey || requested,
     buyerGoal: session.metadata?.buyerGoal || 'First-time Buyer',
     amountTotal: session.amount_total,
     currency: session.currency,
@@ -215,9 +227,9 @@ export function markCheckoutSessionUsed(sessionId: string, listingUrl?: string) 
 /** @deprecated prefer verify + markCheckoutSessionUsed after successful analyze */
 export async function consumePaidCheckoutSession(opts: {
   sessionId: string;
-  listingUrl: string;
+  propertyKey: string;
 }): Promise<PaidSession> {
   const paid = await verifyPaidCheckoutSession(opts);
-  markCheckoutSessionUsed(opts.sessionId, opts.listingUrl);
+  markCheckoutSessionUsed(opts.sessionId, opts.propertyKey);
   return paid;
 }

@@ -19,6 +19,12 @@ import {
   verifyPaidCheckoutSession,
 } from "./src/lib/stripePaywall";
 import { scrapeRightmoveUrl } from "./src/lib/rightmoveScrape";
+import { addressPropertyKey, isInvalidAddress, validateUkAddress } from "./src/lib/ukAddress";
+import {
+  hasIdealPostcodesKey,
+  resolveAddress,
+  suggestAddresses,
+} from "./src/lib/idealPostcodes";
 
 // Load environment variables (.env.local overrides .env)
 dotenv.config();
@@ -69,7 +75,87 @@ app.get("/api/pricing", (_req, res) => {
     priceLabel: formatPriceLabel(pence),
     currency: "gbp",
     publishableKey: publishableKey.startsWith("pk_") ? publishableKey : null,
+    addressAutocomplete: hasIdealPostcodesKey(),
   });
+});
+
+/** Ideal Postcodes autocomplete suggestions (not billed until resolve). */
+app.get("/api/address/suggest", async (req, res) => {
+  try {
+    if (!hasIdealPostcodesKey()) {
+      return res.status(503).json({
+        error: "Address autocomplete is not configured.",
+        suggestions: [],
+      });
+    }
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (q.length < 3) {
+      return res.json({ suggestions: [] });
+    }
+
+    const ip = clientIp(req);
+    const ipLimit = checkRateLimit({
+      key: `addr-suggest:${ip}`,
+      limit: 90,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (ipLimit.ok === false) {
+      res.setHeader("Retry-After", String(ipLimit.retryAfterSec));
+      return res.status(429).json({
+        error: "Too many address lookups. Please wait a moment.",
+        code: "RATE_LIMITED",
+      });
+    }
+
+    const suggestions = await suggestAddresses(q);
+    return res.json({ suggestions });
+  } catch (err: any) {
+    console.error("[address/suggest]", err?.message || err);
+    const status = typeof err?.status === "number" ? err.status : 502;
+    return res.status(status).json({ error: err?.message || "Address lookup failed.", suggestions: [] });
+  }
+});
+
+/** Ideal Postcodes resolve (billed). */
+app.post("/api/address/resolve", async (req, res) => {
+  try {
+    if (!hasIdealPostcodesKey()) {
+      return res.status(503).json({ error: "Address autocomplete is not configured." });
+    }
+    const id = typeof req.body?.id === "string" ? req.body.id.trim() : "";
+    if (!id) {
+      return res.status(400).json({ error: "Missing address suggestion id." });
+    }
+
+    const ip = clientIp(req);
+    const ipLimit = checkRateLimit({
+      key: `addr-resolve:${ip}`,
+      limit: 40,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (ipLimit.ok === false) {
+      res.setHeader("Retry-After", String(ipLimit.retryAfterSec));
+      return res.status(429).json({
+        error: "Too many address selections. Please wait a moment.",
+        code: "RATE_LIMITED",
+      });
+    }
+
+    const resolved = await resolveAddress(id);
+    return res.json({
+      success: true,
+      address: resolved.formatted,
+      postcode: resolved.postcode,
+      postTown: resolved.postTown,
+      line1: resolved.line1,
+      line2: resolved.line2,
+      line3: resolved.line3,
+    });
+  } catch (err: any) {
+    console.error("[address/resolve]", err?.message || err);
+    const status = typeof err?.status === "number" ? err.status : 502;
+    return res.status(status).json({ error: err?.message || "Could not resolve address." });
+  }
 });
 
 app.post("/api/checkout", async (req, res) => {
@@ -82,10 +168,29 @@ app.post("/api/checkout", async (req, res) => {
     }
 
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
+    const rawAddress = typeof req.body?.address === "string" ? req.body.address.trim() : "";
     const buyerGoal = typeof req.body?.buyerGoal === "string" ? req.body.buyerGoal : "First-time Buyer";
-    const listing = validateListingUrl(rawUrl);
-    if (isInvalidListingUrl(listing)) {
-      return res.status(400).json({ error: listing.error });
+
+    let propertyKey = "";
+    let productDescription = "Single listing property report";
+
+    if (rawAddress) {
+      const addr = validateUkAddress(rawAddress);
+      if (isInvalidAddress(addr)) {
+        return res.status(400).json({ error: addr.error });
+      }
+      propertyKey = addr.propertyKey;
+      productDescription = "Single address property report";
+    } else if (rawUrl) {
+      const listing = validateListingUrl(rawUrl);
+      if (isInvalidListingUrl(listing)) {
+        return res.status(400).json({ error: listing.error });
+      }
+      propertyKey = listing.url;
+    } else {
+      return res.status(400).json({
+        error: "Enter a supported listing URL or a full UK address with postcode.",
+      });
     }
 
     const publishableKey = getStripePublishableKey();
@@ -100,10 +205,11 @@ app.post("/api/checkout", async (req, res) => {
     const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
     const baseUrl = getPublicBaseUrl(req.get("host") || undefined, proto);
     const session = await createReportCheckoutSession({
-      listingUrl: listing.url,
+      propertyKey,
       buyerGoal,
       baseUrl,
       uiMode: "embedded",
+      productDescription,
     });
 
     return res.json({
@@ -121,12 +227,73 @@ app.post("/api/checkout", async (req, res) => {
 });
 
 /**
- * Free listing preview (NO AI). Rate-limited scrape of public listing basics only.
+ * Free listing / address preview (NO AI). Rate-limited.
  * Full Gemini/OpenAI analysis stays behind paid /api/analyze.
  */
 app.post("/api/teaser", async (req, res) => {
   try {
     const rawUrl = typeof req.body?.url === "string" ? req.body.url.trim() : "";
+    const rawAddress = typeof req.body?.address === "string" ? req.body.address.trim() : "";
+
+    // Address-only preview (no scrape)
+    if (rawAddress && !rawUrl) {
+      const addr = validateUkAddress(rawAddress);
+      if (isInvalidAddress(addr)) {
+        return res.status(400).json({ error: addr.error });
+      }
+
+      const cacheKey = addr.propertyKey;
+      const cached = teaserCacheGet(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
+      const ip = clientIp(req);
+      const ipLimit = checkRateLimit({
+        key: `teaser:ip:${ip}`,
+        limit: 60,
+        windowMs: 15 * 60 * 1000,
+      });
+      if (ipLimit.ok === false) {
+        res.setHeader("Retry-After", String(ipLimit.retryAfterSec));
+        return res.status(429).json({
+          error: "Too many preview requests. Please wait a few minutes and try again.",
+          code: "RATE_LIMITED",
+        });
+      }
+
+      const payload = {
+        success: true,
+        limited: true,
+        mode: "address" as const,
+        listingUrl: "",
+        portal: "Address lookup",
+        host: "address",
+        address: addr.address,
+        price: null,
+        bedrooms: null,
+        bathrooms: null,
+        propertyType: null,
+        images: [] as string[],
+        keyFeatures: [] as string[],
+        tenure: null,
+        summary:
+          "Address lookup — we’ll research sold history, local area, risks and estimated value bands from public UK sources. No live asking price unless comps show one.",
+        pricePerBedroom: null,
+        locationHint: addr.locationHint,
+        researchPlan: buildFullReportTeaserPlan({
+          locationHint: addr.locationHint,
+          bedrooms: null,
+          propertyType: null,
+          price: null,
+          tenure: null,
+        }),
+      };
+
+      teaserCacheSet(cacheKey, payload);
+      return res.json(payload);
+    }
+
     const listing = validateListingUrl(rawUrl);
     if (isInvalidListingUrl(listing)) {
       return res.status(400).json({ error: listing.error });
@@ -145,7 +312,7 @@ app.post("/api/teaser", async (req, res) => {
       limit: 60,
       windowMs: 15 * 60 * 1000,
     });
-    if (!ipLimit.ok) {
+    if (ipLimit.ok === false) {
       res.setHeader("Retry-After", String(ipLimit.retryAfterSec));
       return res.status(429).json({
         error: "Too many preview requests. Please wait a few minutes and try again.",
@@ -212,6 +379,7 @@ app.post("/api/teaser", async (req, res) => {
     const payload = {
       success: true,
       limited,
+      mode: "listing" as const,
       listingUrl: listing.url,
       portal: listing.portal,
       host: listing.host,
@@ -315,9 +483,18 @@ app.get("/api/image-proxy", async (req: express.Request, res: express.Response) 
 // Property Scraper + AI analysis endpoint
 app.post("/api/analyze", async (req: express.Request, res: express.Response) => {
   const { url, pastedText, buyerGoal, address, sessionId } = req.body;
-  const manualAddress = typeof address === "string" ? address.trim() : "";
+  const rawAddress = typeof address === "string" ? address.trim() : "";
   const rawUrl = typeof url === "string" ? url.trim() : "";
   const checkoutSessionId = typeof sessionId === "string" ? sessionId.trim() : "";
+
+  let manualAddress = "";
+  if (rawAddress) {
+    const addr = validateUkAddress(rawAddress);
+    if (isInvalidAddress(addr)) {
+      return res.status(400).json({ error: addr.error });
+    }
+    manualAddress = addr.address;
+  }
 
   if (!rawUrl && !pastedText && !manualAddress) {
     return res.status(400).json({
@@ -334,6 +511,10 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
     normalizedUrl = listing.url;
   }
 
+  const propertyKey = manualAddress
+    ? addressPropertyKey(manualAddress)
+    : normalizedUrl;
+
   // Public marketing reports require a paid Stripe Checkout session
   if (isPaywallEnabled()) {
     if (!checkoutSessionId) {
@@ -342,15 +523,15 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
         code: "PAYMENT_REQUIRED",
       });
     }
-    if (!normalizedUrl) {
+    if (!propertyKey) {
       return res.status(400).json({
-        error: "A valid listing URL is required when using a paid checkout session.",
+        error: "A valid listing URL or address is required when using a paid checkout session.",
       });
     }
     try {
       await verifyPaidCheckoutSession({
         sessionId: checkoutSessionId,
-        listingUrl: normalizedUrl,
+        propertyKey,
       });
     } catch (err: any) {
       const status = typeof err?.status === "number" ? err.status : 402;
@@ -434,7 +615,7 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
     (analysis as any).sources = sources;
 
     if (isPaywallEnabled() && checkoutSessionId) {
-      markCheckoutSessionUsed(checkoutSessionId, normalizedUrl);
+      markCheckoutSessionUsed(checkoutSessionId, propertyKey);
     }
 
     return res.json({

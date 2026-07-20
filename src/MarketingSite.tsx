@@ -27,17 +27,29 @@ import { BuyerGoal, PropertyAnalysis } from './types';
 import { PDFReport } from './components/PDFReport';
 import { generatePDF } from './utils/pdfExport';
 import { SUPPORTED_PORTALS, isInvalidListingUrl, validateListingUrl } from './lib/listingUrl';
+import { isInvalidAddress, validateUkAddress } from './lib/ukAddress';
 import { REPORT_CONTENT_CHIPS, REPORT_CONTENTS, INVESTOR_REPORT_CONTENTS } from './lib/reportContents';
 import { EmbeddedCheckoutModal } from './components/EmbeddedCheckoutModal';
 import { ReportTeaserModal, TeaserData } from './components/ReportTeaserModal';
+import { AddressAutocomplete } from './components/AddressAutocomplete';
 
 const LOGO = '/checkthishouselogo.png';
 
-const LOADING_STEPS = [
+type LookupMode = 'listing' | 'address';
+
+const LISTING_LOADING_STEPS = [
   'Reading your listing link…',
   'Checking schools, crime, transport and local amenities…',
   'Reviewing flood, damp, structure and insurance signals…',
   'Comparing sold prices and building offer guidance…',
+  'Preparing your downloadable PDF report…',
+];
+
+const ADDRESS_LOADING_STEPS = [
+  'Looking up this address…',
+  'Checking schools, crime, transport and local amenities…',
+  'Reviewing flood, damp, structure and insurance signals…',
+  'Comparing sold prices and estimating value bands…',
   'Preparing your downloadable PDF report…',
 ];
 
@@ -104,13 +116,16 @@ function safeFilename(analysis: PropertyAnalysis): string {
 }
 
 export default function MarketingSite() {
+  const [lookupMode, setLookupMode] = useState<LookupMode>('address');
   const [url, setUrl] = useState('');
+  const [address, setAddress] = useState('');
   const [buyerGoal, setBuyerGoal] = useState<BuyerGoal>('First-time Buyer');
   const [phase, setPhase] = useState<Phase>('idle');
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PropertyAnalysis | null>(null);
   const [urlHint, setUrlHint] = useState<string | null>(null);
+  const [addressHint, setAddressHint] = useState<string | null>(null);
   const [readyDismissed, setReadyDismissed] = useState(false);
   const [priceLabel, setPriceLabel] = useState('£4.99');
   const [paywallEnabled, setPaywallEnabled] = useState(true);
@@ -120,6 +135,8 @@ export default function MarketingSite() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [teaser, setTeaser] = useState<TeaserData | null>(null);
   const [teaserOpen, setTeaserOpen] = useState(false);
+
+  const loadingSteps = lookupMode === 'address' ? ADDRESS_LOADING_STEPS : LISTING_LOADING_STEPS;
 
   const isBusy =
     phase === 'analyzing' ||
@@ -146,13 +163,14 @@ export default function MarketingSite() {
     if (phase !== 'analyzing') return;
     setLoadingStep(0);
     const id = setInterval(() => {
-      setLoadingStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1));
+      setLoadingStep((s) => Math.min(s + 1, loadingSteps.length - 1));
     }, 4500);
     return () => clearInterval(id);
-  }, [phase]);
+  }, [phase, loadingSteps.length]);
 
   const runAnalysis = async (opts: {
-    listingUrl: string;
+    listingUrl?: string;
+    address?: string;
     goal: BuyerGoal;
     sessionId?: string | null;
   }) => {
@@ -166,7 +184,8 @@ export default function MarketingSite() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: opts.listingUrl,
+          url: opts.listingUrl || undefined,
+          address: opts.address || undefined,
           buyerGoal: opts.goal,
           sessionId: opts.sessionId || undefined,
         }),
@@ -207,28 +226,43 @@ export default function MarketingSite() {
     }
 
     if (checkout === 'success' && sessionId) {
-      let pending: { url?: string; buyerGoal?: BuyerGoal } = {};
+      let pending: {
+        mode?: LookupMode;
+        url?: string;
+        address?: string;
+        buyerGoal?: BuyerGoal;
+      } = {};
       try {
         pending = JSON.parse(sessionStorage.getItem(PENDING_CHECKOUT_KEY) || '{}');
       } catch {
         pending = {};
       }
 
+      const mode = pending.mode || (pending.address ? 'address' : 'listing');
       const listingUrl = pending.url || '';
+      const pendingAddress = pending.address || '';
       const goal = pending.buyerGoal || 'First-time Buyer';
-      if (listingUrl) {
-        setUrl(listingUrl);
-        setBuyerGoal(goal);
-      }
+
+      setLookupMode(mode);
+      if (listingUrl) setUrl(listingUrl);
+      if (pendingAddress) setAddress(pendingAddress);
+      setBuyerGoal(goal);
       setCheckoutSessionId(sessionId);
 
-      if (!listingUrl) {
-        setError('Payment succeeded, but we lost the listing link. Paste it again and contact support with your receipt.');
+      if (!listingUrl && !pendingAddress) {
+        setError(
+          'Payment succeeded, but we lost the property details. Enter them again and contact support with your receipt.'
+        );
         setPhase('idle');
         return;
       }
 
-      void runAnalysis({ listingUrl, goal, sessionId });
+      void runAnalysis({
+        listingUrl: listingUrl || undefined,
+        address: pendingAddress || undefined,
+        goal,
+        sessionId,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for Stripe return
   }, []);
@@ -237,6 +271,11 @@ export default function MarketingSite() {
     if (!url.trim()) return null;
     return validateListingUrl(url);
   }, [url]);
+
+  const liveAddressValidation = useMemo(() => {
+    if (!address.trim()) return null;
+    return validateUkAddress(address);
+  }, [address]);
 
   const handleUrlChange = (value: string) => {
     setUrl(value);
@@ -249,18 +288,46 @@ export default function MarketingSite() {
     setUrlHint(isInvalidListingUrl(result) ? result.error : `Looks good — ${result.portal}`);
   };
 
-  const startCheckout = async (listingUrl: string, goal: BuyerGoal) => {
+  const handleAddressChange = (value: string) => {
+    setAddress(value);
+    setError(null);
+    if (!value.trim()) {
+      setAddressHint(null);
+      return;
+    }
+    const result = validateUkAddress(value);
+    setAddressHint(
+      isInvalidAddress(result)
+        ? result.error
+        : `Looks good — ${result.postcode || 'UK address'}`
+    );
+  };
+
+  const startCheckout = async (opts: {
+    listingUrl?: string;
+    address?: string;
+    goal: BuyerGoal;
+  }) => {
     setPhase('redirecting');
     setError(null);
     try {
       sessionStorage.setItem(
         PENDING_CHECKOUT_KEY,
-        JSON.stringify({ url: listingUrl, buyerGoal: goal })
+        JSON.stringify({
+          mode: opts.address ? 'address' : 'listing',
+          url: opts.listingUrl || undefined,
+          address: opts.address || undefined,
+          buyerGoal: opts.goal,
+        })
       );
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: listingUrl, buyerGoal: goal }),
+        body: JSON.stringify({
+          url: opts.listingUrl || undefined,
+          address: opts.address || undefined,
+          buyerGoal: opts.goal,
+        }),
       });
       const data = await readJsonResponse(response);
       if (!response.ok) {
@@ -287,8 +354,87 @@ export default function MarketingSite() {
     }
   };
 
+  const teaserFromResponse = (data: any, fallback: Partial<TeaserData>): TeaserData => ({
+    limited: Boolean(data.limited),
+    mode: data.mode === 'address' ? 'address' : 'listing',
+    listingUrl: data.listingUrl || fallback.listingUrl || '',
+    portal: data.portal || fallback.portal || 'Listing',
+    host: data.host || fallback.host || '',
+    address: data.address || fallback.address || null,
+    price: data.price || null,
+    bedrooms: data.bedrooms || null,
+    bathrooms: data.bathrooms || null,
+    propertyType: data.propertyType || null,
+    images: Array.isArray(data.images) ? data.images.filter(Boolean).slice(0, 3) : [],
+    keyFeatures: Array.isArray(data.keyFeatures)
+      ? data.keyFeatures.filter(Boolean).slice(0, 6)
+      : [],
+    tenure: data.tenure || null,
+    summary: data.summary || null,
+    pricePerBedroom: data.pricePerBedroom || null,
+    locationHint: data.locationHint || null,
+    researchPlan: Array.isArray(data.researchPlan) ? data.researchPlan.filter(Boolean) : [],
+  });
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (lookupMode === 'address') {
+      const result = validateUkAddress(address);
+      if (isInvalidAddress(result)) {
+        setError(result.error);
+        setAddressHint(result.error);
+        return;
+      }
+
+      if (paywallEnabled && !checkoutSessionId) {
+        if (teaser && teaser.mode === 'address' && teaser.address === result.address) {
+          setError(null);
+          setTeaserOpen(true);
+          setPhase('preview');
+          return;
+        }
+
+        setPhase('previewing');
+        setError(null);
+        setTeaser(null);
+        setTeaserOpen(false);
+        try {
+          const response = await fetch('/api/teaser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: result.address }),
+          });
+          const data = await readJsonResponse(response);
+          if (!response.ok) {
+            throw new Error(data.error || 'Could not load preview.');
+          }
+          const next = teaserFromResponse(data, {
+            listingUrl: '',
+            portal: 'Address lookup',
+            host: 'address',
+            address: result.address,
+          });
+          setTeaser(next);
+          setTeaserOpen(true);
+          setPhase('preview');
+          return;
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Could not load preview.';
+          setError(message);
+          setPhase('idle');
+          return;
+        }
+      }
+
+      await runAnalysis({
+        address: result.address,
+        goal: buyerGoal,
+        sessionId: checkoutSessionId,
+      });
+      return;
+    }
+
     const result = validateListingUrl(url);
     if (isInvalidListingUrl(result)) {
       setError(result.error);
@@ -320,26 +466,11 @@ export default function MarketingSite() {
         if (!response.ok) {
           throw new Error(data.error || 'Could not load preview.');
         }
-        const next: TeaserData = {
-          limited: Boolean(data.limited),
-          listingUrl: data.listingUrl || result.url,
-          portal: data.portal || result.portal,
-          host: data.host || result.host,
-          address: data.address || null,
-          price: data.price || null,
-          bedrooms: data.bedrooms || null,
-          bathrooms: data.bathrooms || null,
-          propertyType: data.propertyType || null,
-          images: Array.isArray(data.images) ? data.images.filter(Boolean).slice(0, 3) : [],
-          keyFeatures: Array.isArray(data.keyFeatures)
-            ? data.keyFeatures.filter(Boolean).slice(0, 6)
-            : [],
-          tenure: data.tenure || null,
-          summary: data.summary || null,
-          pricePerBedroom: data.pricePerBedroom || null,
-          locationHint: data.locationHint || null,
-          researchPlan: Array.isArray(data.researchPlan) ? data.researchPlan.filter(Boolean) : [],
-        };
+        const next = teaserFromResponse(data, {
+          listingUrl: result.url,
+          portal: result.portal,
+          host: result.host,
+        });
         setTeaser(next);
         setTeaserOpen(true);
         setPhase('preview');
@@ -438,8 +569,8 @@ export default function MarketingSite() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-[15px] sm:text-lg text-brand-muted max-w-lg leading-relaxed mb-6 sm:mb-8"
               >
-                Paste a Rightmove, Zoopla, Zillow or other listing link and download a clear, branded buyer PDF
-                you can take to a viewing — before you make an offer.
+                Paste a listing link, or look up any UK address — even if it isn’t for sale — and download a clear
+                branded PDF you can use before you offer, remortgage or sell.
               </motion.p>
 
               <motion.form
@@ -449,33 +580,102 @@ export default function MarketingSite() {
                 onSubmit={handleGenerate}
                 className="space-y-3 max-w-xl"
               >
-                <label className="block">
-                  <span className="brand-label mb-1.5 block">Property listing link</span>
-                  <input
-                    type="url"
-                    inputMode="url"
-                    autoComplete="url"
-                    placeholder="https://www.rightmove.co.uk/properties/…"
-                    value={url}
-                    onChange={(e) => handleUrlChange(e.target.value)}
-                    disabled={isBusy}
-                    className="brand-input text-base md:text-sm py-3.5"
-                    aria-invalid={liveValidation?.ok === false}
-                    aria-describedby="url-hint"
-                  />
-                </label>
-                {urlHint && (
-                  <p
-                    id="url-hint"
-                    className={`text-xs break-words ${liveValidation?.ok ? 'text-brand-green' : 'text-rose-700'}`}
-                  >
-                    {urlHint}
-                  </p>
+                <div
+                  className="flex rounded-xl border border-brand-line bg-white/80 p-1 gap-1"
+                  role="tablist"
+                  aria-label="Lookup type"
+                >
+                  {(
+                    [
+                      { id: 'address' as const, label: 'Address lookup' },
+                      { id: 'listing' as const, label: 'Listing link' },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={lookupMode === tab.id}
+                      disabled={isBusy}
+                      onClick={() => {
+                        setLookupMode(tab.id);
+                        setError(null);
+                      }}
+                      className={`flex-1 min-h-[40px] rounded-lg text-sm font-semibold transition ${
+                        lookupMode === tab.id
+                          ? 'bg-brand-navy text-white shadow-sm'
+                          : 'text-brand-muted hover:text-brand-navy'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {lookupMode === 'listing' ? (
+                  <>
+                    <label className="block">
+                      <span className="brand-label mb-1.5 block">Property listing link</span>
+                      <input
+                        type="url"
+                        inputMode="url"
+                        autoComplete="url"
+                        placeholder="https://www.rightmove.co.uk/properties/…"
+                        value={url}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        disabled={isBusy}
+                        className="brand-input text-base md:text-sm py-3.5"
+                        aria-invalid={liveValidation?.ok === false}
+                        aria-describedby="url-hint"
+                      />
+                    </label>
+                    {urlHint && (
+                      <p
+                        id="url-hint"
+                        className={`text-xs break-words ${liveValidation?.ok ? 'text-brand-green' : 'text-rose-700'}`}
+                      >
+                        {urlHint}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <label className="block">
+                      <span className="brand-label mb-1.5 block">UK address</span>
+                      <AddressAutocomplete
+                        value={address}
+                        onChange={handleAddressChange}
+                        onResolved={(formatted) => {
+                          handleAddressChange(formatted);
+                        }}
+                        disabled={isBusy}
+                        placeholder="Start with a postcode, e.g. PA2 8TR"
+                        hintId="address-hint"
+                        invalid={liveAddressValidation?.ok === false}
+                      />
+                    </label>
+                    {addressHint && (
+                      <p
+                        id="address-hint"
+                        className={`text-xs break-words ${
+                          liveAddressValidation?.ok ? 'text-brand-green' : 'text-rose-700'
+                        }`}
+                      >
+                        {addressHint}
+                      </p>
+                    )}
+                    <p className="text-[11px] text-brand-muted leading-relaxed -mt-1">
+                      Type a postcode or street and pick your address from the list. Works even if the
+                      property isn’t for sale.
+                    </p>
+                  </>
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <label className="flex-1 min-w-0">
-                    <span className="brand-label mb-1.5 block">I am buying as</span>
+                    <span className="brand-label mb-1.5 block">
+                      {lookupMode === 'address' ? 'I’m checking as' : 'I am buying as'}
+                    </span>
                     <select
                       value={buyerGoal}
                       onChange={(e) => setBuyerGoal(e.target.value as BuyerGoal)}
@@ -497,9 +697,10 @@ export default function MarketingSite() {
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" /> Opening checkout…
                         </>
-                      ) : phase === 'analyzing' ? (
+                      ) : phase === 'analyzing' || phase === 'previewing' ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> Generating…
+                          <Loader2 className="w-4 h-4 animate-spin" />{' '}
+                          {phase === 'previewing' ? 'Loading preview…' : 'Generating…'}
                         </>
                       ) : paywallEnabled ? (
                         <>
@@ -526,7 +727,9 @@ export default function MarketingSite() {
                     ? `Pay securely on this page via Stripe · ${priceLabel} for one full PDF · `
                     : ''}
                   <span className="max-md:block max-md:mt-1">
-                    Supported: {SUPPORTED_PORTALS.map((p) => p.name).join(', ')} and similar major portals.
+                    {lookupMode === 'address'
+                      ? 'Start typing a postcode to pick your address — no listing link needed.'
+                      : `Supported: ${SUPPORTED_PORTALS.map((p) => p.name).join(', ')} and similar major portals.`}
                   </span>
                 </p>
               </motion.form>
@@ -632,8 +835,8 @@ export default function MarketingSite() {
               {[
                 {
                   n: '01',
-                  title: 'Paste a listing link',
-                  body: 'Rightmove, Zoopla, Zillow and other major portals. Invalid or unsupported links are blocked.',
+                  title: 'Paste a link or enter an address',
+                  body: 'Use a Rightmove, Zoopla or other listing URL — or look up any UK address with postcode, even if it isn’t for sale.',
                 },
                 {
                   n: '02',
@@ -666,7 +869,11 @@ export default function MarketingSite() {
             {[
               {
                 q: 'What is CheckThisHouse?',
-                a: 'CheckThisHouse turns a property listing link into a clear multi-page buyer PDF. You get summary and scores, whether it’s a good buy for your goal, pros and cons, what it’s worth, how value could change, flood/damp/lease/fire/insurance risks, crime in the area, schools nearby, transport links, shops and amenities, sold prices nearby, what to offer, how to negotiate, a viewing checklist and questions for the agent. Buy to let also gets rental yield and ROI sections.',
+                a: 'CheckThisHouse turns a property listing link — or any UK address — into a clear multi-page PDF. You get summary and scores, whether it’s a good buy (or fair value) for your goal, pros and cons, what it’s worth, how value could change, flood/damp/lease/fire/insurance risks, crime in the area, schools nearby, transport links, shops and amenities, sold prices nearby, and practical next steps. Buy to let also gets rental yield and ROI sections.',
+              },
+              {
+                q: 'Can I look up a house that isn’t for sale?',
+                a: 'Yes. Use Address lookup, start typing your postcode, and pick the property from the list. The report researches sold history, local area and risks from public sources. There won’t be a live asking price unless comparable sales suggest one.',
               },
               {
                 q: 'Is this a RICS survey?',
@@ -674,15 +881,15 @@ export default function MarketingSite() {
               },
               {
                 q: 'Which listing websites are supported?',
-                a: 'Major portals including Rightmove, Zoopla, OnTheMarket, Zillow, Realtor.com and Redfin. Links from unsupported websites are rejected.',
+                a: 'Major portals including Rightmove, Zoopla, OnTheMarket, Zillow, Realtor.com and Redfin. Links from unsupported websites are rejected. Or skip the link entirely and use Address lookup.',
               },
               {
                 q: 'Who is it for?',
-                a: 'First-time buyers and movers who want a clear picture before they offer. Landlords can select buy to let for yield-focused extras.',
+                a: 'First-time buyers and movers who want a clear picture before they offer, homeowners checking their own property, and landlords who select buy to let for yield-focused extras.',
               },
               {
                 q: 'How detailed is the PDF?',
-                a: 'Typically 6 pages for first-time buyers and movers, and 7 for buy to let — cover score, summary, what it’s worth, risks and the local area (schools, crime, transport), sold prices nearby, then what to offer and what to check on a viewing. Built to use on a viewing, not skim once.',
+                a: 'Typically 6 pages for first-time buyers and movers, and 7 for buy to let — cover score, summary, what it’s worth, risks and the local area (schools, crime, transport), sold prices nearby, then what to offer and what to check next. Built to use on a viewing or remortgage conversation, not skim once.',
               },
             ].map((item) => (
               <div key={item.q} className="border-b border-brand-line pb-5">
@@ -722,7 +929,17 @@ export default function MarketingSite() {
         }}
         onUnlock={() => {
           if (!teaser) return;
-          void startCheckout(teaser.listingUrl, buyerGoal);
+          if (teaser.mode === 'address' || teaser.host === 'address') {
+            void startCheckout({
+              address: teaser.address || address,
+              goal: buyerGoal,
+            });
+            return;
+          }
+          void startCheckout({
+            listingUrl: teaser.listingUrl,
+            goal: buyerGoal,
+          });
         }}
       />
 
@@ -803,7 +1020,7 @@ export default function MarketingSite() {
                 </div>
               </div>
               <p className="text-sm text-brand-navy font-medium min-h-[2.5rem] leading-snug">
-                {LOADING_STEPS[loadingStep]}
+                {loadingSteps[loadingStep]}
               </p>
               <div className="mt-4 h-1.5 rounded-full bg-brand-paper overflow-hidden">
                 <motion.div
@@ -816,7 +1033,7 @@ export default function MarketingSite() {
                 />
               </div>
               <ul className="mt-5 space-y-2">
-                {LOADING_STEPS.map((step, i) => (
+                {loadingSteps.map((step, i) => (
                   <li
                     key={step}
                     className={`text-xs flex items-center gap-2 ${

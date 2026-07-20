@@ -138,13 +138,12 @@ export function buildFullReportTeaserPlan(opts: {
   const place = opts.locationHint || 'this area';
   const beds = opts.bedrooms ? `${opts.bedrooms}-bed ` : '';
   const type = opts.propertyType || 'home';
-  const asking = opts.price || 'asking price';
 
   const items = [
     `Summary & scores for this ${beds}${type}`.replace(/\s+/g, ' ').trim(),
     `Is it a good buy for your goal`,
     `Pros and cons`,
-    `What is it worth vs ${asking}`,
+    `What is it worth${opts.price ? ` vs ${opts.price}` : ' (estimated value bands)'}`,
     `How value could change over time`,
     `Flood, damp and insurance watch-outs`,
     `Leasehold and fire safety flags`,
@@ -153,11 +152,15 @@ export function buildFullReportTeaserPlan(opts: {
     `Transport links`,
     `Shops & amenities nearby`,
     `Sold prices nearby`,
-    `What to offer (opener, fair target, walk-away)`,
-    `How to negotiate`,
-    `Viewing checklist + questions for the agent`,
+    opts.price
+      ? `What to offer (opener, fair target, walk-away)`
+      : `Value guidance and next steps`,
+    opts.price ? `How to negotiate` : `Questions to ask agents or valuers`,
+    opts.price
+      ? `Viewing checklist + questions for the agent`
+      : `Checks before remortgage, sale or purchase`,
     `Extra rental numbers if you choose buy to let`,
-  ];
+  ].filter(Boolean) as string[];
 
   if (opts.tenure && /lease/i.test(opts.tenure)) {
     items.splice(6, 0, `Leasehold checks: term left, ground rent and service charge`);

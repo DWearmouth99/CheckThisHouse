@@ -1,8 +1,9 @@
 import React from 'react';
-import { BedDouble, Bath, Home, Lock, Loader2, X, ArrowRight } from 'lucide-react';
+import { BedDouble, Bath, Home, Lock, Loader2, X, ArrowRight, MapPinned } from 'lucide-react';
 
 export type TeaserData = {
   limited: boolean;
+  mode?: 'listing' | 'address';
   listingUrl: string;
   portal: string;
   host: string;
@@ -42,8 +43,9 @@ export function ReportTeaserModal({
   if (!open || !teaser) return null;
 
   const hero = teaser.images[0] || null;
+  const isAddressMode = teaser.mode === 'address' || teaser.host === 'address';
   const hasBasics = Boolean(teaser.address || teaser.price);
-  const address = teaser.address || 'Your selected listing';
+  const address = teaser.address || (isAddressMode ? 'Your address' : 'Your selected listing');
   const price = teaser.price;
   const beds = teaser.bedrooms || '3';
   const type = teaser.propertyType || 'property';
@@ -107,15 +109,29 @@ export function ReportTeaserModal({
                 </div>
               )}
 
+              {!hero && isAddressMode && (
+                <div className="rounded-md mb-4 bg-brand-paper border border-brand-line px-4 py-6 flex items-start gap-3">
+                  <MapPinned className="w-8 h-8 text-brand-green shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide text-brand-green font-semibold mb-1">
+                      Address lookup
+                    </p>
+                    <p className="text-sm text-brand-navy leading-snug">
+                      No listing photos — research uses public sold data, area and risk sources for this address.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <p className="text-[10px] uppercase tracking-[0.2em] text-brand-green font-semibold mb-1.5">
-                Full property report
+                {isAddressMode ? 'Full address report' : 'Full property report'}
               </p>
               <p className="font-display font-bold text-xl text-brand-navy leading-snug">{address}</p>
               {price && (
                 <p className="font-display font-bold text-2xl text-brand-navy mt-1">{price}</p>
               )}
 
-              {hasBasics && (
+              {hasBasics && !isAddressMode && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-brand-muted">
                   {teaser.bedrooms && (
                     <span className="inline-flex items-center gap-1">
@@ -136,7 +152,11 @@ export function ReportTeaserModal({
                 </div>
               )}
 
-              {!hasBasics && (
+              {isAddressMode && teaser.summary && (
+                <p className="text-xs text-brand-muted mt-3 leading-relaxed">{teaser.summary}</p>
+              )}
+
+              {!hasBasics && !isAddressMode && (
                 <p className="text-xs text-brand-muted mt-3 leading-relaxed">
                   Listing linked from {teaser.portal}. Unlock checkout to generate the complete multi-page PDF.
                 </p>
@@ -146,7 +166,7 @@ export function ReportTeaserModal({
                 {(
                   [
                     price ? (['Asking', price.replace(/^Offers over\s+/i, '')] as const) : null,
-                    ['Score', '••/100'] as const,
+                    [isAddressMode ? 'Est. value' : 'Score', '••/100'] as const,
                     ['Risk', '•••'] as const,
                     ['Confidence', '••%'] as const,
                   ].filter(Boolean) as [string, string][]
@@ -275,10 +295,12 @@ export function ReportTeaserModal({
                   ['Fair market', '£338,000', 'bg-emerald-50 border-emerald-200'],
                   ['Optimistic', '£355,000', 'bg-sky-50 border-sky-200'],
                 ].map(([label, value, cls]) => (
-                  <BlurBlock key={label} className={`rounded-lg border px-2.5 py-3 text-center ${cls}`}>
-                    <p className="text-[8px] font-bold uppercase text-brand-muted">{label}</p>
-                    <p className="font-display font-bold text-base text-brand-navy mt-1">{value}</p>
-                  </BlurBlock>
+                  <div key={label}>
+                    <BlurBlock className={`rounded-lg border px-2.5 py-3 text-center ${cls}`}>
+                      <p className="text-[8px] font-bold uppercase text-brand-muted">{label}</p>
+                      <p className="font-display font-bold text-base text-brand-navy mt-1">{value}</p>
+                    </BlurBlock>
+                  </div>
                 ))}
               </div>
               <BlurBlock>
@@ -327,13 +349,12 @@ export function ReportTeaserModal({
                   ['Subsidence', 'No strong signal — still ask about historic claims.'],
                   ['Planning', 'Check nearby applications that could affect light or parking.'],
                 ].map(([label, body]) => (
-                  <BlurBlock
-                    key={label}
-                    className="rounded-md border border-brand-line bg-brand-paper/40 px-2.5 py-2"
-                  >
-                    <p className="text-[9px] font-bold uppercase text-brand-muted mb-1">{label}</p>
-                    <p className="text-[10px] text-brand-navy leading-snug">{body}</p>
-                  </BlurBlock>
+                  <div key={label}>
+                    <BlurBlock className="rounded-md border border-brand-line bg-brand-paper/40 px-2.5 py-2">
+                      <p className="text-[9px] font-bold uppercase text-brand-muted mb-1">{label}</p>
+                      <p className="text-[10px] text-brand-navy leading-snug">{body}</p>
+                    </BlurBlock>
+                  </div>
                 ))}
               </div>
 
@@ -431,10 +452,12 @@ export function ReportTeaserModal({
                   ['Fair target', '£328,000', 'border-brand-green bg-emerald-50'],
                   ['Walk-away', '£340,000', 'border-amber-200 bg-amber-50'],
                 ].map(([label, value, cls]) => (
-                  <BlurBlock key={label} className={`rounded-lg border px-1.5 sm:px-2 py-2.5 sm:py-3 text-center ${cls}`}>
-                    <p className="text-[7px] sm:text-[8px] font-bold uppercase text-brand-muted">{label}</p>
-                    <p className="font-display font-bold text-xs sm:text-sm text-brand-navy mt-1">{value}</p>
-                  </BlurBlock>
+                  <div key={label}>
+                    <BlurBlock className={`rounded-lg border px-1.5 sm:px-2 py-2.5 sm:py-3 text-center ${cls}`}>
+                      <p className="text-[7px] sm:text-[8px] font-bold uppercase text-brand-muted">{label}</p>
+                      <p className="font-display font-bold text-xs sm:text-sm text-brand-navy mt-1">{value}</p>
+                    </BlurBlock>
+                  </div>
                 ))}
               </div>
 
