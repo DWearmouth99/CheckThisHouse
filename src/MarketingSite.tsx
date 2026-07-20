@@ -296,10 +296,9 @@ export default function MarketingSite() {
       return;
     }
     const result = validateUkAddress(value);
+    // Only show positive confirmation while typing — don't nag with red errors mid-entry
     setAddressHint(
-      isInvalidAddress(result)
-        ? result.error
-        : `Looks good — ${result.postcode || 'UK address'}`
+      isInvalidAddress(result) ? null : `Looks good — ${result.postcode || 'UK address'}`
     );
   };
 
@@ -383,7 +382,7 @@ export default function MarketingSite() {
       const result = validateUkAddress(address);
       if (isInvalidAddress(result)) {
         setError(result.error);
-        setAddressHint(result.error);
+        setAddressHint(null);
         return;
       }
 
@@ -651,15 +650,12 @@ export default function MarketingSite() {
                         disabled={isBusy}
                         placeholder="Start with a postcode, e.g. PA2 8TR"
                         hintId="address-hint"
-                        invalid={liveAddressValidation?.ok === false}
                       />
                     </label>
                     {addressHint && (
                       <p
                         id="address-hint"
-                        className={`text-xs break-words ${
-                          liveAddressValidation?.ok ? 'text-brand-green' : 'text-rose-700'
-                        }`}
+                        className="text-xs break-words text-brand-green"
                       >
                         {addressHint}
                       </p>
