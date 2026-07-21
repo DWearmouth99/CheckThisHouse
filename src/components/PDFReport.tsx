@@ -293,12 +293,14 @@ function PageShell({
   address,
   children,
   cover,
+  fitContent,
 }: {
   page: number;
   total: number;
   address: string;
   children: React.ReactNode;
   cover?: boolean;
+  fitContent?: boolean;
 }) {
   return (
     <div
@@ -328,7 +330,13 @@ function PageShell({
           </div>
         </div>
       )}
-      <div className={`flex-1 min-h-0 overflow-hidden ${cover ? '' : 'px-7 py-4'}`}>{children}</div>
+      <div
+        className={`flex-1 min-h-0 overflow-hidden ${cover ? '' : 'px-7 py-4'} ${
+          fitContent ? 'pdf-page-fit-area' : ''
+        }`}
+      >
+        {fitContent ? <div className="pdf-page-fit-content">{children}</div> : children}
+      </div>
       {!cover && (
         <div
           className="px-7 py-2 border-t flex items-center justify-between text-[9px] shrink-0"
@@ -745,7 +753,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       </PageShell>
 
       {/* ========== 4 VALUATION ========== */}
-      <PageShell page={pageValuation} total={TOTAL} address={addressLine}>
+      <PageShell page={pageValuation} total={TOTAL} address={addressLine} fitContent>
         <SectionTitle>3. What is it worth?</SectionTitle>
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">

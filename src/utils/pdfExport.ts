@@ -4,6 +4,35 @@ import { toPng } from 'html-to-image';
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 
+function fitMarkedPageContent(page: HTMLElement) {
+  const area = page.querySelector<HTMLElement>('.pdf-page-fit-area');
+  const content = page.querySelector<HTMLElement>('.pdf-page-fit-content');
+  if (!area || !content) return;
+
+  content.style.width = '';
+  content.style.transform = '';
+  content.style.transformOrigin = '';
+
+  const availableHeight = area.clientHeight;
+  const contentHeight = content.scrollHeight;
+  if (!availableHeight || contentHeight <= availableHeight) return;
+
+  // Scale only pages explicitly marked for fitting. Expanding the layout width
+  // offsets the visual narrowing caused by transform scale.
+  let scale = Math.min(1, (availableHeight - 2) / contentHeight);
+  content.style.transformOrigin = 'top left';
+  content.style.width = `${100 / scale}%`;
+  content.style.transform = `scale(${scale})`;
+
+  // Wider text can reflow; make one final adjustment if it still exceeds A4.
+  const renderedHeight = content.scrollHeight * scale;
+  if (renderedHeight > availableHeight - 1) {
+    scale *= (availableHeight - 2) / renderedHeight;
+    content.style.width = `${100 / scale}%`;
+    content.style.transform = `scale(${scale})`;
+  }
+}
+
 export const generatePDF = async (
   containerId: string,
   filename: string,
@@ -72,6 +101,7 @@ export const generatePDF = async (
     for (let i = 0; i < pages.length; i++) {
       if (i > 0) pdf.addPage();
       const pageEl = pages[i] as HTMLElement;
+      fitMarkedPageContent(pageEl);
 
       const dataUrl = await toPng(pageEl, {
         quality: 1,

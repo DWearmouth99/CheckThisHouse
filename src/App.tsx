@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import MarketingSite from './MarketingSite';
 import LabApp from './LabApp';
+import TermsPage from './TermsPage';
 
 function useLabMode() {
   const [isLab, setIsLab] = useState(() => {
@@ -28,5 +29,8 @@ function useLabMode() {
 /** Public marketing site by default. Internal analyzer: /#lab */
 export default function App() {
   const isLab = useLabMode();
+  const isTerms =
+    typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/terms';
+  if (isTerms) return <TermsPage />;
   return isLab ? <LabApp /> : <MarketingSite />;
 }

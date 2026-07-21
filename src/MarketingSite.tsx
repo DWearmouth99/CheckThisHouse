@@ -28,7 +28,7 @@ import { PDFReport } from './components/PDFReport';
 import { generatePDF } from './utils/pdfExport';
 import { SUPPORTED_PORTALS, isInvalidListingUrl, validateListingUrl } from './lib/listingUrl';
 import { isInvalidAddress, validateUkAddress } from './lib/ukAddress';
-import { REPORT_CONTENT_CHIPS, REPORT_CONTENTS, INVESTOR_REPORT_CONTENTS } from './lib/reportContents';
+import { REPORT_CONTENTS, INVESTOR_REPORT_CONTENTS } from './lib/reportContents';
 import { EmbeddedCheckoutModal } from './components/EmbeddedCheckoutModal';
 import { ReportTeaserModal, TeaserData } from './components/ReportTeaserModal';
 import { AddressAutocomplete } from './components/AddressAutocomplete';
@@ -718,40 +718,78 @@ export default function MarketingSite() {
               className="md:col-span-5 relative z-0 min-w-0"
               aria-hidden
             >
-              <div className="relative mx-auto max-w-sm md:max-w-none">
+              <div className="relative mx-auto max-w-md md:max-w-none">
                 <div
                   className="absolute -inset-3 rounded-[28px] blur-2xl opacity-60 max-md:opacity-40"
                   style={{ background: 'linear-gradient(135deg, rgba(31,122,69,0.25), rgba(11,31,58,0.15))' }}
                 />
-                <div className="relative rounded-2xl border border-white/70 bg-white/90 shadow-[0_24px_60px_rgba(11,31,58,0.14)] overflow-hidden">
-                  <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg,#1f7a45,#b45309,#b91c1c)' }} />
-                  <div className="p-4 sm:p-5 space-y-3 sm:space-y-3.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <img src={LOGO} alt="" className="h-7 sm:h-8 w-auto" />
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-brand-muted shrink-0">
-                        Full buyer PDF
-                      </span>
+                <div className="relative rounded-2xl border border-brand-line bg-white shadow-[0_24px_60px_rgba(11,31,58,0.14)] overflow-hidden">
+                  <div className="h-11 sm:h-12 border-b border-brand-line bg-brand-cream flex items-center px-3.5 sm:px-4 relative">
+                    <div className="flex gap-2">
+                      <span className="w-3 h-3 rounded-full bg-[#ff6868]" />
+                      <span className="w-3 h-3 rounded-full bg-[#f8c713]" />
+                      <span className="w-3 h-3 rounded-full bg-[#49ce7b]" />
                     </div>
-                    <p className="font-display font-bold text-base sm:text-lg leading-snug">Inside every report</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {REPORT_CONTENT_CHIPS.map((label) => (
-                        <div
-                          key={label}
-                          className="rounded-md border border-brand-line bg-brand-paper/80 px-2 py-1.5 text-[10px] font-semibold text-brand-navy leading-snug"
-                        >
-                          {label}
+                    <p className="absolute inset-x-20 text-center text-[10px] sm:text-xs font-medium text-brand-muted truncate">
+                      CheckThisHouse Report Preview
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 sm:p-5 space-y-3.5">
+                    <div className="rounded-xl border border-brand-line bg-brand-cream/70 p-3.5 sm:p-4">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="min-w-0">
+                          <p className="font-display font-bold text-sm sm:text-base text-brand-navy truncate">
+                            14 Maple Avenue, Bristol BS8
+                          </p>
+                          <p className="text-[10px] sm:text-xs text-brand-muted mt-0.5 truncate">
+                            Victorian terrace · 4 bed · 1,847 sq ft
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-3 pt-1">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-4 border-brand-green flex flex-col items-center justify-center shrink-0">
-                        <span className="font-display font-bold text-base sm:text-lg leading-none text-brand-green">72</span>
-                        <span className="text-[7px] uppercase text-brand-muted">/100</span>
+                        <span className="rounded-lg border border-brand-green/20 bg-brand-green-soft px-2.5 py-1.5 text-[9px] sm:text-[10px] font-mono text-brand-green shrink-0">
+                          Report ready
+                        </span>
                       </div>
-                      <p className="text-xs text-brand-muted leading-snug">
-                        9–10 page branded PDF: summary & scores, pros & cons, valuation, risks, local area, due
-                        diligence, sold prices and what to offer — made for real viewings.
-                      </p>
+
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+                        <div>
+                          <p className="font-display font-bold text-lg sm:text-2xl leading-none text-brand-navy">£585k</p>
+                          <p className="text-[9px] sm:text-[10px] text-brand-muted mt-1">Fair value</p>
+                        </div>
+                        <div>
+                          <p className="font-display font-bold text-lg sm:text-2xl leading-none text-brand-navy">C (72)</p>
+                          <p className="text-[9px] sm:text-[10px] text-brand-muted mt-1">EPC rating</p>
+                        </div>
+                        <div>
+                          <p className="font-display font-bold text-lg sm:text-2xl leading-none text-brand-green">Low</p>
+                          <p className="text-[9px] sm:text-[10px] text-brand-muted mt-1">Flood risk</p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg bg-brand-navy-soft p-3">
+                        <p className="text-[9px] sm:text-[10px] text-brand-muted mb-2">Your report includes:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {['Price history', 'EPC details', 'Risk scores', 'Planning', 'Local area'].map((label) => (
+                            <span
+                              key={label}
+                              className="rounded-md border border-brand-line bg-white px-2 py-1 text-[8px] sm:text-[9px] font-medium text-brand-navy"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-brand-line bg-brand-cream/70 px-3.5 py-3">
+                        <p className="font-display font-bold text-sm text-brand-green">72/100</p>
+                        <p className="text-[9px] sm:text-[10px] text-brand-muted mt-0.5">Overall score</p>
+                      </div>
+                      <div className="rounded-xl border border-brand-line bg-brand-cream/70 px-3.5 py-3">
+                        <p className="font-display font-bold text-sm text-brand-navy">9–10 pages</p>
+                        <p className="text-[9px] sm:text-[10px] text-brand-muted mt-0.5">Full buyer report</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -885,6 +923,12 @@ export default function MarketingSite() {
             </p>
           </div>
           <div className="text-xs space-y-1 md:text-right">
+            <a
+              href="/terms"
+              className="inline-block text-white/90 hover:text-white underline underline-offset-4 transition"
+            >
+              Terms &amp; Conditions
+            </a>
             <p className="flex items-center gap-1.5 md:justify-end">
               <FileText className="w-3.5 h-3.5 shrink-0" /> checkthishouse.co.uk
             </p>
