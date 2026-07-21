@@ -68,60 +68,75 @@ function scoreColor(score: number) {
   return '#c23b4e';
 }
 
-function riskStyle(text: string = '', kind: 'general' | 'planning' = 'general') {
+type RiskToneName = 'positive' | 'caution' | 'negative' | 'neutral';
+
+function toneStyle(tone: RiskToneName) {
+  if (tone === 'positive') return { bg: GREEN_SOFT, border: '#b8dfc8', fg: GREEN };
+  if (tone === 'negative') return { bg: '#fff1f2', border: '#fecdd3', fg: '#be123c' };
+  if (tone === 'caution') return { bg: '#fff8eb', border: '#f5d78e', fg: '#9a6b10' };
+  return { bg: '#f8fafc', border: LINE, fg: NAVY };
+}
+
+/**
+ * Colour risk cards from explicit AI tones when present, else infer from wording.
+ * Planning/works that add value (extensions, granted apps) must read green — not grey.
+ */
+function riskStyle(
+  text: string = '',
+  kind: 'general' | 'planning' = 'general',
+  tone?: RiskToneName | string | null
+) {
+  if (tone === 'positive' || tone === 'caution' || tone === 'negative' || tone === 'neutral') {
+    // Still allow heuristic override when tone is wrongly "neutral" but text is clearly positive planning upside
+    if (tone !== 'neutral' || kind !== 'planning') {
+      return toneStyle(tone);
+    }
+  }
+
   const t = text.toLowerCase();
 
-  // Planning notes often say "significant regeneration" / "major council investment" —
-  // those words must not auto-flag red when the tone is positive for a homebuyer.
   if (kind === 'planning') {
     const upside =
-      /\b(regeneration|investment|improv|benefit|opportunity|positive|good|boost|enhance|upgrade|revital|amenit|growth|new\s+school|transport|funding|masterplan|welcome)\b/.test(
+      /\b(extension|loft|conservatory|outbuilding|garage\s+conversion|approved|granted|permitted|permission|adds?\s+value|valuation\s+premium|completed\s+works|improved|larger|benefit|positive|good|boost|enhance|upgrade|regeneration|investment|opportunity|welcome|masterplan|amenit|growth|building\s+control|dpp|full\s+planning|rear\s+extension|side\s+extension|supports?\s+(a\s+)?(higher|stronger|premium)|value[-\s]?adding)\b/.test(
         t
-      );
+      ) ||
+      /\b(none\s+found|no\s+(known|major)\s+(adverse|negative|issues?)|no\s+adverse)\b/.test(t);
     const downside =
-      /\b(disrupt|overshadow|industrial|quarry|landfill|incinerat|motorway|flyover|objection|blight|compulsory|pollut|congest|demolit|high[-\s]?rise\s+next|noise\s+nuisance|flood\s+risk)\b/.test(
+      /\b(disrupt|overshadow|industrial|quarry|landfill|incinerat|motorway|flyover|objection|blight|compulsory|pollut|congest|demolit|high[-\s]?rise\s+next|noise\s+nuisance|flood\s+risk|refused|enforcement|unauthorised|non[-\s]?compliant|illegal)\b/.test(
         t
       );
-    if (upside && !downside) return { bg: GREEN_SOFT, border: '#b8dfc8', fg: GREEN };
-    if (downside && !upside) return { bg: '#fff1f2', border: '#fecdd3', fg: '#be123c' };
-    if (upside && downside) return { bg: '#fff8eb', border: '#f5d78e', fg: '#9a6b10' };
+    if (upside && !downside) return toneStyle('positive');
+    if (downside && !upside) return toneStyle('negative');
+    if (upside && downside) return toneStyle('caution');
     if (/\b(none|no\s+(known|major|significant)|low|clear|quiet)\b/.test(t)) {
-      return { bg: GREEN_SOFT, border: '#b8dfc8', fg: GREEN };
+      return toneStyle('positive');
     }
-    return { bg: '#f8fafc', border: LINE, fg: NAVY };
+    return toneStyle('neutral');
   }
 
   const positive =
-    /\b(low|minimal|negligible|none|no\s+concerns?|no\s+issues?|not\s+a\s+concern|good|excellent|satisfactory|acceptable|compliant|clear|safe|sound|standard|typical|unremarkable)\b/.test(
+    /\b(low|minimal|negligible|none|no\s+(known\s+)?(concerns?|issues?|problems?)|not\s+a\s+concern|good|excellent|satisfactory|acceptable|compliant|clear|safe|sound|standard|typical|unremarkable|easily\s+insurable|standard\s+insurance|freehold|no\s+leasehold|no\s+flood|very\s+low)\b/.test(
       t
     ) ||
     /\bno\s+(high|elevated|significant|major)\b/.test(t) ||
     /\b(not|isn't|is not)\s+(high|elevated|severe)\b/.test(t);
 
-  // Only treat severity words as bad when they describe risk/problems — not "major investment"
   const negative =
-    /\b(unsafe|non[-\s]?compliant|cladding\s+risk|flood\s+risk|severe|critical|serious\s+(risk|concern|issue|problem)|elevated\s+risk|high\s+risk|significant\s+(risk|concern|issue|problem|defect)|major\s+(risk|concern|issue|problem|defect))\b/.test(
+    /\b(unsafe|non[-\s]?compliant|cladding\s+risk|severe|critical|serious\s+(risk|concern|issue|problem)|elevated\s+risk|high\s+risk|significant\s+(risk|concern|issue|problem|defect)|major\s+(risk|concern|issue|problem|defect)|hard\s+to\s+insure|uninsurable|short\s+lease|ground\s+rent\s+(doubl|escalat))\b/.test(
       t
     ) ||
+    (/\bflood\s+risk\b/.test(t) && !/\b(no|low|minimal|negligible|very\s+low)\b/.test(t)) ||
     (/\b(high|elevated)\b/.test(t) &&
       /\b(risk|concern|danger|hazard|threat|likelihood)\b/.test(t) &&
       !/\b(highlight|highway|high\s+street)\b/.test(t));
 
-  const medium = /\b(medium|moderate|mixed|some\s+concern|caution|average|watch|investigate)\b/.test(t);
+  const medium = /\b(medium|moderate|mixed|some\s+concern|caution|average|watch|investigate|verify|confirm)\b/.test(t);
 
-  if (positive && !negative) {
-    return { bg: GREEN_SOFT, border: '#b8dfc8', fg: GREEN };
-  }
-  if (negative && !positive) {
-    return { bg: '#fff1f2', border: '#fecdd3', fg: '#be123c' };
-  }
-  if (medium) {
-    return { bg: '#fff8eb', border: '#f5d78e', fg: '#9a6b10' };
-  }
-  if (positive) {
-    return { bg: GREEN_SOFT, border: '#b8dfc8', fg: GREEN };
-  }
-  return { bg: '#f8fafc', border: LINE, fg: NAVY };
+  if (positive && !negative) return toneStyle('positive');
+  if (negative && !positive) return toneStyle('negative');
+  if (medium || (positive && negative)) return toneStyle('caution');
+  if (positive) return toneStyle('positive');
+  return toneStyle('neutral');
 }
 
 function ScoreDial({ score }: { score: number }) {
@@ -330,7 +345,7 @@ function PageShell({
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <h2
-      className="text-[15px] font-bold uppercase tracking-[0.06em] mb-3 pb-1.5 border-b-2"
+      className="text-[15px] font-bold uppercase tracking-[0.04em] leading-snug mb-3.5 pb-2 border-b-2 break-words"
       style={{ color: NAVY, borderColor: GREEN, fontFamily: 'Outfit, sans-serif' }}
     >
       {children}
@@ -340,9 +355,45 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function SubHead({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] mb-2" style={{ color: MUTED }}>
+    <h3
+      className="text-[11px] font-bold uppercase tracking-[0.06em] leading-snug mb-2 break-words"
+      style={{ color: MUTED }}
+    >
       {children}
     </h3>
+  );
+}
+
+function ProConCard({
+  item,
+  tone,
+}: {
+  item: { title?: string; desc?: string; category?: string };
+  tone: 'pro' | 'con';
+}) {
+  const isPro = tone === 'pro';
+  return (
+    <div
+      className="rounded border px-2 py-1.5 break-words"
+      style={
+        isPro
+          ? { borderColor: '#b8dfc8', background: GREEN_SOFT }
+          : { borderColor: '#fecdd3', background: '#fff1f2' }
+      }
+    >
+      <p
+        className="text-[7.5px] uppercase font-bold leading-none mb-0.5"
+        style={{ color: isPro ? GREEN : '#be123c' }}
+      >
+        {item.category || (isPro ? 'Strength' : 'Watch-out')}
+      </p>
+      <p className="text-[10px] font-bold leading-snug" style={{ color: NAVY }}>
+        {item.title}
+      </p>
+      <p className="text-[9.5px] leading-snug mt-0.5" style={{ color: '#334155' }}>
+        {item.desc}
+      </p>
+    </div>
   );
 }
 
@@ -373,11 +424,15 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
     investmentMetrics,
     marketAndRental,
     riskAnalysis,
+    riskTones,
     offerStrategy,
     comparableSales,
     soldHistory,
     locationIntelligence,
     advanced,
+    propertyWorks,
+    dueDiligence,
+    marketEvidence,
     specs,
     pros,
     cons,
@@ -404,12 +459,10 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
     if (asMoney && asMoney > 1000) return asMoney;
     const pct = parsePercent(raw);
     if (pct != null) return basePrice * (1 + pct / 100);
-    // Compound rough fallback if string is bare number like "8"
     const bare = parseFloat((raw || '').replace(/[^0-9.-]/g, ''));
     if (Number.isFinite(bare) && Math.abs(bare) <= 80) {
       return basePrice * (1 + bare / 100);
     }
-    // mild default growth curve so chart never collapses
     return basePrice * Math.pow(1.02, years);
   };
 
@@ -434,18 +487,44 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           { label: 'Market', value: scores?.marketScore ?? 0 },
           { label: 'Rental', value: scores?.rentalScore ?? 0 },
         ]
-      : [
-          { label: 'Market', value: scores?.marketScore ?? 0 },
-        ]),
+      : [{ label: 'Market', value: scores?.marketScore ?? 0 }]),
   ];
 
-  const riskRows: [string, string | undefined, 'general' | 'planning'][] = [
-    ['Flood', riskAnalysis?.floodRisk, 'general'],
-    ['Subsidence', riskAnalysis?.subsidence, 'general'],
-    ['Planning', riskAnalysis?.planningDevelopments, 'planning'],
-    ['Leasehold', riskAnalysis?.leaseholdIssues, 'general'],
-    ['Fire safety', riskAnalysis?.fireSafety, 'general'],
-    ['Insurance', riskAnalysis?.insuranceRisk, 'general'],
+  const planningRiskText = [
+    riskAnalysis?.planningDevelopments,
+    propertyWorks?.extensionsAndAlterations,
+    propertyWorks?.valueImpact,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const riskRows: {
+    label: string;
+    value?: string;
+    kind: 'general' | 'planning';
+    toneKey: keyof NonNullable<typeof riskTones>;
+  }[] = [
+    { label: 'Flood', value: riskAnalysis?.floodRisk, kind: 'general', toneKey: 'floodRisk' },
+    { label: 'Subsidence', value: riskAnalysis?.subsidence, kind: 'general', toneKey: 'subsidence' },
+    {
+      label: 'Planning & works',
+      value: riskAnalysis?.planningDevelopments,
+      kind: 'planning',
+      toneKey: 'planningDevelopments',
+    },
+    {
+      label: 'Leasehold',
+      value: riskAnalysis?.leaseholdIssues,
+      kind: 'general',
+      toneKey: 'leaseholdIssues',
+    },
+    { label: 'Fire safety', value: riskAnalysis?.fireSafety, kind: 'general', toneKey: 'fireSafety' },
+    {
+      label: 'Insurance',
+      value: riskAnalysis?.insuranceRisk,
+      kind: 'general',
+      toneKey: 'insuranceRisk',
+    },
   ];
 
   const comps = (comparableSales || [])
@@ -456,7 +535,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       similarity: cleanField(sale.similarity),
     }))
     .filter((sale) => sale.address || sale.price)
-    .slice(0, 8);
+    .slice(0, 10);
 
   const history = (soldHistory || [])
     .map((h) => ({
@@ -466,12 +545,21 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       description: cleanField(h.description),
     }))
     .filter((h) => h.year || h.price)
-    .slice(0, 8);
+    .slice(0, 10);
 
-  const TOTAL = showInvestment ? 7 : 6;
-  const pageRisk = showInvestment ? 5 : 4;
-  const pageComps = showInvestment ? 6 : 5;
-  const pageOffer = showInvestment ? 7 : 6;
+  const prosList = (pros || []).slice(0, 8);
+  const consList = (cons || []).slice(0, 8);
+  const nextSteps = dueDiligence?.recommendedNextSteps?.filter(Boolean).slice(0, 10) || [];
+
+  // 1 cover + summary + pros + valuation + [investor] + risks + area + diligence + comps + offer
+  const TOTAL = showInvestment ? 10 : 9;
+  const pageValuation = 4;
+  const pageInvest = 5;
+  const pageRisk = showInvestment ? 6 : 5;
+  const pageArea = showInvestment ? 7 : 6;
+  const pageDiligence = showInvestment ? 8 : 7;
+  const pageComps = showInvestment ? 9 : 8;
+  const pageOffer = showInvestment ? 10 : 9;
   const overall = scores?.overall ?? 0;
 
   return (
@@ -601,52 +689,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3.5 mb-3">
-          <div>
-            <SubHead>Pros</SubHead>
-            <div className="space-y-2">
-              {(pros || []).slice(0, 5).map((p, i) => (
-                <div key={i} className="rounded border px-2.5 py-2" style={{ borderColor: '#b8dfc8', background: GREEN_SOFT }}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[11px] font-bold" style={{ color: NAVY }}>
-                      {p.title}
-                    </p>
-                    <span className="text-[8px] uppercase font-bold shrink-0" style={{ color: GREEN }}>
-                      {p.category}
-                    </span>
-                  </div>
-                  <p className="text-[10px] leading-snug mt-1" style={{ color: '#334155' }}>
-                    {p.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <SubHead>Cons</SubHead>
-            <div className="space-y-2">
-              {(cons || []).slice(0, 5).map((c, i) => (
-                <div key={i} className="rounded border border-rose-200 bg-rose-50 px-2.5 py-2">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[11px] font-bold" style={{ color: NAVY }}>
-                      {c.title}
-                    </p>
-                    <span className="text-[8px] uppercase font-bold text-rose-700 shrink-0">{c.category}</span>
-                  </div>
-                  <p className="text-[10px] leading-snug mt-1" style={{ color: '#334155' }}>
-                    {c.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {(specs?.length ?? 0) > 0 && (
           <div>
             <SubHead>Property details</SubHead>
             <div className="grid grid-cols-2 gap-x-4">
-              {specs!.slice(0, 10).map((s, i) => (
+              {specs!.slice(0, 16).map((s, i) => (
                 <React.Fragment key={i}>
                   <KV label={s.label} value={s.value} />
                 </React.Fragment>
@@ -656,9 +703,50 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
         )}
       </PageShell>
 
-      {/* ========== 3 VALUATION ========== */}
+      {/* ========== 3 PROS & CONS (own page — prevents footer clipping) ========== */}
       <PageShell page={3} total={TOTAL} address={addressLine}>
-        <SectionTitle>2. What is it worth?</SectionTitle>
+        <SectionTitle>2. Pros & cons</SectionTitle>
+          <p className="text-[11px] leading-relaxed mb-3" style={{ color: MUTED }}>
+            Balanced strengths and watch-outs grounded in research for this buyer goal — use as talking points with your
+            surveyor and solicitor.
+          </p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <SubHead>Pros</SubHead>
+            <div className="space-y-1.5">
+              {prosList.map((p, i) => (
+                <React.Fragment key={i}>
+                  <ProConCard item={p} tone="pro" />
+                </React.Fragment>
+              ))}
+              {prosList.length === 0 && (
+                <p className="text-[11px]" style={{ color: MUTED }}>
+                  No pros returned for this run.
+                </p>
+              )}
+            </div>
+          </div>
+          <div>
+            <SubHead>Cons</SubHead>
+            <div className="space-y-1.5">
+              {consList.map((c, i) => (
+                <React.Fragment key={i}>
+                  <ProConCard item={c} tone="con" />
+                </React.Fragment>
+              ))}
+              {consList.length === 0 && (
+                <p className="text-[11px]" style={{ color: MUTED }}>
+                  No cons returned for this run.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </PageShell>
+
+      {/* ========== 4 VALUATION ========== */}
+      <PageShell page={pageValuation} total={TOTAL} address={addressLine}>
+        <SectionTitle>3. What is it worth?</SectionTitle>
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           {[
@@ -705,7 +793,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-2 gap-3.5 mb-3.5">
           <div className="rounded-lg border p-3" style={{ borderColor: LINE, background: NAVY_SOFT }}>
             <SubHead>Is the asking price fair?</SubHead>
             <p className="text-[11px] leading-relaxed" style={{ color: NAVY }}>
@@ -722,12 +810,52 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
             </p>
           </div>
         </div>
+
+        <div className="rounded-lg border px-3.5 py-2.5 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
+          <SubHead>Market evidence (from online research)</SubHead>
+          <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+            <strong>Asking vs solds:</strong>{' '}
+            {marketEvidence?.askingVsSoldEvidence || 'See sold comps later in this report.'}
+          </p>
+          <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+            <strong>Competing supply:</strong> {marketEvidence?.competingSupply || 'Check live portals on offer day.'}
+          </p>
+          <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+            <strong>£/sqft or £/sqm:</strong>{' '}
+            {marketEvidence?.pricePerSqmOrSqft || 'Confirm floor area from EPC / measured survey.'}
+          </p>
+          <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
+            <strong>Negotiation levers:</strong>{' '}
+            {marketEvidence?.negotiationLevers || 'Use survey, chain and comps — not arbitrary lowballs.'}
+          </p>
+        </div>
+
+        <div className="rounded-lg border px-3.5 py-3" style={{ borderColor: '#c5d4e8', background: '#f4f7fb' }}>
+          <SubHead>Extensions, planning & works</SubHead>
+          <p className="text-[11px] leading-relaxed mb-2" style={{ color: '#1e293b' }}>
+            <strong>Works found:</strong>{' '}
+            {propertyWorks?.extensionsAndAlterations ||
+              'No dedicated works summary — check planning notes in Risks.'}
+          </p>
+          <p className="text-[11px] leading-relaxed mb-2" style={{ color: '#1e293b' }}>
+            <strong>Planning applications:</strong>{' '}
+            {propertyWorks?.planningApplications || 'Not summarised in this report.'}
+          </p>
+          <p className="text-[11px] leading-relaxed mb-2" style={{ color: '#1e293b' }}>
+            <strong>Impact on value & forecasts:</strong>{' '}
+            {propertyWorks?.valueImpact ||
+              'Confirm any extensions with the agent, planning portal and survey before relying on value bands.'}
+          </p>
+          <p className="text-[10px] leading-relaxed" style={{ color: MUTED }}>
+            <strong>Certainty:</strong> {propertyWorks?.certainty || 'Verify on the local council planning portal.'}
+          </p>
+        </div>
       </PageShell>
 
-      {/* ========== 4 FINANCIALS (investors only) ========== */}
+      {/* ========== FINANCIALS (investors only) ========== */}
       {showInvestment && (
-      <PageShell page={4} total={TOTAL} address={addressLine}>
-        <SectionTitle>3. Rental & investment numbers</SectionTitle>
+      <PageShell page={pageInvest} total={TOTAL} address={addressLine}>
+        <SectionTitle>4. Rental & investment numbers</SectionTitle>
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           {[
@@ -767,20 +895,15 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           <KV label="Tenant profile" value={marketAndRental?.tenantProfile} />
           <KV label="Airbnb potential" value={marketAndRental?.airbnbPotential} />
           <KV label="Walkability" value={locationIntelligence?.walkability} />
-          <KV label="Population growth" value={locationIntelligence?.populationGrowth} />
-          <KV label="Infrastructure" value={locationIntelligence?.plannedInfrastructure} />
         </div>
 
         <div className="rounded-lg border px-3 py-2" style={{ borderColor: LINE }}>
-          <SubHead>Area outlook</SubHead>
+          <SubHead>Investor area notes</SubHead>
           <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
-            <strong>Projects:</strong> {locationIntelligence?.regenerationProjects || 'N/A'}
+            <strong>Population growth:</strong> {locationIntelligence?.populationGrowth || 'N/A'}
           </p>
           <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
-            <strong>Future outlook:</strong> {areaAnalysis?.futureOutlook || 'N/A'}
-          </p>
-          <p className="text-[10px] leading-snug mt-1" style={{ color: '#1e293b' }}>
-            <strong>Demographics:</strong> {areaAnalysis?.demographics || 'N/A'}
+            <strong>Infrastructure:</strong> {locationIntelligence?.plannedInfrastructure || 'N/A'}
           </p>
         </div>
       </PageShell>
@@ -788,31 +911,71 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
 
       {/* ========== RISKS ========== */}
       <PageShell page={pageRisk} total={TOTAL} address={addressLine}>
-        <SectionTitle>{showInvestment ? '4' : '3'}. Risks & the local area</SectionTitle>
+        <SectionTitle>{showInvestment ? '5' : '4'}. Risks & red flags</SectionTitle>
 
         <div className="grid grid-cols-2 gap-2.5 mb-4">
-          {riskRows.map(([label, value, kind]) => {
-            const s = riskStyle(value, kind);
+          {riskRows.map((row) => {
+            const textForStyle =
+              row.kind === 'planning' ? planningRiskText || row.value || '' : row.value || '';
+            const s = riskStyle(textForStyle, row.kind, riskTones?.[row.toneKey]);
             return (
-              <div key={label} className="rounded-lg border px-3 py-2.5" style={{ background: s.bg, borderColor: s.border }}>
-                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: s.fg }}>
-                  {label}
+              <div
+                key={row.label}
+                className="rounded-lg border px-3 py-2.5"
+                style={{ background: s.bg, borderColor: s.border }}
+              >
+                <p
+                  className="text-[10px] font-bold uppercase tracking-wide leading-snug mb-1.5 break-words"
+                  style={{ color: s.fg }}
+                >
+                  {row.label}
                 </p>
                 <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
-                  {value || 'N/A'}
+                  {row.value || 'N/A'}
                 </p>
               </div>
             );
           })}
         </div>
 
-        <div className="rounded-lg border px-3.5 py-2.5 mb-4" style={{ borderColor: LINE, background: '#fafbfc' }}>
+        {(propertyWorks?.extensionsAndAlterations || propertyWorks?.valueImpact) && (
+          <div className="rounded-lg border px-3.5 py-2.5 mb-3" style={{ borderColor: '#b8dfc8', background: GREEN_SOFT }}>
+            <SubHead>This property’s planning & works (value context)</SubHead>
+            <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+              <strong>Works:</strong> {propertyWorks?.extensionsAndAlterations || 'See planning notes above.'}
+            </p>
+            <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
+              <strong>Value impact:</strong>{' '}
+              {propertyWorks?.valueImpact || 'Confirm completed works with survey before relying on uplift.'}
+            </p>
+          </div>
+        )}
+
+        <div className="rounded-lg border px-3.5 py-2.5 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
           <SubHead>Crime in the area</SubHead>
           <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
             <strong>{areaAnalysis?.crimeSafety?.rating || 'N/A'}</strong>
             {areaAnalysis?.crimeSafety?.description ? ` — ${areaAnalysis.crimeSafety.description}` : ''}
           </p>
         </div>
+
+        <div className="rounded-lg border px-3.5 py-2.5" style={{ borderColor: LINE }}>
+          <SubHead>Local context that affects risk</SubHead>
+          <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+            <strong>Regeneration / projects:</strong> {locationIntelligence?.regenerationProjects || 'N/A'}
+          </p>
+          <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+            <strong>Planned infrastructure:</strong> {locationIntelligence?.plannedInfrastructure || 'N/A'}
+          </p>
+          <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
+            <strong>Future outlook:</strong> {areaAnalysis?.futureOutlook || 'N/A'}
+          </p>
+        </div>
+      </PageShell>
+
+      {/* ========== LOCAL AREA ========== */}
+      <PageShell page={pageArea} total={TOTAL} address={addressLine}>
+        <SectionTitle>{showInvestment ? '6' : '5'}. Schools, transport & amenities</SectionTitle>
 
         <div className="grid grid-cols-2 gap-3.5 mb-3">
           <div>
@@ -826,7 +989,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                 </tr>
               </thead>
               <tbody>
-                {(areaAnalysis?.schools || []).slice(0, 6).map((s, i) => (
+                {(areaAnalysis?.schools || []).slice(0, 10).map((s, i) => (
                   <tr key={i} style={{ background: i % 2 ? '#f8fafc' : '#fff' }}>
                     <td className="px-2 py-1.5 font-medium border-b border-slate-100">{s.name}</td>
                     <td className="px-2 py-1.5 border-b border-slate-100" style={{ color: MUTED }}>
@@ -858,7 +1021,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                 </tr>
               </thead>
               <tbody>
-                {(areaAnalysis?.transport || []).slice(0, 6).map((t, i) => (
+                {(areaAnalysis?.transport || []).slice(0, 10).map((t, i) => (
                   <tr key={i} style={{ background: i % 2 ? '#f8fafc' : '#fff' }}>
                     <td className="px-2 py-1.5 border-b border-slate-100">{t.type}</td>
                     <td className="px-2 py-1.5 font-medium border-b border-slate-100">{t.line}</td>
@@ -877,11 +1040,21 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           </div>
         </div>
 
+        <div className="rounded-lg border px-3.5 py-2.5 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
+          <SubHead>Who lives here & how walkable it feels</SubHead>
+          <p className="text-[11px] leading-relaxed mb-1" style={{ color: '#1e293b' }}>
+            <strong>Demographics:</strong> {areaAnalysis?.demographics || 'N/A'}
+          </p>
+          <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
+            <strong>Walkability:</strong> {locationIntelligence?.walkability || 'N/A'}
+          </p>
+        </div>
+
         {(areaAnalysis?.amenities?.length ?? 0) > 0 && (
           <div>
             <SubHead>Shops & amenities</SubHead>
             <div className="flex flex-wrap gap-1.5">
-              {areaAnalysis!.amenities.slice(0, 18).map((a, i) => (
+              {areaAnalysis!.amenities.slice(0, 36).map((a, i) => (
                 <span
                   key={i}
                   className="text-[9px] px-2 py-1 rounded border"
@@ -895,9 +1068,64 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
         )}
       </PageShell>
 
+      {/* ========== DUE DILIGENCE ========== */}
+      <PageShell page={pageDiligence} total={TOTAL} address={addressLine}>
+        <SectionTitle>{showInvestment ? '7' : '6'}. Due diligence deep dive</SectionTitle>
+        <p className="text-[11px] leading-relaxed mb-3" style={{ color: MUTED }}>
+          Practical checks buyers often miss — energy, connectivity, tenure, cash needed beyond deposit, and what to do next.
+        </p>
+
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
+          {[
+            ['EPC & energy', dueDiligence?.epcAndEnergy],
+            ['Broadband & mobile', dueDiligence?.broadbandAndMobile],
+            ['Tenure & legal', dueDiligence?.tenureAndLegal],
+            ['Council tax & parking', dueDiligence?.councilTaxAndParking],
+            ['Purchase costs stack', dueDiligence?.purchaseCosts],
+            ['Other environmental', dueDiligence?.environmentalOther],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-lg border px-3 py-2.5" style={{ borderColor: LINE, background: '#fafbfc' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: GREEN }}>
+                {label}
+              </p>
+              <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
+                {value || 'Confirm before offering.'}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-lg border px-3.5 py-2.5 mb-3" style={{ borderColor: LINE }}>
+          <SubHead>Ownership & chain notes</SubHead>
+          <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
+            {dueDiligence?.ownershipAndChain || 'Ask how long the seller has owned the home and whether they are in a chain.'}
+          </p>
+        </div>
+
+        <div className="rounded-lg border px-3.5 py-2.5" style={{ borderColor: '#b8dfc8', background: GREEN_SOFT }}>
+          <SubHead>Recommended next steps</SubHead>
+          <ol className="list-decimal pl-4 space-y-1">
+            {(nextSteps.length
+              ? nextSteps
+              : [
+                  'Book a viewing with this report’s checklist',
+                  'Instruct a conveyancer early',
+                  'Order an appropriate survey',
+                  'Confirm buildings insurance before offering',
+                  'Re-check council planning history',
+                ]
+            ).map((step, i) => (
+              <li key={i} className="text-[11px] leading-snug" style={{ color: NAVY }}>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </PageShell>
+
       {/* ========== COMPS ========== */}
       <PageShell page={pageComps} total={TOTAL} address={addressLine}>
-        <SectionTitle>{showInvestment ? '5' : '4'}. Sold prices nearby</SectionTitle>
+        <SectionTitle>{showInvestment ? '8' : '7'}. Sold prices nearby</SectionTitle>
 
         <SubHead>Similar homes sold nearby</SubHead>
         <table className="w-full text-[10px] mb-4">
@@ -974,35 +1202,51 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
 
       {/* ========== OFFERS ========== */}
       <PageShell page={pageOffer} total={TOTAL} address={addressLine}>
-        <SectionTitle>{showInvestment ? '6' : '5'}. What to offer & what to check</SectionTitle>
+        <SectionTitle>{showInvestment ? '9' : '8'}. What to offer & what to check</SectionTitle>
 
-        <div className="grid grid-cols-3 gap-2.5 mb-4">
+        <div className="grid grid-cols-3 gap-2.5 mb-3">
           <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-3">
-            <p className="text-[9px] font-bold uppercase text-rose-700">Cheeky / opener</p>
-            <p className="text-[22px] font-bold mt-1.5" style={{ color: NAVY }}>
+            <p className="text-[9px] font-bold uppercase leading-snug text-rose-700">Opening offer</p>
+            <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
               {offerStrategy?.lowOffer || 'N/A'}
             </p>
+            <p className="text-[8px] mt-1 leading-snug text-rose-800/80">Realistic opener — not a lowball</p>
           </div>
           <div className="rounded-lg border-2 px-3 py-3" style={{ borderColor: GREEN, background: GREEN_SOFT }}>
-            <p className="text-[9px] font-bold uppercase" style={{ color: GREEN }}>
+            <p className="text-[9px] font-bold uppercase leading-snug" style={{ color: GREEN }}>
               Fair market target
             </p>
-            <p className="text-[24px] font-bold mt-1.5" style={{ color: NAVY }}>
+            <p className="text-[22px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
               {offerStrategy?.fairOffer || 'N/A'}
+            </p>
+            <p className="text-[8px] mt-1 leading-snug" style={{ color: MUTED }}>
+              What a patient buyer should expect to pay
             </p>
           </div>
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
-            <p className="text-[9px] font-bold uppercase text-amber-800">Walk-away max</p>
-            <p className="text-[22px] font-bold mt-1.5" style={{ color: NAVY }}>
+            <p className="text-[9px] font-bold uppercase leading-snug text-amber-800">Walk-away max</p>
+            <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
               {offerStrategy?.premiumOffer || 'N/A'}
             </p>
+            <p className="text-[8px] mt-1 leading-snug text-amber-900/80">Stop above this unless strategy changes</p>
           </div>
         </div>
 
+        {(marketEvidence?.askingVsSoldEvidence || marketEvidence?.negotiationLevers) && (
+          <div className="rounded-lg border px-3 py-2 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
+            <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+              <strong>Evidence behind these figures:</strong> {marketEvidence?.askingVsSoldEvidence}
+            </p>
+            <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
+              <strong>Levers to use:</strong> {marketEvidence?.negotiationLevers}
+            </p>
+          </div>
+        )}
+
         <SubHead>How to negotiate</SubHead>
-        <ol className="mb-4 space-y-1.5">
+        <ol className="mb-3 space-y-1">
           {(offerStrategy?.negotiationTips || []).slice(0, 8).map((tip, i) => (
-            <li key={i} className="flex gap-2.5 text-[11px] leading-relaxed items-start">
+            <li key={i} className="flex gap-2.5 text-[10.5px] leading-relaxed items-start">
               <span
                 className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 text-white leading-none"
                 style={{ background: NAVY }}
@@ -1014,12 +1258,12 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           ))}
         </ol>
 
-        <div className="grid grid-cols-2 gap-3.5 mb-4">
+        <div className="grid grid-cols-2 gap-3.5 mb-3">
           <div>
             <SubHead>Viewing checklist</SubHead>
-            <ul className="space-y-1.5">
-              {(viewingChecks || []).slice(0, 9).map((c, i) => (
-                <li key={i} className="flex gap-2 text-[11px] leading-relaxed">
+            <ul className="space-y-1">
+              {(viewingChecks || []).slice(0, 12).map((c, i) => (
+                <li key={i} className="flex gap-2 text-[10.5px] leading-relaxed">
                   <span className="font-mono" style={{ color: GREEN }}>
                     ☐
                   </span>
@@ -1030,9 +1274,9 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           </div>
           <div>
             <SubHead>Questions for the agent</SubHead>
-            <ul className="space-y-1.5">
-              {(agentQuestions || []).slice(0, 9).map((q, i) => (
-                <li key={i} className="flex gap-2 text-[11px] leading-relaxed">
+            <ul className="space-y-1">
+              {(agentQuestions || []).slice(0, 12).map((q, i) => (
+                <li key={i} className="flex gap-2 text-[10.5px] leading-relaxed">
                   <span className="font-bold" style={{ color: NAVY }}>
                     {i + 1}.
                   </span>

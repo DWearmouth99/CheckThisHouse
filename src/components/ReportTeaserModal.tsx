@@ -67,7 +67,7 @@ export function ReportTeaserModal({
               Full report preview
             </p>
             <p className="text-[11px] text-brand-muted">
-              6–7 page PDF · sample layout with analysis blurred
+              9–10 page PDF · sample layout with analysis blurred
             </p>
           </div>
           <button
@@ -512,7 +512,7 @@ export function ReportTeaserModal({
           </MockPage>
 
           <p className="text-center text-[11px] text-brand-muted px-2 pb-1 leading-relaxed">
-            Listing cover details are free. The full unlocked PDF is a complete 6–7 page report with real scores,
+            Listing cover details are free. The full unlocked PDF is a complete 9–10 page report with real scores,
             local research, sold evidence and offer figures for this property.
           </p>
         </div>

@@ -107,8 +107,14 @@ app.get("/api/address/suggest", async (req, res) => {
       });
     }
 
-    const suggestions = await suggestAddresses(q);
-    return res.json({ suggestions });
+    const result = await suggestAddresses(q);
+    return res.json({
+      suggestions: result.suggestions,
+      source: result.source,
+      completeList: result.completeList,
+      notice: result.notice || null,
+      didYouMean: result.didYouMean || [],
+    });
   } catch (err: any) {
     console.error("[address/suggest]", err?.message || err);
     const status = typeof err?.status === "number" ? err.status : 502;

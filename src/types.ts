@@ -100,6 +100,30 @@ export interface RiskAnalysis {
   insuranceRisk: string;
 }
 
+/** Explicit tone for PDF colouring — set by the model from evidence, not vibes. */
+export type RiskTone = 'positive' | 'caution' | 'negative' | 'neutral';
+
+export interface RiskTones {
+  floodRisk: RiskTone;
+  subsidence: RiskTone;
+  planningDevelopments: RiskTone;
+  leaseholdIssues: RiskTone;
+  fireSafety: RiskTone;
+  insuranceRisk: RiskTone;
+}
+
+/** Market / listing context grounded in online sold & listing evidence. */
+export interface MarketEvidence {
+  /** How asking compares to recent sold comps (streets, £ deltas) */
+  askingVsSoldEvidence: string;
+  /** Nearby similar homes for sale / supply pressure if found */
+  competingSupply: string;
+  /** £/sqft or £/sqm context when floor area or EPC floor area is known */
+  pricePerSqmOrSqft: string;
+  /** Evidence-based levers (days on market, chain, condition, works) */
+  negotiationLevers: string;
+}
+
 export interface LocationIntelligence {
   plannedInfrastructure: string;
   populationGrowth: string;
@@ -111,6 +135,38 @@ export interface AdvancedMetrics {
   undervaluedExplanation: string;
   renovationROI: string;
   developmentOpportunity: string;
+}
+
+/** Planning history, extensions and works — must feed valuation. */
+export interface PropertyWorks {
+  /** What extensions/alterations appear to exist (or "None found in public sources") */
+  extensionsAndAlterations: string;
+  /** Local council / Planning Portal applications for this address */
+  planningApplications: string;
+  /** How works (or lack of) change fair value and forecasts vs unextended comps */
+  valueImpact: string;
+  /** How confident we are; what still needs survey/solicitor checks */
+  certainty: string;
+}
+
+/** Extra due-diligence depth beyond core valuation / area pages. */
+export interface DueDiligence {
+  /** EPC band, estimated running costs, upgrade notes */
+  epcAndEnergy: string;
+  /** Fixed broadband / mobile coverage notes */
+  broadbandAndMobile: string;
+  /** Freehold/leasehold, ground rent, service charge, title caveats */
+  tenureAndLegal: string;
+  /** Council tax band, parking permits, CPZ, bins / local charges */
+  councilTaxAndParking: string;
+  /** Stamp duty/LBTT, solicitor, survey, moving — rough cash needed besides deposit */
+  purchaseCosts: string;
+  /** Radon, mining, conservation area, noise, airports, other env flags */
+  environmentalOther: string;
+  /** Ownership length, chain, sales history context if known */
+  ownershipAndChain: string;
+  /** Ordered practical next steps after reading this report */
+  recommendedNextSteps: string[];
 }
 
 export interface PropertyAnalysis {
@@ -131,8 +187,13 @@ export interface PropertyAnalysis {
   investmentMetrics: InvestmentMetrics;
   marketAndRental: MarketAndRental;
   riskAnalysis: RiskAnalysis;
+  /** Optional for older saved reports; new runs should always populate */
+  riskTones?: RiskTones;
   locationIntelligence: LocationIntelligence;
   advanced: AdvancedMetrics;
+  propertyWorks: PropertyWorks;
+  dueDiligence: DueDiligence;
+  marketEvidence?: MarketEvidence;
   pros: ProConsItem[];
   cons: ProConsItem[];
   soldHistory: SoldHistoryItem[];

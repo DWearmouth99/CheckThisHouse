@@ -22,7 +22,7 @@ export const REPORT_CONTENTS: ReportContentItem[] = [
   },
   {
     label: 'Pros & cons',
-    detail: 'The main strengths and red flags so you see the deal clearly at a glance.',
+    detail: 'Dedicated strengths and red flags so every point is fully readable — not squeezed off the page.',
   },
   {
     label: 'Property details',
@@ -31,6 +31,14 @@ export const REPORT_CONTENTS: ReportContentItem[] = [
   {
     label: 'What is it worth?',
     detail: 'Low, fair and high value bands so you know if the asking price looks stretched.',
+  },
+  {
+    label: 'Market evidence',
+    detail: 'Asking vs recent solds, competing supply nearby, £/sqft context and real negotiation levers.',
+  },
+  {
+    label: 'Extensions & planning',
+    detail: 'Council planning history and extensions where public records show them — factored into value bands.',
   },
   {
     label: 'How value could change',
@@ -65,6 +73,22 @@ export const REPORT_CONTENTS: ReportContentItem[] = [
     detail: 'Shops, parks, healthcare and day-to-day conveniences nearby.',
   },
   {
+    label: 'EPC & running costs',
+    detail: 'Energy rating context and what that may mean for bills and future upgrades.',
+  },
+  {
+    label: 'Broadband & mobile',
+    detail: 'Connectivity notes for working from home and everyday coverage.',
+  },
+  {
+    label: 'Tenure, tax & parking',
+    detail: 'Freehold/leasehold flags, council tax band and parking / permit considerations.',
+  },
+  {
+    label: 'Purchase cost stack',
+    detail: 'Stamp duty/LBTT, solicitor, survey and moving cash needed beyond the deposit.',
+  },
+  {
     label: 'Sold prices nearby',
     detail: 'Similar homes sold recently so asking isn’t taken at face value.',
   },
@@ -87,6 +111,10 @@ export const REPORT_CONTENTS: ReportContentItem[] = [
   {
     label: 'Questions for the agent',
     detail: 'Smart questions that uncover survey history, works, lease details and seller motivation.',
+  },
+  {
+    label: 'Recommended next steps',
+    detail: 'A clear post-report action list: survey, solicitor, insurance and planning checks.',
   },
 ];
 
@@ -111,6 +139,8 @@ export const REPORT_CONTENT_CHIPS: string[] = [
   'Overall score & verdict',
   'Pros & cons',
   'Fair value bands',
+  'Market evidence vs solds',
+  'Extensions & planning',
   'Price outlook (1–10yr)',
   'Flood, damp & structure',
   'Leasehold & insurance',
@@ -118,10 +148,14 @@ export const REPORT_CONTENT_CHIPS: string[] = [
   'Schools & Ofsted',
   'Transport links',
   'Shops & amenities',
+  'EPC & running costs',
+  'Broadband & tenure',
+  'Purchase cost stack',
   'Sold comps nearby',
   'Offer opener & walk-away',
   'Viewing checklist',
   'Questions for the agent',
+  'Next steps',
   'Investor yields*',
 ];
 
@@ -144,6 +178,7 @@ export function buildFullReportTeaserPlan(opts: {
     `Is it a good buy for your goal`,
     `Pros and cons`,
     `What is it worth${opts.price ? ` vs ${opts.price}` : ' (estimated value bands)'}`,
+    `Extensions, alterations and planning applications`,
     `How value could change over time`,
     `Flood, damp and insurance watch-outs`,
     `Leasehold and fire safety flags`,
@@ -151,6 +186,7 @@ export function buildFullReportTeaserPlan(opts: {
     `Schools in the local area`,
     `Transport links`,
     `Shops & amenities nearby`,
+    `EPC, broadband, council tax and purchase costs`,
     `Sold prices nearby`,
     opts.price
       ? `What to offer (opener, fair target, walk-away)`
@@ -159,6 +195,7 @@ export function buildFullReportTeaserPlan(opts: {
     opts.price
       ? `Viewing checklist + questions for the agent`
       : `Checks before remortgage, sale or purchase`,
+    `Recommended next steps after this report`,
     `Extra rental numbers if you choose buy to let`,
   ].filter(Boolean) as string[];
 

@@ -22,19 +22,19 @@ export default function OfferStrategyComp({ analysis }: OfferStrategyCompProps) 
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Cheeky Bid */}
+          {/* Opening offer */}
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
             <div>
               <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-bold">
-                Cheeky Bid (Low)
+                Opening offer
               </span>
               <p className="font-sans font-bold text-xl text-slate-900 mt-3">{lowOffer}</p>
               <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                Use if listing is stale (over 6 weeks), chain-free, or needs upfront repairs.
+                Sensible opener (typically a few percent under asking if fairly priced) — not an extreme lowball.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-mono">
-              Est: -6% to -10% down
+              Usually ~3–6% under asking when fairly priced
             </div>
           </div>
 
@@ -42,15 +42,15 @@ export default function OfferStrategyComp({ analysis }: OfferStrategyCompProps) 
           <div className="p-4 rounded-xl bg-slate-50 border border-blue-200 flex flex-col justify-between shadow-md">
             <div>
               <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold">
-                Fair Bid (Market)
+                Fair market target
               </span>
               <p className="font-sans font-bold text-xl text-emerald-600 mt-3">{fairOffer}</p>
               <p className="text-[11px] text-slate-600 mt-1.5 leading-snug">
-                Aligned to similar road transactions. Recommended for steady, reasonable buyers.
+                What a patient buyer should expect to pay, anchored to sold evidence and fair value.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-blue-200 text-[10px] text-blue-600 font-mono">
-              Healthy Market Standard
+              Primary negotiation target
             </div>
           </div>
 
@@ -58,15 +58,15 @@ export default function OfferStrategyComp({ analysis }: OfferStrategyCompProps) 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
             <div>
               <span className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold">
-                Absolute Limit (Max)
+                Walk-away max
               </span>
               <p className="font-sans font-bold text-xl text-slate-900 mt-3">{premiumOffer}</p>
               <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
-                Do NOT bid higher than this. Walk away if other parties push it beyond.
+                Cap yourself here unless market conditions clearly change (e.g. genuine bidding war).
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-mono">
-              Maximum Fair Return Cap
+              Usually asking to ~+3% (max ~+5%)
             </div>
           </div>
 

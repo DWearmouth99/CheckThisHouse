@@ -32,26 +32,11 @@ import { REPORT_CONTENT_CHIPS, REPORT_CONTENTS, INVESTOR_REPORT_CONTENTS } from 
 import { EmbeddedCheckoutModal } from './components/EmbeddedCheckoutModal';
 import { ReportTeaserModal, TeaserData } from './components/ReportTeaserModal';
 import { AddressAutocomplete } from './components/AddressAutocomplete';
+import { ReportGeneratingOverlay } from './components/ReportGeneratingOverlay';
 
 const LOGO = '/checkthishouselogo.png';
 
 type LookupMode = 'listing' | 'address';
-
-const LISTING_LOADING_STEPS = [
-  'Reading your listing link…',
-  'Checking schools, crime, transport and local amenities…',
-  'Reviewing flood, damp, structure and insurance signals…',
-  'Comparing sold prices and building offer guidance…',
-  'Preparing your downloadable PDF report…',
-];
-
-const ADDRESS_LOADING_STEPS = [
-  'Looking up this address…',
-  'Checking schools, crime, transport and local amenities…',
-  'Reviewing flood, damp, structure and insurance signals…',
-  'Comparing sold prices and estimating value bands…',
-  'Preparing your downloadable PDF report…',
-];
 
 const BENEFIT_ICONS = [
   Scale,
@@ -121,7 +106,6 @@ export default function MarketingSite() {
   const [address, setAddress] = useState('');
   const [buyerGoal, setBuyerGoal] = useState<BuyerGoal>('First-time Buyer');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PropertyAnalysis | null>(null);
   const [urlHint, setUrlHint] = useState<string | null>(null);
@@ -135,8 +119,6 @@ export default function MarketingSite() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [teaser, setTeaser] = useState<TeaserData | null>(null);
   const [teaserOpen, setTeaserOpen] = useState(false);
-
-  const loadingSteps = lookupMode === 'address' ? ADDRESS_LOADING_STEPS : LISTING_LOADING_STEPS;
 
   const isBusy =
     phase === 'analyzing' ||
@@ -158,15 +140,6 @@ export default function MarketingSite() {
         /* keep defaults */
       });
   }, []);
-
-  useEffect(() => {
-    if (phase !== 'analyzing') return;
-    setLoadingStep(0);
-    const id = setInterval(() => {
-      setLoadingStep((s) => Math.min(s + 1, loadingSteps.length - 1));
-    }, 4500);
-    return () => clearInterval(id);
-  }, [phase, loadingSteps.length]);
 
   const runAnalysis = async (opts: {
     listingUrl?: string;
@@ -517,7 +490,7 @@ export default function MarketingSite() {
         {/* ===== HERO ===== */}
         <section
           id="generate"
-          className="relative overflow-hidden border-b border-brand-line"
+          className="relative z-10 overflow-x-hidden border-b border-brand-line"
           style={{
             background:
               'linear-gradient(165deg, #f7faf8 0%, #eef3f8 42%, #e8f0e9 100%)',
@@ -541,7 +514,7 @@ export default function MarketingSite() {
           />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-5 pt-6 pb-10 sm:pt-8 sm:pb-14 md:pt-12 md:pb-20 grid md:grid-cols-12 gap-8 md:gap-12 items-center">
-            <div className="md:col-span-7 min-w-0">
+            <div className="md:col-span-7 min-w-0 relative z-30">
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -647,7 +620,13 @@ export default function MarketingSite() {
                         onResolved={(formatted) => {
                           handleAddressChange(formatted);
                         }}
-                        disabled={isBusy}
+                        disabled={
+                          isBusy ||
+                          checkoutOpen ||
+                          phase === 'preview' ||
+                          phase === 'previewing' ||
+                          ((phase === 'ready' || phase === 'downloading') && !readyDismissed)
+                        }
                         placeholder="Start with a postcode, e.g. PA2 8TR"
                         hintId="address-hint"
                       />
@@ -661,8 +640,8 @@ export default function MarketingSite() {
                       </p>
                     )}
                     <p className="text-[11px] text-brand-muted leading-relaxed -mt-1">
-                      Type a postcode or street and pick your address from the list. Works even if the
-                      property isn’t for sale.
+                      Enter a full postcode to list every property there, or type your house number +
+                      postcode to jump straight to yours.
                     </p>
                   </>
                 )}
@@ -736,7 +715,7 @@ export default function MarketingSite() {
               initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.65, delay: 0.2 }}
-              className="md:col-span-5 relative min-w-0"
+              className="md:col-span-5 relative z-0 min-w-0"
               aria-hidden
             >
               <div className="relative mx-auto max-w-sm md:max-w-none">
@@ -770,8 +749,8 @@ export default function MarketingSite() {
                         <span className="text-[7px] uppercase text-brand-muted">/100</span>
                       </div>
                       <p className="text-xs text-brand-muted leading-snug">
-                        6–7 page branded PDF: summary & scores, what it’s worth, risks, local area, sold
-                        prices and what to offer — made for real viewings.
+                        9–10 page branded PDF: summary & scores, pros & cons, valuation, risks, local area, due
+                        diligence, sold prices and what to offer — made for real viewings.
                       </p>
                     </div>
                   </div>
@@ -842,7 +821,7 @@ export default function MarketingSite() {
                 {
                   n: '03',
                   title: 'Download your PDF',
-                  body: 'A branded 6–7 page report you can take to viewings, share with family, or send to your surveyor and solicitor.',
+                  body: 'A branded 9–10 page report you can take to viewings, share with family, or send to your surveyor and solicitor.',
                 },
               ].map((step) => (
                 <li key={step.n} className="relative">
@@ -885,7 +864,7 @@ export default function MarketingSite() {
               },
               {
                 q: 'How detailed is the PDF?',
-                a: 'Typically 6 pages for first-time buyers and movers, and 7 for buy to let — cover score, summary, what it’s worth, risks and the local area (schools, crime, transport), sold prices nearby, then what to offer and what to check next. Built to use on a viewing or remortgage conversation, not skim once.',
+                a: 'Typically 9 pages for first-time buyers and movers, and 10 for buy to let — cover, summary & scores, pros & cons, valuation, risks, local area, due diligence, sold prices, then what to offer and what to check next. Built to use on a viewing or remortgage conversation, not skim once.',
               },
             ].map((item) => (
               <div key={item.q} className="border-b border-brand-line pb-5">
@@ -988,73 +967,9 @@ export default function MarketingSite() {
           </motion.div>
         )}
         {phase === 'analyzing' && (
-          <motion.div
-            key="analyzing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/55 backdrop-blur-sm px-4 sm:px-5"
-            role="status"
-            aria-live="polite"
-            aria-label="Generating report"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="w-full max-w-md rounded-2xl bg-white border border-brand-line shadow-2xl p-5 sm:p-7 max-h-[90dvh] overflow-y-auto"
-            >
-              <div className="flex items-center gap-3 mb-5">
-                <div className="relative w-12 h-12">
-                  <div className="absolute inset-0 rounded-full border-2 border-brand-green/20" />
-                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-brand-green animate-spin" />
-                  <ShieldCheck className="absolute inset-0 m-auto w-5 h-5 text-brand-green" />
-                </div>
-                <div>
-                  <p className="font-display font-bold text-lg">Building your report</p>
-                  <p className="text-xs text-brand-muted">Usually takes under a minute</p>
-                </div>
-              </div>
-              <p className="text-sm text-brand-navy font-medium min-h-[2.5rem] leading-snug">
-                {loadingSteps[loadingStep]}
-              </p>
-              <div className="mt-4 h-1.5 rounded-full bg-brand-paper overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-brand-green"
-                  initial={false}
-                  animate={{
-                    width: `${[14, 34, 54, 72, 88][loadingStep] ?? 88}%`,
-                  }}
-                  transition={{ duration: 0.85, ease: 'easeOut' }}
-                />
-              </div>
-              <ul className="mt-5 space-y-2">
-                {loadingSteps.map((step, i) => (
-                  <li
-                    key={step}
-                    className={`text-xs flex items-center gap-2 ${
-                      i < loadingStep
-                        ? 'text-brand-navy/70'
-                        : i === loadingStep
-                          ? 'text-brand-green font-semibold'
-                          : 'text-brand-muted'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        i < loadingStep
-                          ? 'bg-brand-green/50'
-                          : i === loadingStep
-                            ? 'bg-brand-green'
-                            : 'bg-brand-line'
-                      }`}
-                    />
-                    {step.replace('…', '')}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          </motion.div>
+          <div key="analyzing">
+            <ReportGeneratingOverlay open mode={lookupMode} />
+          </div>
         )}
 
         {(phase === 'ready' || phase === 'downloading') && analysis && !readyDismissed && (

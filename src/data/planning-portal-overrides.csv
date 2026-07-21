@@ -1,0 +1,22 @@
+authority_name,url,tags
+Midlothian,https://planning-applications.midlothian.gov.uk/OnlinePlanning/search.do?action=simple&searchType=Application,scotland
+Renfrewshire,https://planning.renfrewshire.gov.uk/online-applications/search.do?action=advanced,scotland
+East Lothian,https://planning.eastlothian.gov.uk/online-applications/search.do?action=advanced,scotland
+West Lothian,https://planning.westlothian.gov.uk/publicaccess/search.do?action=advanced,scotland
+Fife,https://planning.fife.gov.uk/online-applications/search.do?action=advanced,scotland
+South Lanarkshire,https://publicaccess.southlanarkshire.gov.uk/online-applications/search.do?action=advanced,scotland
+North Lanarkshire,https://eplanning.northlanarkshire.gov.uk/online-applications/search.do?action=advanced,scotland
+Dundee,https://idoxwam.dundeecity.gov.uk/idoxpa-web/search.do?action=advanced,scotland
+Stirling,https://www.stirling.gov.uk/online-applications/search.do?action=advanced,scotland
+Perth and Kinross,https://planningapps.pkc.gov.uk/online-applications/search.do?action=advanced,scotland
+Highland,https://wam.highland.gov.uk/wam/search.do?action=advanced,scotland
+Aberdeenshire,https://upa.aberdeenshire.gov.uk/online-applications/search.do?action=advanced,scotland
+Angus,https://planning.angus.gov.uk/online-applications/search.do?action=advanced,scotland
+Scottish Borders,https://eplanning.scotborders.gov.uk/online-applications/search.do?action=advanced,scotland
+Dumfries and Galloway,https://eaccess.dumgal.gov.uk/online-applications/search.do?action=advanced,scotland
+Falkirk,https://eplanning.falkirk.gov.uk/online-applications/search.do?action=advanced,scotland
+Clackmannanshire,https://eplanning.clacks.gov.uk/online-applications/search.do?action=advanced,scotland
+Inverclyde,https://planning.inverclyde.gov.uk/online-applications/search.do?action=advanced,scotland
+East Renfrewshire,https://ercplanning.eastrenfrewshire.gov.uk/online-applications/search.do?action=advanced,scotland
+East Dunbartonshire,https://planning.eastdunbarton.gov.uk/online-applications/search.do?action=advanced,scotland
+West Dunbartonshire,https://www.west-dunbarton.gov.uk/online-applications/search.do?action=advanced,scotland
