@@ -254,7 +254,7 @@ export function AddressAutocomplete({
               left: menuPos.left,
               width: menuPos.width,
               maxHeight: menuPos.maxHeight,
-              zIndex: 40,
+              zIndex: 70,
             }}
             className="overflow-y-auto overscroll-contain rounded-xl border border-brand-line bg-white shadow-[0_16px_40px_rgba(11,31,58,0.22)] py-1"
           >

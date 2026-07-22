@@ -16,12 +16,12 @@ const ALLOWED_HOST_SUFFIXES = [
 ] as const;
 
 export const SUPPORTED_PORTALS = [
-  { name: 'Rightmove', region: 'UK' },
-  { name: 'Zoopla', region: 'UK' },
-  { name: 'OnTheMarket', region: 'UK' },
-  { name: 'Zillow', region: 'US' },
-  { name: 'Realtor.com', region: 'US' },
-  { name: 'Redfin', region: 'US' },
+  { name: 'Rightmove', region: 'UK', listingRead: 'best' as const },
+  { name: 'Zoopla', region: 'UK', listingRead: 'address-preferred' as const },
+  { name: 'OnTheMarket', region: 'UK', listingRead: 'address-preferred' as const },
+  { name: 'Zillow', region: 'US', listingRead: 'address-preferred' as const },
+  { name: 'Realtor.com', region: 'US', listingRead: 'address-preferred' as const },
+  { name: 'Redfin', region: 'US', listingRead: 'address-preferred' as const },
 ] as const;
 
 function normalizeHost(hostname: string): string {
@@ -65,7 +65,7 @@ export function validateListingUrl(raw: string): ListingUrlResult {
     return {
       ok: false,
       error:
-        'Only popular property listing sites are supported (Rightmove, Zoopla, OnTheMarket, Zillow, Realtor.com, Redfin, and similar).',
+        'That listing site isn’t supported. Use a Rightmove link, or switch to Address lookup with the full UK address.',
     };
   }
 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { BedDouble, Bath, Home, Lock, Loader2, X, ArrowRight, MapPinned } from 'lucide-react';
+import { BedDouble, Bath, Home, Lock, Loader2, X, ArrowRight, AlertTriangle } from 'lucide-react';
+import { assessListingPaymentGate } from '../lib/listingPaymentGate';
 
 export type TeaserData = {
   limited: boolean;
@@ -28,6 +29,9 @@ type Props = {
   unlocking?: boolean;
   onClose: () => void;
   onUnlock: () => void;
+  onSwitchToAddress?: () => void;
+  /** Prefer this when the listing needs an exact door-number confirmation. */
+  onConfirmAddress?: () => void;
 };
 
 const LOGO = '/checkthishouselogo.png';
@@ -39,12 +43,16 @@ export function ReportTeaserModal({
   unlocking = false,
   onClose,
   onUnlock,
+  onSwitchToAddress,
+  onConfirmAddress,
 }: Props) {
   if (!open || !teaser) return null;
 
   const hero = teaser.images[0] || null;
   const isAddressMode = teaser.mode === 'address' || teaser.host === 'address';
   const hasBasics = Boolean(teaser.address || teaser.price);
+  const paymentGate = assessListingPaymentGate(teaser);
+  const canPay = paymentGate.ok;
   const address = teaser.address || (isAddressMode ? 'Your address' : 'Your selected listing');
   const price = teaser.price;
   const beds = teaser.bedrooms || '3';
@@ -93,7 +101,7 @@ export function ReportTeaserModal({
               <div className="flex items-start justify-between gap-2 mb-5">
                 <img src={LOGO} alt="" className="h-9 w-auto object-contain" />
                 <div className="text-right">
-                  <p className="text-[9px] font-mono text-brand-muted">Confidential buyer report</p>
+                  <p className="text-[9px] font-mono text-brand-muted">Confidential property report</p>
                   <p className="text-[9px] text-brand-muted mt-0.5">Page 1 of 6</p>
                 </div>
               </div>
@@ -106,20 +114,6 @@ export function ReportTeaserModal({
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
-                </div>
-              )}
-
-              {!hero && isAddressMode && (
-                <div className="rounded-md mb-4 bg-brand-paper border border-brand-line px-4 py-6 flex items-start gap-3">
-                  <MapPinned className="w-8 h-8 text-brand-green shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-brand-green font-semibold mb-1">
-                      Address lookup
-                    </p>
-                    <p className="text-sm text-brand-navy leading-snug">
-                      No listing photos — research uses public sold data, area and risk sources for this address.
-                    </p>
-                  </div>
                 </div>
               )}
 
@@ -517,23 +511,52 @@ export function ReportTeaserModal({
           </p>
         </div>
 
-        <div className="shrink-0 border-t border-brand-line bg-white px-4 sm:px-5 py-3.5 space-y-1.5">
-          <button
-            type="button"
-            onClick={onUnlock}
-            disabled={unlocking}
-            className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-brand-green text-white font-semibold text-sm py-3 hover:brightness-105 transition disabled:opacity-70"
-          >
-            {unlocking ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Opening checkout…
-              </>
-            ) : (
-              <>
-                Unlock full PDF · {priceLabel} <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+        <div className="shrink-0 border-t border-brand-line bg-white px-4 sm:px-5 py-3.5 space-y-2">
+          {!canPay && paymentGate.ok === false && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-950 leading-relaxed">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+              <p>{paymentGate.reason}</p>
+            </div>
+          )}
+          {canPay ? (
+            <button
+              type="button"
+              onClick={onUnlock}
+              disabled={unlocking}
+              className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-brand-green text-white font-semibold text-sm py-3 hover:brightness-105 transition disabled:opacity-70"
+            >
+              {unlocking ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Opening checkout…
+                </>
+              ) : (
+                <>
+                  Unlock full PDF · {priceLabel} <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (onConfirmAddress) onConfirmAddress();
+                else if (onSwitchToAddress) onSwitchToAddress();
+                else onClose();
+              }}
+              disabled={unlocking}
+              className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-brand-navy text-white font-semibold text-sm py-3 hover:brightness-110 transition disabled:opacity-70"
+            >
+              {onConfirmAddress ? (
+                <>
+                  Confirm exact address <ArrowRight className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  Use Address lookup instead <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}

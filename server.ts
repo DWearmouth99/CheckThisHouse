@@ -360,7 +360,11 @@ app.post("/api/teaser", async (req, res) => {
         limited = !(address || price);
       } else {
         limited = true;
+        summary =
+          "We couldn’t reliably read this Rightmove listing. Use Address lookup with the full UK address before paying.";
       }
+    } else {
+      summary = `${listing.portal} links can’t be read as reliably as Rightmove yet. Use Address lookup with the full UK address before paying.`;
     }
 
     // Cheap derived signal (no AI): price per bedroom when parseable
