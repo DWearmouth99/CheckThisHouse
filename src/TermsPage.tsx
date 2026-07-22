@@ -263,7 +263,14 @@ const sections: TermsSection[] = [
   {
     title: 'Privacy',
     paragraphs: [
-      'Our collection and use of personal information is explained in our Privacy Policy. By using the Website, you acknowledge that personal information may be processed in accordance with that policy.',
+      <>
+        Our collection and use of personal information is explained in our{' '}
+        <a className="font-semibold text-brand-green underline underline-offset-2" href="/privacy">
+          Privacy Policy
+        </a>
+        . By using the Website, you acknowledge that personal information may be processed in
+        accordance with that policy.
+      </>,
     ],
   },
   {
@@ -445,7 +452,12 @@ export default function TermsPage() {
             <img src={LOGO} alt="" className="h-8 w-auto brightness-0 invert opacity-90" />
             <p className="text-xs">Advisory property intelligence only.</p>
           </div>
-          <p className="text-xs">© 2026 CheckThisHouse. All rights reserved.</p>
+          <div className="text-xs space-y-1 sm:text-right">
+            <a href="/privacy" className="underline underline-offset-4 hover:text-white transition">
+              Privacy Policy
+            </a>
+            <p>© 2026 CheckThisHouse. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>

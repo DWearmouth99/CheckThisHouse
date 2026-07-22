@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import MarketingSite from './MarketingSite';
 import LabApp from './LabApp';
 import TermsPage from './TermsPage';
+import PrivacyPage from './PrivacyPage';
 
 function useLabMode() {
   const [isLab, setIsLab] = useState(() => {
@@ -29,8 +30,9 @@ function useLabMode() {
 /** Public marketing site by default. Internal analyzer: /#lab */
 export default function App() {
   const isLab = useLabMode();
-  const isTerms =
-    typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/terms';
-  if (isTerms) return <TermsPage />;
+  const path =
+    typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') : '';
+  if (path === '/terms') return <TermsPage />;
+  if (path === '/privacy') return <PrivacyPage />;
   return isLab ? <LabApp /> : <MarketingSite />;
 }

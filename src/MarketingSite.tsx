@@ -923,12 +923,20 @@ export default function MarketingSite() {
             </p>
           </div>
           <div className="text-xs space-y-1 md:text-right">
-            <a
-              href="/terms"
-              className="inline-block text-white/90 hover:text-white underline underline-offset-4 transition"
-            >
-              Terms &amp; Conditions
-            </a>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 md:justify-end">
+              <a
+                href="/terms"
+                className="inline-block text-white/90 hover:text-white underline underline-offset-4 transition"
+              >
+                Terms &amp; Conditions
+              </a>
+              <a
+                href="/privacy"
+                className="inline-block text-white/90 hover:text-white underline underline-offset-4 transition"
+              >
+                Privacy Policy
+              </a>
+            </div>
             <p className="flex items-center gap-1.5 md:justify-end">
               <FileText className="w-3.5 h-3.5 shrink-0" /> checkthishouse.co.uk
             </p>
