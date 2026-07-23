@@ -9,6 +9,8 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "test:acceptance": "tsx scripts/acceptance-tests.ts",
+    "test:acceptance:live": "tsx scripts/regenerate-acceptance-fixtures.ts",
     "planning:portals": "tsx scripts/refresh-planning-portals.ts"
   },
   "dependencies": {

@@ -101,7 +101,7 @@ export function ReportTeaserModal({
               <div className="flex items-start justify-between gap-2 mb-5">
                 <img src={LOGO} alt="" className="h-9 w-auto object-contain" />
                 <div className="text-right">
-                  <p className="text-[9px] font-mono text-brand-muted">Confidential property report</p>
+                  <p className="text-[9px] font-mono text-brand-muted">Property report</p>
                   <p className="text-[9px] text-brand-muted mt-0.5">Page 1 of 6</p>
                 </div>
               </div>

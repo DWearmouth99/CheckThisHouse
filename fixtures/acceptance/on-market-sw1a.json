@@ -1,0 +1,444 @@
+{
+  "title": "Property Analysis: 10 Downing Street, London",
+  "price": "£2,500,000",
+  "bedrooms": "Not on record — verify with a viewing or the listing",
+  "bathrooms": "Not on record — verify with a viewing or the listing",
+  "propertyType": "Terraced Georgian building",
+  "location": {
+    "address": "10 Downing Street",
+    "postcode": "SW1A 2AA",
+    "town": "London"
+  },
+  "summary": "10 Downing Street represents a globally recognized, Grade I listed Georgian asset within the highly secure Whitehall Conservation Area. Featuring an extensive 100-room internal footprint and a rare 0.5-acre rear garden, the property commands an unparalleled central London position. Extensive infrastructure and fire safety renewals were completed between 2009 and 2011, future-proofing the core mechanical services. The stated asking price of £2,500,000 sits exceptionally low for a vast hyper-prime SW1 asset, suggesting severe tenure restrictions under the Crown Estate. Buyers seeking a primary residence must prepare for stringent heritage planning limitations and instruct specialist conveyancers to verify the exact legal mechanism of the title transfer.",
+  "specs": [
+    {
+      "label": "Listing Status",
+      "value": "Grade I Listed Building (Ref: 1210759)"
+    },
+    {
+      "label": "Conservation Area",
+      "value": "Whitehall Conservation Area"
+    },
+    {
+      "label": "External Space",
+      "value": "0.5-acre rear garden"
+    },
+    {
+      "label": "Tenure",
+      "value": "Crown / Government Estate"
+    },
+    {
+      "label": "Internal Layout",
+      "value": "Approx. 100 rooms including 3rd-floor private residence"
+    },
+    {
+      "label": "Bathrooms",
+      "value": "Not on record — verify with a viewing or the listing"
+    },
+    {
+      "label": "Bedrooms / rooms",
+      "value": "Not on record — verify with a viewing or the listing"
+    }
+  ],
+  "valuation": {
+    "conservative": "£2,350,000",
+    "fair": "£2,500,000",
+    "optimistic": "£2,650,000",
+    "growthAssumptions": {
+      "lowPct": 2,
+      "centralPct": 3.5,
+      "highPct": 5,
+      "basis": "Prime central London historical capital appreciation trends over 10 years."
+    },
+    "forecast1y": "£2,587,500",
+    "forecast3y": "£2,771,795",
+    "forecast5y": "£2,969,216",
+    "forecast10y": "£3,526,497"
+  },
+  "investmentMetrics": {
+    "estimatedRent": "~£15,000 pcm estimated rent",
+    "grossYield": "7.20%",
+    "netYield": "4.50% net yield (assuming high heritage maintenance costs)",
+    "roi": "3.80% estimated annual ROI on cash purchase",
+    "cashflow": "£9,375 estimated monthly net cashflow (cash purchase)",
+    "stampDuty": "Est. SDLT £213,750 (England/NI). Confirm with a solicitor.",
+    "breakEven": "9 years estimated capital break-even on standard purchase costs",
+    "irr": "5.10% estimated 10-year IRR",
+    "growthReasoning": "Long-term prime central London macro trends drive steady capital preservation, though unique tenure profiles dictate liquidity.",
+    "grossYieldBasis": "~£15,000 pcm estimated rent → 7.20% gross yield"
+  },
+  "marketAndRental": {
+    "supplyDemand": "Severe undersupply of historic, large-footprint mansions in central SW1 creates a captive luxury market.",
+    "timeOnMarket": "Not on record — verify with the agent listing",
+    "priceTrend": "Prime central SW1 prices remain highly insulated from broader national mortgage fluctuations.",
+    "vacancyRates": "Extremely low for ultra-prime residential stock in Westminster.",
+    "tenantProfile": "High-net-worth individuals, diplomats, and corporate executives.",
+    "airbnbPotential": "Nil. Prohibited by stringent security protocols and Whitehall Conservation Area short-let restrictions."
+  },
+  "riskAnalysis": {
+    "floodRisk": "Currently no active flood warnings. The broader area borders the River Thames and was affected historically by the 1928 flood, but modern central London flood defences protect the immediate zone.",
+    "subsidence": "Not on record — verify with a structural survey.",
+    "planningDevelopments": "See Extensions, Planning & Works for exact-address planning history.",
+    "leaseholdIssues": "Crown/Government Estate title. Non-standard tenure requires immediate verification of lease terms and transfer rights.",
+    "fireSafety": "Comprehensive 2011 renewal programme replaced ageing infrastructure and installed modern fire protection systems.",
+    "insuranceRisk": "Grade I listed status and hyper-prime location mandate highly specialized heritage building insurance policies."
+  },
+  "riskTones": {
+    "floodRisk": "neutral",
+    "subsidence": "neutral",
+    "planningDevelopments": "caution",
+    "leaseholdIssues": "caution",
+    "fireSafety": "positive",
+    "insuranceRisk": "caution"
+  },
+  "locationIntelligence": {
+    "plannedInfrastructure": "Continuous Westminster public realm and security enhancements along the Whitehall corridor.",
+    "populationGrowth": "Stable central institutional zone with negligible population fluctuation.",
+    "regenerationProjects": "Parliamentary Estate restoration and ongoing local heritage conservation efforts.",
+    "walkability": "Exceptional walkability to Royal Parks, the West End, and major transport hubs."
+  },
+  "advanced": {
+    "undervaluedExplanation": "An asking price of £2,500,000 for a 100-room property on 0.5 acres in SW1 is severely dislocated from standard market pricing, strongly implying the sale is for a heavily restricted leasehold or fractional title.",
+    "renovationROI": "Capital uplift from cosmetic improvements is heavily capped by the extreme costs of executing Grade I compliant works.",
+    "developmentOpportunity": "Effectively zero. Structural alterations or footprint expansions are fundamentally incompatible with the Grade I listing and Crown Estate protections."
+  },
+  "propertyWorks": {
+    "extensionsAndAlterations": "Not on record — verify with Westminster planning portal for past internal works.",
+    "planningApplications": "No exact-address planning matches on the Westminster portal for this postcode.",
+    "valueImpact": "Heritage status strictly preserves existing value but limits modernization-driven capital gains.",
+    "certainty": "High certainty of planning restrictions due to hyper-prime conservation rules."
+  },
+  "dueDiligence": {
+    "epcAndEnergy": "No EPC on register — request from vendor. Verify at find-energy-certificate.service.gov.uk.",
+    "broadbandAndMobile": "Ofcom reports 67.4 Mbit/s average download, 362 Mbit/s max. Superfast availability is 98%, Full Fibre (FTTP) is 45%.",
+    "tenureAndLegal": "Crown Estate tenure. Verify the legal reality of the title transfer, lease length, and specific use clauses with a specialist conveyancer.",
+    "councilTaxAndParking": "Not on record — verify with Westminster City Council.",
+    "purchaseCosts": "Factor £213,750 for primary residence SDLT, plus highly elevated legal, survey, and heritage insurance premiums.",
+    "environmentalOther": "Thames proximity is mitigated by the Thames Barrier and Westminster City Council local flood risk management strategies.",
+    "ownershipAndChain": "Not on record — verify availability and seller chain with the agent listing.",
+    "recommendedNextSteps": [
+      "Instruct a heritage-specialist solicitor to analyze the Crown Estate title",
+      "Commission an RICS Level 3 Building Survey by a Grade I conservation specialist",
+      "Verify the exact boundaries of the 0.5-acre rear garden on the title plan",
+      "Obtain quotes for high-value specialist heritage insurance",
+      "Investigate any ongoing service charges or maintenance levies associated with the 2011 infrastructure works",
+      "Confirm security and access restrictions with the vendor given the Whitehall location",
+      "Request a breakdown of the £2,500,000 asking price valuation basis",
+      "Check for any outstanding public realm obligations or easements",
+      "Verify the EPC rating and any listed building energy exemptions",
+      "Review the structural survey regarding the 17th-century masonry and foundations"
+    ]
+  },
+  "marketEvidence": {
+    "askingVsSoldEvidence": "No recent Price Paid sales returned for this postcode on the Land Registry.",
+    "competingSupply": "Zero directly comparable 100-room Grade I mansions available in central Westminster.",
+    "pricePerSqmOrSqft": "Not on record — verify floor area with a measured survey."
+  },
+  "pros": [
+    {
+      "title": "Unrivalled Location",
+      "desc": "Situated in hyper-prime SW1 with immediate access to St James's Park and Westminster.",
+      "category": "Location"
+    },
+    {
+      "title": "Historic Prestige",
+      "desc": "Grade I Listed 17th-century building originally built by Sir Christopher Wren.",
+      "category": "Heritage"
+    },
+    {
+      "title": "Exceptional Scale",
+      "desc": "Approximately 100 internal rooms providing a vast domestic and reception footprint.",
+      "category": "Space"
+    },
+    {
+      "title": "Rare Central Garden",
+      "desc": "Features a highly unusual 0.5-acre rear garden overlooking Horse Guards Parade.",
+      "category": "Lifestyle"
+    },
+    {
+      "title": "Modernized Infrastructure",
+      "desc": "Benefitting from a comprehensive 2009-2011 M&E and infrastructure renewal programme.",
+      "category": "Condition"
+    },
+    {
+      "title": "Upgraded Fire Safety",
+      "desc": "Modern fire protection systems fully installed during recent renovations.",
+      "category": "Safety"
+    },
+    {
+      "title": "Superb Transport Links",
+      "desc": "Walking distance to Westminster and Charing Cross Underground stations.",
+      "category": "Transport"
+    },
+    {
+      "title": "High Walkability",
+      "desc": "Instant pedestrian access to central London's premier cultural and government districts.",
+      "category": "Lifestyle"
+    }
+  ],
+  "cons": [
+    {
+      "title": "Extreme Planning Limits",
+      "desc": "Grade I listing and Conservation Area status prevent almost all external and internal modernization.",
+      "category": "Heritage"
+    },
+    {
+      "title": "Complex Tenure",
+      "desc": "Crown Estate ownership creates significant legal hurdles for private residential transfer.",
+      "category": "Legal"
+    },
+    {
+      "title": "High Local Crime Rate",
+      "desc": "108.1 incidents per 1,000 residents recorded nearby, largely driven by central tourist density.",
+      "category": "Risk"
+    },
+    {
+      "title": "Missing Public Records",
+      "desc": "No EPC, exact floor area, or exact-address planning history available publicly.",
+      "category": "Due Diligence"
+    },
+    {
+      "title": "Heritage Maintenance Costs",
+      "desc": "Upkeep of a 17th-century 100-room mansion requires continuous, highly specialized capital expenditure.",
+      "category": "Financial"
+    },
+    {
+      "title": "Specialist Insurance Required",
+      "desc": "Mainstream building insurance policies will not cover this asset, forcing premium market rates.",
+      "category": "Financial"
+    },
+    {
+      "title": "Historical Flood Zone",
+      "desc": "While currently mitigated, the Thames riverside position carries long-term environmental context.",
+      "category": "Environmental"
+    }
+  ],
+  "soldHistory": [
+    {
+      "year": "—",
+      "price": "Not found",
+      "source": "HM Land Registry Price Paid",
+      "description": "Not on record — verify with HM Land Registry Price Paid for this exact address."
+    }
+  ],
+  "comparableSales": [],
+  "areaAnalysis": {
+    "schools": [
+      {
+        "name": "Wetherby Senior School",
+        "distance": "1.5 miles",
+        "rating": "Good (2016)"
+      },
+      {
+        "name": "Christ Church Bentinck CofE Primary School",
+        "distance": "1.8 miles",
+        "rating": "Outstanding (2024)"
+      },
+      {
+        "name": "Ark King Solomon Academy",
+        "distance": "2.0 miles",
+        "rating": "Outstanding (2024)"
+      },
+      {
+        "name": "Burdett-Coutts and Townshend Foundation CofE Primary School",
+        "distance": "0.8 miles",
+        "rating": "Good (2024)"
+      },
+      {
+        "name": "Southbank International School Westminster",
+        "distance": "1.2 miles",
+        "rating": "Outstanding (2017)"
+      }
+    ],
+    "transport": [
+      {
+        "type": "Underground",
+        "line": "Jubilee, District, Circle",
+        "time": "5 mins walk"
+      },
+      {
+        "type": "Underground",
+        "line": "Northern, Bakerloo",
+        "time": "8 mins walk"
+      },
+      {
+        "type": "Bus",
+        "line": "Routes 11, 12, 24, 88, 453",
+        "time": "2 mins walk"
+      }
+    ],
+    "crimeSafety": {
+      "rating": "108.1 incidents per 1,000 residents",
+      "description": "108.1 incidents per 1,000 residents recorded locally. This high metric is primarily driven by footfall in central tourist and government hubs rather than residential burglaries.",
+      "incidentsPerThousand": 108.1
+    },
+    "demographics": "Dominated by institutional operations, diplomatic missions, and ultra-high-net-worth international residents.",
+    "amenities": [
+      "St James's Park",
+      "Whitehall Gardens",
+      "Trafalgar Square cultural institutions",
+      "West End theatres and dining",
+      "Embankment riverside walks"
+    ],
+    "futureOutlook": "Maintains position as a heavily protected, globally significant location with zero prospect of negative commercial intrusion."
+  },
+  "buyingSuitability": "As a primary residence, this property presents a highly irregular profile. The £2,500,000 asking price is a mathematical anomaly for 100 central London rooms on 0.5 acres, strongly indicating the sale is subject to onerous leasehold constraints or represents a fractional interest. Buyers must thoroughly verify the legal mechanics of the Crown Estate title and assess whether the Grade I heritage restrictions align with their lifestyle requirements. Structurally, the 2011 mechanical overhaul provides excellent foundational peace of mind.",
+  "viewingChecks": [
+    "Verify the exact boundaries of the 0.5-acre garden included in the sale",
+    "Inspect the condition of the original 17th-century sash windows",
+    "Assess the physical footprint of the 3rd-floor private residence versus the reception rooms",
+    "Check the modern boiler and M&E plant installations from the 2011 renewal",
+    "Look for any signs of internal damp in the basement and lower ground levels",
+    "Examine the state of the roof and rainwater harvesting system",
+    "Verify vehicular access, parking rights, and security clearance protocols on Whitehall",
+    "Test mobile phone reception through the thick historical masonry",
+    "Inspect all historical fireplaces and verify sweeping history",
+    "Check the condition of the exterior brickwork and pointing on the main facade"
+  ],
+  "offerStrategy": {
+    "lowOffer": "£2,350,000",
+    "fairOffer": "£2,500,000",
+    "premiumOffer": "£2,575,000",
+    "negotiationTips": [
+      "Given the highly unusual £2,500,000 price point for a hyper-prime asset, establish exactly what rights and term lengths are being sold before bidding.",
+      "Use the extreme heritage maintenance obligations to anchor early offers lower.",
+      "If the tenure is heavily restricted by the Crown Estate, refuse to bid above asking price.",
+      "Demand complete transparency on service charges or structural levies before committing to a final figure."
+    ]
+  },
+  "agentQuestions": [
+    "Exactly what lease term or title mechanism is being sold for £2,500,000?",
+    "Are there any restrictive covenants dictating who may reside in the property?",
+    "Can you provide the detailed schedule of works from the 2009-2011 infrastructure renewal?",
+    "Why is there no EPC registered publicly for this address?",
+    "What are the annual building insurance premiums historically paid?",
+    "Are any items of internal furniture or art included in the fixtures and fittings?",
+    "How does the Crown Estate ownership impact the buyer's right to alter the internal layout?",
+    "What are the exact boundary lines of the 0.5-acre rear garden on the title plan?",
+    "Is there any historic or ongoing subsidence monitoring for the structure?",
+    "What specific security protocols must residents follow for daily access via Whitehall?"
+  ],
+  "sources": [
+    {
+      "title": "wikipedia.org",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFTuPispNefLw19uIQ1QWTPsGkwpwWBd8yWZiXKgWlxccWLF6whJLxl2HIaICmpXcfy6kuzbC8kxnTdabb1_2OCi0dPOzVysjwAvK-otXdxkm2R-jv7Omnqf26LA0DNzGPO8IuW"
+    },
+    {
+      "title": "www.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFE1u9JlT4H0I2qK-7Dx1YqPSaEapL05-Cm1bZn7xhrySJeLJm7ofPFtTErNax5ISmTQahliZM_WtGxHJ8m823I3zph0rsBoLynb4qE_h2E5A5CDkFJsPvO1JGEf2zLtltXsJg7KsT9LTF7EIw="
+    },
+    {
+      "title": "openhouse.org.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGnYVxxNJisjyto5ATntfnqu4JHESpXYqH5Wx0ruJilhPlEYr24ABrQKXmrbKO26bg1hir_0sRlcZ1QYW4Zc2mJXmEomTahpbDM7ONCi8yQfaXgA-Z5eJDDyrHlABZFNiIXxcFiM2w="
+    },
+    {
+      "title": "westminster.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGKdRiXb7Atn_FB80Ckk4oQAoU9XIKFr-6lILZLB6SzYF1csn3Hc9R3k2cNYsW0ILhSimZVEwDC0078pVDQQ15aq30xYaw3STipkHIXNCT2oIVih6VHMTIhFrDQcKDGvJBf12-VOwWxL0uexp3foRe4omsJGdqsvnkbHNDPo-DbILnA75ptWox8akgsrx_lHQ0TEMyNeSWlRA=="
+    },
+    {
+      "title": "benhams.com",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGik7Jut3SbufX7IWztq986nHaL6l0-ned_-UboOLfLCbQ0q5iNGgu6UaVcFVS8fBeK9hkKE7yUv7SKz_6GLY94tP7rLO7jehqsiMQX5JDrrAvECj3n8qTqSuaNhEFVGDNjUs0AlLyWJv4G80FLQ8ySbaPca1YYBtuF85GexwDh4DaArAcVT38Gs-ixa3QKJ7jPZfyMJ_NF6QWNaC6CpjTIeTGRc7pxv5A5C2k3KOmArQB7"
+    },
+    {
+      "title": "westminster.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEJtkDGrDcSNMEuTaSH2wL5BvA54-o4wRY5fl_vneQM-OhcmcMEAkBcWGXaOi4rgVJkktpqoQrYnFIse5mpKqD8rZRbc4gYgPs6qYBfg4h3XWUZLqiVRt0YwHib5I-6wLFTDwWQxRKLB2yJAqvkz5bqQkng4aWldZyNseuSeY8nhO8gXKn5V0BSF1-D5uBzry5FtOCEWYJgUS3TJVH_jKr-xyG_"
+    },
+    {
+      "title": "westminster.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEmW2SYvbVCdNkXx5G06i0smJQRBBzyoZ8qbZgiAakVDPmBo2TZKrAOXkeyHL7Qjy1HVkytAc2uTA0AYNk1e44V3mq6PqH8ZpSqaoZxT-XIibiNIdnCumHVq45QnMPheKO8p_GUVVOl-4NP4PsH-KkVFMy4wwDrKOnvthOFTpX2MZauoruFKo5e0q-b4AU="
+    },
+    {
+      "title": "www.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGM0OzJta9W3U2zzYxYRIjPm-ysc_xNI9klBAqrHWVmQ2cegwU25fbI-GIWOdFe7lLQxWljlKgOFvOT3jZSr8Y_ygj098SGNe-S3ivG_iQIsdeN30ritDfYOesYoupeThQPYYuyMZnKQcV6HfT_"
+    },
+    {
+      "title": "homedata.co.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHWeELMdJavqU9VDf0Fwi2SIknKJMq8aQFPX1vhjrF0sIFLluQu6-rKQSLpC-8SW_NuGngEEmC2xqkpn6YrJc57xiT6AH-yfrBut3CeemMqmHoeoTdzo8UU4lg="
+    },
+    {
+      "title": "ofsted.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEoausRrefEHz637JekGjttb6oMaoSTqq8TLM1pxWAOQWX93zeRT3UWPJLRshPKEPmgn9GD4m7FZBeCfrIkvvVu7r0X_vvpl1_HB0keVGg7QyZ2MCNsILG9jqG1Af_sbd_qb8ZlJWmRY108f0bgKcxY5SbDkQoYHt8sdH9ClUzK-8FcWiGRiriJ6nxYyqSROPn6ZeeK0kLIlLy5Sx-smDrEKgpeoEpLJvsaSOLMhk4GPA=="
+    },
+    {
+      "title": "ofsted.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHEcuIiMlPdkr-ZHYQ22iX3dbBgBaHdGuGfZMF2JNFynqyvZKBjTp117u7tlyE0VIPNBX4QUi9dH2eHtHGwBGrzXomBkD5YjYIjCTspjLsS1sUYYJPx6NWfRZaqoDGY69zU7T7slzdi7qBzYLZXktGMf7qxlAl5VBKPCmHf9CTI4G1DN7ckDup5f8qNKmpCk_4xOFIaPPbZyYAnfz9-3Xu4BTplsOeY7DT_l6bViV5nJt0tiA0GENq1uX6hbcI-pkgdgmYZPY_8dUD-N64VgHzeo4cQ"
+    },
+    {
+      "title": "ofsted.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH2s_5Wzefy5liSinWMQLzUV2P5fL3KFrQjFQ8qaP0hyaVcpnDbMELzGa5fr-uMPg_i-6ucd6d4xLHWEF6aMJfpW0cdbRBx2JJl-qRjW1_fNKlh5L0lN2DXM4Q136zcYyVLUVPoTe3MF7sNqMJYem4Vz30qxVT7Z42Scw5j0gvjbjlJzqBBNPRuYPMX6jHMqFbCAtj6mEKJh6V368jsBjvhUOnpHES52_7k1vVNgVEeNnL-k5A_BoVI7pC9HoZcc1s3J-ucEd3lQwAmRG6pnRu1SoI4_qQsJRAhUGx5hMyaAZfIOPbYWynJueLn5qRRknt-vA=="
+    },
+    {
+      "title": "Find an energy certificate",
+      "url": "https://find-energy-certificate.service.gov.uk/"
+    },
+    {
+      "title": "HM Land Registry Price Paid Data",
+      "url": "https://landregistry.data.gov.uk/"
+    },
+    {
+      "title": "Westminster planning portal",
+      "url": "http://idoxpa.westminster.gov.uk/online-applications"
+    },
+    {
+      "title": "police.uk crime data",
+      "url": "https://data.police.uk/"
+    }
+  ],
+  "reportMode": "on_market",
+  "priceLabel": "Asking price",
+  "showConfidence": false,
+  "verifiedCrime": {
+    "incidentsPerThousand": 108.1,
+    "crimeCountMonth": 4055,
+    "month": "2026-05",
+    "label": "108.1 incidents per 1,000 residents (approx., police.uk street-level for 2026-05; 4055 recorded crimes in that month near this postcode).",
+    "sourceUrl": "https://data.police.uk/"
+  },
+  "forecastMilestones": {
+    "baseValue": 2500000,
+    "assumptions": {
+      "lowPct": 2,
+      "centralPct": 3.5,
+      "highPct": 5,
+      "basis": "Prime central London historical capital appreciation trends over 10 years."
+    },
+    "forecast1y": 2587500,
+    "forecast3y": 2771795,
+    "forecast5y": 2969216,
+    "forecast10y": 3526497,
+    "bands": {
+      "y1": {
+        "low": 2550000,
+        "central": 2587500,
+        "high": 2625000
+      },
+      "y3": {
+        "low": 2653020,
+        "central": 2771795,
+        "high": 2894063
+      },
+      "y5": {
+        "low": 2760202,
+        "central": 2969216,
+        "high": 3190704
+      },
+      "y10": {
+        "low": 3047486,
+        "central": 3526497,
+        "high": 4072237
+      }
+    }
+  },
+  "scores": {
+    "overall": 66,
+    "valueForMoney": 65,
+    "locationRating": 73,
+    "conditionRating": 55,
+    "investmentScore": 65,
+    "marketScore": 75,
+    "rentalScore": 67,
+    "growthPotential": "Medium",
+    "riskLevel": "Medium",
+    "confidenceScore": 69
+  }
+}

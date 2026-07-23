@@ -410,6 +410,11 @@
     "tags": "england tyneandwear"
   },
   {
+    "name": "North Yorkshire",
+    "url": "https://publicaccess.northyorks.gov.uk/online-applications/search.do?action=simple&searchType=Application",
+    "tags": "england"
+  },
+  {
     "name": "Northern Ireland",
     "url": "http://epicpublic.planningni.gov.uk/publicaccess/search.do?action=advanced&searchType=Application",
     "tags": "northernireland belfast"

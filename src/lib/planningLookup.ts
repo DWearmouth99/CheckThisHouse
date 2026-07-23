@@ -12,6 +12,11 @@
 import { readFileSync } from "fs";
 import path from "path";
 import bundledPortals from "../data/planning-portals.json";
+import {
+  extractPostcode as extractPcStrict,
+  filterRecordsBySubjectPostcode,
+  type DropLog,
+} from "./addressMatch";
 
 export type PlanningApplication = {
   reference: string;
@@ -148,15 +153,39 @@ function parseIdoxPortal(council: string, searchUrl: string): ResolvedPortal | n
 }
 
 function scoreNameMatch(district: string, portalName: string): number {
+  const STOP = new Set([
+    "yorkshire",
+    "england",
+    "wales",
+    "scotland",
+    "council",
+    "county",
+    "city",
+    "borough",
+    "district",
+    "north",
+    "south",
+    "east",
+    "west",
+    "upon",
+    "and",
+  ]);
   const a = normalizeName(district);
   const b = normalizeName(portalName);
   if (!a || !b) return 0;
   if (a === b) return 100;
-  if (a.includes(b) || b.includes(a)) return 80;
-  const aw = new Set(a.split(" "));
-  const bw = b.split(" ");
-  const overlap = bw.filter((w) => aw.has(w)).length;
-  if (overlap > 0) return 40 + overlap * 15;
+  const aw = a.split(" ").filter(Boolean);
+  const bw = b.split(" ").filter(Boolean);
+  if (!aw.length || !bw.length) return 0;
+  const aSet = new Set(aw);
+  const bSet = new Set(bw);
+  const aHasAllB = bw.every((w) => aSet.has(w));
+  const bHasAllA = aw.every((w) => bSet.has(w));
+  if (aHasAllB || bHasAllA) {
+    return 70 + Math.min(aw.length, bw.length) * 5;
+  }
+  const meaningful = bw.filter((w) => aSet.has(w) && w.length > 3 && !STOP.has(w));
+  if (meaningful.length > 0) return 45 + meaningful.length * 20;
   return 0;
 }
 
@@ -284,14 +313,21 @@ function normalizeAddrKey(address: string): string {
 function matchesProperty(appAddress: string, target: string): boolean {
   const parsed = parseHouseAndStreet(target);
   if (!parsed) {
-    const t = normalizeAddrKey(target);
+    // Named houses / unparseable — require strong containment both ways on a long token, not soft includes
+    const t = normalizeAddrKey(target).replace(/\d{2,}/g, ' ').trim();
     const a = normalizeAddrKey(appAddress);
-    return a.includes(t) || t.includes(a);
+    if (t.length < 12) return false;
+    const core = t.split(/\s+/).filter((w) => w.length > 3).slice(0, 4).join(' ');
+    return core.length >= 8 && a.includes(core);
   }
   const a = normalizeAddrKey(appAddress);
-  const numRe = new RegExp(`^${parsed.number}\\b`);
+  // Require house number at start OR as a clear token (avoids matching "12" inside "112")
+  const numRe = new RegExp(`(?:^|\\b)${parsed.number}\\b`);
   if (!numRe.test(a)) return false;
-  return a.includes(parsed.street);
+  // Street: require all significant street tokens, not a single substring false friend
+  const streetTokens = parsed.street.split(/\s+/).filter((w) => w.length > 1);
+  if (streetTokens.length === 0) return false;
+  return streetTokens.every((tok) => a.includes(tok));
 }
 
 function sameStreetDifferentHouse(appAddress: string, target: string): boolean {
@@ -306,8 +342,15 @@ function sameStreetDifferentHouse(appAddress: string, target: string): boolean {
 function buildSearchQueries(address: string, postcode: string | null): string[] {
   const parsed = parseHouseAndStreet(address);
   const queries: string[] = [];
-  if (parsed) queries.push(`${parsed.number} ${parsed.street}`);
+  // Prefer postcode first so we never land on a same-named street in another city
   if (postcode) queries.push(postcode);
+  if (parsed) queries.push(`${parsed.number} ${parsed.street}`);
+  // Named house (e.g. "Pentland, Cross Lane")
+  const withoutPc = address.replace(UK_POSTCODE_RE, "").replace(/,/g, " ").replace(/\s+/g, " ").trim();
+  if (!parsed && withoutPc) {
+    const named = withoutPc.split(/\s+/).slice(0, 4).join(" ");
+    if (named.length >= 4) queries.push(named);
+  }
   const first = address.split(",")[0]?.trim();
   if (first && !queries.includes(first)) queries.push(first);
   return [...new Set(queries.filter(Boolean))];
@@ -480,27 +523,86 @@ export async function lookupPlanningApplications(
   }
 
   let applications = [...byRef.values()];
-  const matchedToProperty =
+  const subjectPostcode = postcode ? extractPcStrict(postcode) : extractPcStrict(cleaned);
+  const drops: DropLog[] = [];
+
+  // D2: hard postcode filter — wrong-postcode hits never reach matched lists or the LLM brief
+  const applicationsSamePc = filterRecordsBySubjectPostcode({
+    source: "planning.applications",
+    subjectPostcode,
+    records: applications,
+    getPostcode: (a) => extractPcStrict(a.address) || extractPcStrict(a.reference),
+    getAddress: (a) => a.address,
+    drops,
+  });
+
+  const matchedRaw =
     bestMatched.length > 0
       ? bestMatched
-      : applications.filter((a) => matchesProperty(a.address, cleaned));
-  const nearbyOnStreet = applications.filter((a) => sameStreetDifferentHouse(a.address, cleaned));
+      : applicationsSamePc.filter((a) => matchesProperty(a.address, cleaned));
+  const matchedToProperty = filterRecordsBySubjectPostcode({
+    source: "planning.matchedToProperty",
+    subjectPostcode,
+    records: matchedRaw,
+    getPostcode: (a) => extractPcStrict(a.address),
+    getAddress: (a) => a.address,
+    drops,
+  });
+  const nearbyOnStreet = applicationsSamePc.filter((a) =>
+    sameStreetDifferentHouse(a.address, cleaned)
+  );
+
+  if (drops.length) {
+    console.warn(
+      `[planning] Dropped ${drops.length} wrong-address/postcode application(s) before LLM`
+    );
+  }
+
+  // If the portal returned only foreign-postcode hits, do not pass the wrong council name downstream
+  if (applications.length > 0 && applicationsSamePc.length === 0) {
+    console.warn(
+      `[planning] Aborting brief for ${portal.council} — zero same-postcode hits for ${subjectPostcode}`
+    );
+    return {
+      council: portal.council,
+      portalUrl: portal.portalUrl,
+      searchQuery: usedQuery,
+      applications: [],
+      matchedToProperty: [],
+      nearbyOnStreet: [],
+      error: `Portal returned no applications matching subject postcode ${subjectPostcode}.`,
+    };
+  }
 
   return {
     council: portal.council,
     portalUrl: portal.portalUrl,
     searchQuery: usedQuery,
-    applications,
+    // Never expose foreign-postcode apps downstream
+    applications: applicationsSamePc,
     matchedToProperty,
     nearbyOnStreet,
-    error: applications.length === 0 ? lastError : undefined,
+    error: applicationsSamePc.length === 0 ? lastError : undefined,
   };
 }
 
 /** Dense text block for the AI research / valuation prompts. */
 export function formatPlanningBrief(result: PlanningLookupResult): string {
+  // D2: never emit a foreign-council brief that only exists because of a wrong portal match
+  if (
+    result.error &&
+    result.matchedToProperty.length === 0 &&
+    result.applications.length === 0 &&
+    /no applications matching subject postcode/i.test(result.error)
+  ) {
+    return [
+      "VERIFIED FACTS — COUNCIL PLANNING RECORDS.",
+      "No planning applications matched this property postcode on the resolved portal. Leave propertyWorks as not on record unless web research finds an exact-address ref for this postcode.",
+    ].join("\n");
+  }
+
   const lines: string[] = [
-    `AUTHORITATIVE COUNCIL PLANNING RECORDS (scraped directly from ${result.council} portal — treat as ground truth; do NOT claim "no extensions" or "no planning data" if records below evidence works):`,
+    `VERIFIED FACTS — COUNCIL PLANNING RECORDS (${result.council}). Exact-address matches only are ground truth for this property's planning/works.`,
     `Portal: ${result.portalUrl}`,
     `Search used: "${result.searchQuery}"`,
   ];
@@ -521,27 +623,14 @@ export function formatPlanningBrief(result: PlanningLookupResult): string {
     );
     if (extensionLike.length > 0) {
       lines.push(
-        `EXTENSION / WORKS SIGNAL: ${extensionLike.length} application(s) describe extensions or alterations at this address. Populate propertyWorks.extensionsAndAlterations and planningApplications from these refs. Factor completed/approved works into valuation bands.`
+        `EXTENSION / WORKS SIGNAL: ${extensionLike.length} application(s) describe extensions or alterations at this address. Populate propertyWorks from these refs. Factor completed/approved works into valuation bands. Interpret suffixes: /LBC listed building consent, /FUL full, /OUT outline, /TPO trees.`
       );
     }
-  } else if (result.applications.length > 0) {
-    lines.push(
-      `No exact house-number match in portal results for this address. Nearby / street hits (do not attribute to this property unless address matches):`
-    );
-    for (const app of result.applications.slice(0, 8)) {
-      lines.push(formatAppLine(app));
-    }
   } else {
+    // D2: never list unmatched / other-postcode hits — silence is safer than "discounted" language
     lines.push(
-      `No planning applications returned for this search on the ${result.council} portal. You may still note that the portal was checked (${result.portalUrl}).`
+      `No exact-address planning matches on the ${result.council} portal for this postcode. Leave propertyWorks as not on record unless web research finds an exact-address ref.`
     );
-  }
-
-  if (result.nearbyOnStreet.length > 0 && result.matchedToProperty.length > 0) {
-    lines.push(`Other applications on the same street (context only):`);
-    for (const app of result.nearbyOnStreet.slice(0, 5)) {
-      lines.push(formatAppLine(app));
-    }
   }
 
   return lines.join("\n");

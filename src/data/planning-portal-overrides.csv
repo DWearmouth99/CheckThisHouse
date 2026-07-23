@@ -1,4 +1,5 @@
 authority_name,url,tags
+North Yorkshire,https://publicaccess.northyorks.gov.uk/online-applications/search.do?action=simple&searchType=Application,england
 Midlothian,https://planning-applications.midlothian.gov.uk/OnlinePlanning/search.do?action=simple&searchType=Application,scotland
 Renfrewshire,https://planning.renfrewshire.gov.uk/online-applications/search.do?action=advanced,scotland
 East Lothian,https://planning.eastlothian.gov.uk/online-applications/search.do?action=advanced,scotland

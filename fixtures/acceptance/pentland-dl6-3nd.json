@@ -1,0 +1,553 @@
+{
+  "title": "Property Analysis: Pentland, Ingleby Arncliffe",
+  "price": "£672,400",
+  "bedrooms": "Not on record — verify with a viewing or the listing",
+  "bathrooms": "Not on record — verify with a viewing or the listing",
+  "propertyType": "Detached house",
+  "location": {
+    "address": "Pentland, Cross Lane, Ingleby Arncliffe",
+    "postcode": "DL6 3ND",
+    "town": "Northallerton"
+  },
+  "summary": "A substantial 212 sqm detached family home situated on the highly desirable fringe of the North York Moors. The property recently completed a sale in April 2026 for £672,400, reflecting a premium valuation for the immediate lane driven by its expansive footprint and rural setting. Historical marketing notes high-specification finishes, including an oak staircase and a 26-foot living room. The location offers excellent proximity to the A19 for regional commuting, though total reliance on driving is required for secondary schooling and major rail links in Northallerton.",
+  "specs": [
+    {
+      "label": "Floor area",
+      "value": "212 m² (EPC)"
+    },
+    {
+      "label": "EPC rating",
+      "value": "D (potential D)"
+    },
+    {
+      "label": "Heating",
+      "value": "Main heating"
+    },
+    {
+      "label": "Property Type",
+      "value": "Detached house"
+    },
+    {
+      "label": "Main heating",
+      "value": "Main heating"
+    }
+  ],
+  "valuation": {
+    "conservative": "£650,000",
+    "fair": "£672,400",
+    "optimistic": "£695,000",
+    "growthAssumptions": {
+      "lowPct": 1,
+      "centralPct": 2.5,
+      "highPct": 4,
+      "basis": "Historical rural North Yorkshire detached property trends and steady A19 corridor demand."
+    },
+    "forecast1y": "£689,210",
+    "forecast3y": "£724,101",
+    "forecast5y": "£760,759",
+    "forecast10y": "£860,729"
+  },
+  "investmentMetrics": {
+    "estimatedRent": "£2,000 pcm",
+    "grossYield": "3.57%",
+    "netYield": "Approx 2.40% (accounting for maintenance and management in a rural setting)",
+    "roi": "2.10% annualised (cash purchase scenario)",
+    "cashflow": "Positive but yield-constrained, typical for premium rural residential stock",
+    "stampDuty": "Est. SDLT £23,620 (England/NI). Confirm with a solicitor.",
+    "breakEven": "7-9 years including initial transaction costs",
+    "irr": "5.2% over 10 years (assuming central capital growth)",
+    "growthReasoning": "Constrained supply in national park fringe villages supports steady long-term appreciation, though high absolute price ceilings limit explosive short-term growth.",
+    "grossYieldBasis": "~£2,000 pcm estimated rent → 3.57% gross yield"
+  },
+  "marketAndRental": {
+    "supplyDemand": "High demand for premium, large-footprint rural homes, constrained by very limited local stock.",
+    "timeOnMarket": "Typically 12-16 weeks for upper-quartile rural homes in this postcode.",
+    "priceTrend": "Steady long-term appreciation; this specific property grew from £485k in 2006 to £672k in 2026.",
+    "vacancyRates": "Low in the premium rental sector, though the target demographic here is predominantly owner-occupiers.",
+    "tenantProfile": "Relocating executives, remote workers, or families transitioning into the wider local area.",
+    "airbnbPotential": "Moderate to high. The proximity to the North York Moors appeals to domestic tourists, though management logistics in a quiet rural lane must be assessed."
+  },
+  "riskAnalysis": {
+    "floodRisk": "rivers & sea: Very Low; surface water: not returned by open flood-risk-zone API — verify on GOV.UK; (Flood Zone 1; planning.data.gov.uk; fetched 2026-07-23)",
+    "subsidence": "No direct indicators in recent public records, but local soil types should be verified via a standard environmental search.",
+    "planningDevelopments": "See Extensions, Planning & Works for exact-address planning history.",
+    "leaseholdIssues": "Not on record — verify with HM Land Registry. Fully expected to be freehold given the property type and age.",
+    "fireSafety": "No known high-risk materials for a standard detached house. Review general residential smoke and heat detection compliance.",
+    "insuranceRisk": "Standard. The low flood risk and extremely low local crime rates typically result in highly favourable premium conditions."
+  },
+  "riskTones": {
+    "floodRisk": "positive",
+    "subsidence": "neutral",
+    "planningDevelopments": "neutral",
+    "leaseholdIssues": "positive",
+    "fireSafety": "positive",
+    "insuranceRisk": "positive"
+  },
+  "locationIntelligence": {
+    "plannedInfrastructure": "No major immediate infrastructure changes documented; the village relies on the established A19 corridor.",
+    "populationGrowth": "Stable, aging demographic typical of highly affluent rural North Yorkshire villages.",
+    "regenerationProjects": "None immediate; the area relies on heritage and natural landscape preservation rather than urban regeneration.",
+    "walkability": "Very low. Car dependency is total for schooling, major retail, and rail connections."
+  },
+  "advanced": {
+    "undervaluedExplanation": "The property achieved £672,400 in April 2026 against a historical £675,000 asking price, representing fair market value rather than a discount. Its local premium is justified by the large 212 sqm footprint.",
+    "renovationROI": "Limited immediate uplift potential given the recent sale and existing premium features (oak staircase, etc.). Focus should be on maintaining condition.",
+    "developmentOpportunity": "Any substantial extension would require North Yorkshire Council planning consent and must strictly respect the surrounding village character and National Park proximity."
+  },
+  "propertyWorks": {
+    "extensionsAndAlterations": "Not on record — verify with the local authority.",
+    "planningApplications": "None found matching this postcode on the local portal.",
+    "valueImpact": "Negligible based on absent active planning records.",
+    "certainty": "High certainty of no recent logged applications; local searches remain essential for older unmapped works."
+  },
+  "dueDiligence": {
+    "epcAndEnergy": "EPC band D — potential D — 212 m² — heating: Main heating — View EPC certificate on gov.uk (gov.uk EPC certificate 2140-3052-0206-9665-0204)",
+    "broadbandAndMobile": "Verify rural broadband speeds (FTTP availability) and mobile coverage with specific providers, as rural lane infrastructure can vary significantly.",
+    "tenureAndLegal": "Not on record — verify with a conveyancer. Likely freehold, but boundaries and shared access rights on Cross Lane must be checked.",
+    "councilTaxAndParking": "Council Tax band not on record — verify with North Yorkshire Council. Historical marketing notes a block-paved driveway providing ample off-street parking.",
+    "purchaseCosts": "For a £672,400 primary residence, expect £23,620 in SDLT (England), plus £2,000-£3,000 in legal and survey fees.",
+    "environmentalOther": "Low river and sea flood risk. Given the rural location, strictly verify drainage arrangements (mains versus private systems).",
+    "ownershipAndChain": "Recently sold in April 2026. Any swift return to market would suggest a change in personal circumstances rather than an ongoing chain.",
+    "recommendedNextSteps": [
+      "Instruct a conveyancer to confirm freehold status and precise boundary definitions on Cross Lane.",
+      "Conduct a full environmental search to map surface water flood risk.",
+      "Verify exact drainage arrangements (mains vs private waste solutions).",
+      "Check local FTTP broadband availability for home working suitability."
+    ],
+    "epcCertificateUrl": "gov.uk EPC certificate 2140-3052-0206-9665-0204"
+  },
+  "marketEvidence": {
+    "askingVsSoldEvidence": "Land Registry: this property last sold for £672,400 on 2026-04-01 — previous LR sale £485,000 on 2006-04-07 — no live asking price supplied",
+    "competingSupply": "Immediate local supply on Cross Lane is sporadic. Recent sales show significant variance (£310,000 to £490,000), highlighting Pentland's position at the top of the micro-market.",
+    "pricePerSqmOrSqft": "About £3,172/m² using last LR sale £672,400 ÷ EPC floor area 212 m² (indicative only)."
+  },
+  "pros": [
+    {
+      "title": "Substantial Footprint",
+      "desc": "Offers 212 sqm of internal space, providing excellent proportions for a large family.",
+      "category": "Space & Layout"
+    },
+    {
+      "title": "Premium Finishes",
+      "desc": "Historical marketing highlights high-end touches, including an oak staircase and a 26ft living room.",
+      "category": "Condition"
+    },
+    {
+      "title": "Dedicated Parking",
+      "desc": "Features an extensive block-paved driveway providing ample secure off-street parking.",
+      "category": "Practicality"
+    },
+    {
+      "title": "Desirable Location",
+      "desc": "Highly sought-after village setting on the edge of the North York Moors National Park.",
+      "category": "Location"
+    },
+    {
+      "title": "Exceptional Safety",
+      "desc": "Benefits from an extremely low local crime profile, enhancing residential security.",
+      "category": "Environment"
+    },
+    {
+      "title": "Arterial Access",
+      "desc": "Maintains strong arterial connectivity via the nearby A19 for regional commuting to Teesside and York.",
+      "category": "Transport"
+    },
+    {
+      "title": "Low Flood Risk",
+      "desc": "Sited in Flood Zone 1, presenting a very low risk of river and sea flooding.",
+      "category": "Environment"
+    }
+  ],
+  "cons": [
+    {
+      "title": "High Car Dependency",
+      "desc": "Total reliance on driving for daily amenities; poor walkability to major retail hubs.",
+      "category": "Transport"
+    },
+    {
+      "title": "Energy Efficiency",
+      "desc": "Capped at EPC Band D, meaning buyers must budget for higher heating costs in a 212 sqm home.",
+      "category": "Running Costs"
+    },
+    {
+      "title": "Price Ceiling Limit",
+      "desc": "At £672,400, it sits significantly above the immediate street average, potentially constraining future short-term capital growth.",
+      "category": "Financial"
+    },
+    {
+      "title": "Primary Education Access",
+      "desc": "The local primary school closed in 2017, necessitating daily travel to neighboring villages for early education.",
+      "category": "Amenities"
+    },
+    {
+      "title": "Unmapped Surface Water",
+      "desc": "Surface water flood risk remains unmapped via open data and requires specialized statutory searches.",
+      "category": "Environment"
+    },
+    {
+      "title": "Rail Network Distance",
+      "desc": "Distance to major rail networks means Northallerton Station is a 15-21 minute drive away.",
+      "category": "Transport"
+    },
+    {
+      "title": "Utility Considerations",
+      "desc": "The rural lane setting may involve private drainage or non-mains heating that requires specialized maintenance.",
+      "category": "Practicality"
+    }
+  ],
+  "soldHistory": [
+    {
+      "year": "2026",
+      "price": "£672,400",
+      "source": "HM Land Registry Price Paid",
+      "description": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND — detached"
+    },
+    {
+      "year": "2006",
+      "price": "£485,000",
+      "source": "HM Land Registry Price Paid",
+      "description": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND — detached"
+    }
+  ],
+  "comparableSales": [
+    {
+      "address": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£485,000",
+      "soldDate": "2006-04-07",
+      "similarity": "212 sqm This property, sold Apr 2006 (£2,288/sqm)",
+      "basis": "size",
+      "note": "",
+      "floorAreaSqm": "212",
+      "isSubjectPriorSale": true
+    },
+    {
+      "address": "MONKS HOUSE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£310,000",
+      "soldDate": "2025-07-31",
+      "similarity": "191 sqm Semi-detached house, sold Jul 2025 (£1,623/sqm)",
+      "basis": "size",
+      "note": "191 sqm Semi-detached house, sold Jul 2025 (£1,623/sqm)",
+      "floorAreaSqm": "191",
+      "propertyType": "Semi-detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£450,000",
+      "soldDate": "2023-08-24",
+      "similarity": "153 sqm Detached house, sold Aug 2023 (£2,941/sqm)",
+      "basis": "size",
+      "note": "153 sqm Detached house, sold Aug 2023 (£2,941/sqm)",
+      "floorAreaSqm": "153",
+      "propertyType": "Detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£490,000",
+      "soldDate": "2021-05-19",
+      "similarity": "186 sqm Detached house, sold May 2021 (£2,634/sqm)",
+      "basis": "size",
+      "note": "186 sqm Detached house, sold May 2021 (£2,634/sqm)",
+      "floorAreaSqm": "186",
+      "propertyType": "Detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "OAKLANDS, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£275,000",
+      "soldDate": "2020-03-11",
+      "similarity": "Sold Mar 2020",
+      "basis": "date",
+      "note": "Sold Mar 2020",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£330,000",
+      "soldDate": "2014-11-11",
+      "similarity": "153 sqm Detached house, sold Nov 2014 (£2,157/sqm)",
+      "basis": "size",
+      "note": "153 sqm Detached house, sold Nov 2014 (£2,157/sqm)",
+      "floorAreaSqm": "153",
+      "propertyType": "Detached house",
+      "isSubjectPriorSale": false
+    }
+  ],
+  "areaAnalysis": {
+    "schools": [
+      {
+        "name": "Osmotherley Primary School",
+        "distance": "3.0 mi",
+        "rating": "Ofsted inspected 2016"
+      },
+      {
+        "name": "Stokesley School",
+        "distance": "8.0 mi",
+        "rating": "Academy converter"
+      },
+      {
+        "name": "Yarm School",
+        "distance": "8.0 mi",
+        "rating": "Independent"
+      }
+    ],
+    "transport": [
+      {
+        "type": "Car",
+        "line": "A19 Connection",
+        "time": "5 mins"
+      },
+      {
+        "type": "Train",
+        "line": "Northallerton Station",
+        "time": "15-21 mins drive"
+      },
+      {
+        "type": "Bus",
+        "line": "Local village services",
+        "time": "Varying times"
+      }
+    ],
+    "crimeSafety": {
+      "rating": "10.6 incidents per 1,000 residents / year",
+      "description": "Crime levels in this locality are exceptionally low, making it a highly secure and peaceful residential environment.",
+      "incidentsPerThousand": 10.6
+    },
+    "demographics": "Highly affluent, rural community with a mix of established local families, relocating professionals, and retirees.",
+    "amenities": [
+      "Tranquil village environment",
+      "Immediate access to the North York Moors",
+      "Short drive to Northallerton retail and dining",
+      "Proximity to the regional A19 corridor"
+    ],
+    "futureOutlook": "Stable preservation of rural character. Growth will track with general North Yorkshire premium rural market trends rather than any focused urban regeneration."
+  },
+  "buyingSuitability": "As a recently sold property (completed April 2026), this report serves as an intelligence baseline for the current owners to understand their asset's positioning, or for prospective future buyers tracking the address. The home perfectly suits expanding families or relocating executives seeking a substantial rural footprint. High car dependency and the distance to secondary schooling must be factored into long-term suitability. For remortgage purposes, the recent £672,400 transaction establishes a firm, provable valuation baseline.",
+  "viewingChecks": [
+    "Inspect the condition of the oak staircase and premium internal finishes.",
+    "Measure the 26ft living room to ensure it meets your specific layout requirements.",
+    "Assess the heating system's efficiency and age, given the EPC Band D rating.",
+    "Verify the drainage system (mains versus private systems) and review its maintenance history.",
+    "Check the block-paved driveway for any signs of sinking or water pooling.",
+    "Test mobile phone reception across different networks inside the property.",
+    "Look for any physical signs of surface water gathering around the property bounds.",
+    "Inspect the loft space for insulation levels and potential storage capacity.",
+    "Review the condition of all windows and exterior doors for thermal retention.",
+    "Assess ambient noise levels from the nearby A19 during peak traffic hours."
+  ],
+  "agentQuestions": [
+    "What were the primary drivers for the most recent sale returning to the market?",
+    "Are there any restrictive covenants impacting the freehold title?",
+    "Who maintains Cross Lane, and are there any shared liability costs?",
+    "Can you confirm the exact boundaries and any shared access rights?",
+    "What is the current broadband speed and is FTTP available to the property?",
+    "Has the property undergone any unrecorded structural alterations since the 2026 purchase?",
+    "Is the property connected to mains drainage, or does it utilize private solutions like a septic tank?",
+    "What is the current Council Tax band and annual charge for this address?",
+    "Are there any known neighbor disputes or boundary issues on record?",
+    "How long did the property take to exchange contracts during the 2026 transaction?"
+  ],
+  "sources": [
+    {
+      "title": "onthemarket.com",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEIJuVWE-7tiMmmEn_I1tB9AZhgJH4wY1KHwkqZUUXRwDCh82lanWcXy3oUpES1C_YyhoqCxlZvVbJdi79L8VD1CAE5b8-ujVQ1VvNBFJZoeNnIvjmngPP2ErdQ1U995Xr2oHY="
+    },
+    {
+      "title": "rightmove.co.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHqlXt_QRsn5b2c_Lz7CgQqZcv0sOflfR6XAhKf9PHrOeGy71Ge95qGjKmFfxscOgf2jNBOXCjHQXny2XcDEirguNdmBoIyIm9hvwNeGLp2VTW1xA0xHmf6ckWletayfjdc6x2trG8dr2aU_H30DMS3xQw="
+    },
+    {
+      "title": "rome2rio.com",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH5hd3uKq-O4fBNPe0Cm7b3-BAIkD4pSz3mXierI8YqL3_LYIYFPKI0rlZDVy-OsYFTbQDJ4xd3CR0tSVAvPqP9oldZ_vSlJU1ysJXLZEE4WkR2RO8W1G5mISihgcHpkK1xSt-Q9iJbNVImphzx6GJg"
+    },
+    {
+      "title": "kathrynbarrestateagents.co.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFqxz_qBweTCZUcU56svXLvk69Cr-QhJAnp76hUS7-evgJaoRXKPJ05iIFu87awd14R7gkvRwiS833_xCh1PPpV2f7CiyAs6K4bayy8azawHqR-H4ZMb69cKxexcOczu3nfa3T_wmUm-46ZfnUfWDrzOCjYjiHA9FrtESCOugSo3g=="
+    },
+    {
+      "title": "northallertonestateagency.co.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHgZbpeRcPJkmJbhoGLS77Ur6d4u63Gcwr9gWG9-WUEy4Yftc42iTnLr1dEErN2C4R4D4TsJ9mVFDJkTBxgsubd5V8z8p0v6TyiXLbUqYJQ42GSJlA1kncNmBBLHuORX2B_2tqZKksr5F6HB3UGXNp-XIShUvz1dI1aLs_mug=="
+    },
+    {
+      "title": "rome2rio.com",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGUZlryYwL7Y5zzwUW7QX4CWgddSRVuEWqOgXcF_27rRfgmLlMrdNlOGRu4ndYpytsMLEmL7fDObOA9Txo_gktZn6zijQi8HtFgs8K4gXajIhziDmAIe2c2f4-NomdIuRr1ZdHdG-CZWWUITDrK4cNM"
+    },
+    {
+      "title": "service.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHyXL7YpcvCOK89XeRMVjAbp7B18f9m_YYljBicqI99VFnxUZLusUjUqhmBQMWYIXjTRQ5kVwCv0jrzP6L5PIHpfBB9_T1gzBxAfmKxQYyyQeT3aduLxPT9o0XOky-qKVJf6Xf68mMAjrrib67dHiE7vbGmtx-qbZ19FsR-rw9Vk_aoHDiP2qKO7jlBk6kMMlYzqMk5vBi-oTtnxKArJvCoWluyCgq-E1h2dK9gFMjAvkF9KBaZa1FLgkrKJ2UOVZVN6iv4fkDZa_FE03F-S7wVyaw6Um-hHjn68V5wB_LldByhDIM78NOuzCx8"
+    },
+    {
+      "title": "ofsted.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGSKI7bWXtFBqlUPDVmOch5IVJUg-WliPJ2rlZahlo7YFUjcToWHG9_u4zfBaL2bFOz9zuMBvpwbjPHP2aKydakYtgispCeLzgTB8ZaOhM5ugdTwzyhCdwYKYPNKTiQ4Bhi"
+    },
+    {
+      "title": "schoolguide.co.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG_iYfnG1LpXV60HtE899ATO3_J5rcrcQ8ZMITjzEK5nBjzR6xgQ2pyTmCJOjyXkPRVxhs1KX6Bwbv0egd6AUqNP1BNJjvTNgOwh0X3wm_e4nt1mBf_xILHF9WxuieV17Qo0g0zC4Wvn-Lh7dJ-t9JnOS9Erc7F5g=="
+    },
+    {
+      "title": "View EPC certificate on gov.uk (gov.uk EPC certificate 2140-3052-0206-9665-0204)",
+      "url": "gov.uk EPC certificate 2140-3052-0206-9665-0204"
+    },
+    {
+      "title": "HM Land Registry Price Paid Data",
+      "url": "https://landregistry.data.gov.uk/"
+    },
+    {
+      "title": "North Yorkshire planning portal",
+      "url": "https://publicaccess.northyorks.gov.uk/online-applications"
+    },
+    {
+      "title": "police.uk crime data",
+      "url": "https://data.police.uk/"
+    }
+  ],
+  "reportMode": "recently_sold",
+  "priceLabel": "Last Sold Price (Apr 2026)",
+  "showConfidence": false,
+  "recentlySoldPanel": {
+    "headline": "Recently sold — what this means",
+    "lastSoldLabel": "Last Sold Price (Apr 2026)",
+    "lastSoldPrice": "£672,400",
+    "lastSoldDate": "2026-04-01",
+    "bullets": [
+      "This property completed around Apr 2026 at £672,400. It is not currently available to purchase.",
+      "Treat £672,400 as the strongest recent signal for this exact address when judging street and area values.",
+      "If it returns to market, re-check EPC, planning, survey condition and fresh same-street solds before setting any offer band.",
+      "Ask how the previous sale was marketed, whether works completed after completion, and whether any survey issues surfaced.",
+      "Budget for stamp duty/LBTT (and ADS if relevant), solicitor, survey and moving costs on top of any future purchase price.",
+      "For remortgage or sale planning, instruct a local agent or valuer with this report and the Land Registry sale history."
+    ]
+  },
+  "verifiedCrime": {
+    "incidentsPerThousand": 10.6,
+    "crimeCountYear": 19,
+    "monthStart": "2025-06",
+    "monthEnd": "2026-05",
+    "population": 1800,
+    "populationSource": "fallback LSOA-scale 1800 (E01027627)",
+    "label": "10.6 incidents per 1,000 residents / year",
+    "reliable": true,
+    "sourceUrl": "https://data.police.uk/",
+    "debug": {
+      "monthlyCounts": [
+        {
+          "month": "2025-06",
+          "count": 0
+        },
+        {
+          "month": "2025-07",
+          "count": 0
+        },
+        {
+          "month": "2025-08",
+          "count": 2
+        },
+        {
+          "month": "2025-09",
+          "count": 1
+        },
+        {
+          "month": "2025-10",
+          "count": 1
+        },
+        {
+          "month": "2025-11",
+          "count": 0
+        },
+        {
+          "month": "2025-12",
+          "count": 2
+        },
+        {
+          "month": "2026-01",
+          "count": 4
+        },
+        {
+          "month": "2026-02",
+          "count": 1
+        },
+        {
+          "month": "2026-03",
+          "count": 5
+        },
+        {
+          "month": "2026-04",
+          "count": 2
+        },
+        {
+          "month": "2026-05",
+          "count": 1
+        }
+      ],
+      "incidents12m": 19,
+      "population": 1800,
+      "rate": 10.6,
+      "gate": "ok"
+    }
+  },
+  "verifiedFlood": {
+    "riversAndSea": "Very Low",
+    "surfaceWater": null,
+    "floodZone": "1",
+    "sourceUrl": "https://www.planning.data.gov.uk/dataset/flood-risk-zone",
+    "fetchedAt": "2026-07-23",
+    "llmContext": "VERIFIED EA/PLANNING FLOOD BANDINGS ONLY (do not invent rivers, becks, or place-names):\nrivers & sea: Very Low; surface water: not returned by open flood-risk-zone API — verify on GOV.UK; (Flood Zone 1; planning.data.gov.uk; fetched 2026-07-23)\nEntity refs: none (Zone 1)"
+  },
+  "growthSinceLastSale": {
+    "fromPrice": "£485,000",
+    "toPrice": "£672,400",
+    "fromDate": "2006-04-07",
+    "toDate": "2026-04-01",
+    "percent": 38.6,
+    "label": "+38.6% from £485,000 (2006-04-07) to £672,400 (2026-04-01)"
+  },
+  "forecastMilestones": {
+    "baseValue": 672400,
+    "assumptions": {
+      "lowPct": 1,
+      "centralPct": 2.5,
+      "highPct": 4,
+      "basis": "Historical rural North Yorkshire detached property trends and steady A19 corridor demand."
+    },
+    "forecast1y": 689210,
+    "forecast3y": 724101,
+    "forecast5y": 760759,
+    "forecast10y": 860729,
+    "bands": {
+      "y1": {
+        "low": 679124,
+        "central": 689210,
+        "high": 699296
+      },
+      "y3": {
+        "low": 692774,
+        "central": 724101,
+        "high": 756359
+      },
+      "y5": {
+        "low": 706699,
+        "central": 760759,
+        "high": 818077
+      },
+      "y10": {
+        "low": 742748,
+        "central": 860729,
+        "high": 995316
+      }
+    }
+  },
+  "compEpcHitRate": 0.8333333333333334,
+  "scores": {
+    "overall": 64,
+    "valueForMoney": 40,
+    "locationRating": 76,
+    "conditionRating": 65,
+    "investmentScore": 59,
+    "marketScore": 70,
+    "rentalScore": 63,
+    "growthPotential": "Medium",
+    "riskLevel": "Low",
+    "confidenceScore": 93
+  }
+}

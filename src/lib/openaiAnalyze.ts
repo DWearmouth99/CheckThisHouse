@@ -8,6 +8,7 @@ import { propertyAnalysisJsonSchema } from "./propertyAnalysisSchema";
 import { applyStampDutyEstimate, UK_PROPERTY_TAX_RULES_PROMPT } from "./ukPropertyTax";
 import { sanitizeOfferStrategy } from "./sanitizeOfferStrategy";
 import { refineRiskTones } from "./refineRiskTones";
+import { applyPropertyFactLocks, gatherPropertyFacts } from "./propertyFacts";
 
 export type ScrapContext = {
   url?: string;
@@ -52,9 +53,9 @@ Listing URL: ${input.url || input.scrap.url || "Manual Entry"}
 Buyer goal: ${input.buyerGoal}
 Address: ${input.manualAddress || input.scrap.address || "Unknown"}
 Asking price: ${input.scrap.price || "Unknown"}
-Bedrooms: ${input.scrap.bedrooms || "Not specified"}
-Bathrooms: ${input.scrap.bathrooms || "Not specified"}
-Property type: ${input.scrap.propertyType || "Not specified"}
+Bedrooms: ${input.scrap.bedrooms || "Unknown — do not invent a number"}
+Bathrooms: ${input.scrap.bathrooms || "Unknown — do not invent a number (EPC does not reliably state bathrooms)"}
+Property type: ${input.scrap.propertyType || "Unknown — use EPC / Land Registry if provided"}
 Description / features:
 ${description}
 `.trim();
@@ -112,17 +113,25 @@ export async function analyzeWithOpenAI(input: AnalyzeInput): Promise<AnalyzeRes
   const client = getOpenAIClient();
   const listingBrief = buildListingBrief(input);
   const model = process.env.OPENAI_MODEL || "gpt-4.1";
-  const addressForPlanning = input.manualAddress || input.scrap.address || "";
+  const addressForFacts = input.manualAddress || input.scrap.address || "";
 
-  console.log("[ai] Council planning portal lookup...");
+  console.log("[ai] Authoritative facts (EPC + Land Registry) + planning lookup...");
+  const [facts, planning] = await Promise.all([
+    addressForFacts ? gatherPropertyFacts(addressForFacts) : Promise.resolve(null),
+    addressForFacts ? lookupPlanningApplications(addressForFacts) : Promise.resolve(null),
+  ]);
+
   let planningBlock = "";
-  const planning = addressForPlanning
-    ? await lookupPlanningApplications(addressForPlanning)
-    : null;
   if (planning) {
     planningBlock = formatPlanningBrief(planning);
     console.log(
       `[ai] Planning: ${planning.council} — ${planning.matchedToProperty.length} match(es) for property`
+    );
+  }
+  const factsBlock = facts?.brief || "";
+  if (facts) {
+    console.log(
+      `[ai] Facts: EPC ${facts.epc.matched ? "matched" : "no match"} · LR this-property sales ${facts.landRegistry.thisProperty.length}`
     );
   }
 
@@ -134,7 +143,7 @@ export async function analyzeWithOpenAI(input: AnalyzeInput): Promise<AnalyzeRes
       {
         role: "system",
         content:
-          "You are a UK property research analyst. Use web search to find factual, recent information. Prefer Land Registry, Rightmove, Zoopla, Ofsted, police.uk, GOV.UK flood maps, local council planning portals (Idox/Public Access/Planning Portal), EPC register, and reputable local news. Always search for planning applications and extensions at the exact address. When AUTHORITATIVE COUNCIL PLANNING RECORDS are supplied, treat them as ground truth and never claim there is no extension/planning data if those records list works. Be specific about postcodes, streets, dates, and planning refs. If data is uncertain, say so.",
+          "You are a UK property research analyst. Prefer AUTHORITATIVE EPC, Land Registry, and council planning blocks over web guesses. Never invent bathroom counts, sold prices, or planning refs. When AUTHORITATIVE COUNCIL PLANNING RECORDS list works for this exact address, treat them as ground truth.",
       },
       {
         role: "user",
@@ -142,16 +151,17 @@ export async function analyzeWithOpenAI(input: AnalyzeInput): Promise<AnalyzeRes
 
 ${listingBrief}
 
+${factsBlock ? `${factsBlock}\n` : ""}
 ${planningBlock ? `${planningBlock}\n` : ""}
 Find and summarise with sources where possible:
-1. Past sold prices on this street/postcode (Land Registry / portals)
+1. Past sold prices — prefer AUTHORITATIVE LAND REGISTRY block
 2. Nearby comparable sales (note extended vs unextended comps if known; £ and dates)
 3. Schools (Ofsted/HMIE), transport links with journey times, crime relative to UK average
 4. Flood / regeneration signals
-5. **Property works & planning (critical):** Prefer AUTHORITATIVE COUNCIL PLANNING RECORDS when present. Include refs and decisions; only say none found if portal + search both show nothing for this exact address.
+5. **Property works & planning (critical):** Prefer AUTHORITATIVE COUNCIL PLANNING RECORDS when present. Include refs and decisions; only say none found if portal + search both show nothing for this exact address. Never attribute neighbour apps to this door.
 6. Typical rents and yields for this property type in the area
 7. Any leasehold/cladding/fire safety red flags if relevant
-8. EPC / energy costs, broadband/mobile coverage, council tax band, parking / CPZ if findable
+8. EPC / energy — prefer AUTHORITATIVE EPC; never invent bathrooms
 9. Purchase cost stack: stamp duty or LBTT(+ADS), typical solicitor/survey fees
 10. Competing similar listings nearby and any days-on-market / price-cut signals
 11. £/sqft or £/sqm vs local averages when floor area is available
@@ -164,6 +174,7 @@ Return a dense research brief (not JSON). Include concrete figures, place names,
   const researchNotes = extractOutputText(research) || "No web research returned.";
   const sources = [
     ...extractSources(research),
+    ...(facts ? facts.sources : []),
     ...(planning ? planningSources(planning) : []),
   ];
 
@@ -183,7 +194,7 @@ Return a dense research brief (not JSON). Include concrete figures, place names,
       {
         role: "system",
         content:
-          "You are an independent, direct UK property valuer. No fluffy marketing. Use the listing and research brief as evidence. Never ignore evidenced extensions when valuing. When AUTHORITATIVE COUNCIL PLANNING RECORDS list extensions, propertyWorks must reflect them. Populate every JSON field with concrete values. If a figure is estimated, make that clear in the string. Tailor pros/cons/suitability to the buyer goal.",
+          "You are an independent, direct UK property valuer. No fluffy marketing. Never invent bathroom counts, sold prices, or planning refs. Authoritative EPC / Land Registry / council planning blocks override web guesses. Populate every JSON field with concrete values or explicit Unknown. Tailor pros/cons/suitability to the buyer goal.",
       },
       {
         role: "user",
@@ -194,6 +205,7 @@ Buyer goal: ${input.buyerGoal}
 LISTING:
 ${listingBrief}
 
+${factsBlock ? `${factsBlock}\n` : ""}
 ${planningBlock ? `${planningBlock}\n` : ""}
 WEB RESEARCH BRIEF:
 ${researchNotes}
@@ -202,7 +214,8 @@ ${UK_PROPERTY_TAX_RULES_PROMPT}
 
 Requirements:
 - Pros/cons tailored to the buyer goal (at least 7–8 each) with specific, evidence-backed descriptions (2–3 sentences with streets, £, school names, planning refs where known — not fluff)
-- At least 6 comparable sales and 5 sold-history entries when research supports them; invent none
+- comparableSales and soldHistory: prefer AUTHORITATIVE LAND REGISTRY; invent none
+- bedrooms/bathrooms: if unknown write "Unknown — confirm on viewing" — NEVER invent bathroom counts
 - Viewing checklist (10+) and agent questions (10+) — include extension/planning compliance checks where relevant
 - Offer strategy MUST be commercially realistic:
   - lowOffer typically 3–6% below asking if fairly priced; never more than ~8% below unless comps show clear overpricing
@@ -211,11 +224,11 @@ Requirements:
   - At least 6 negotiation tips grounded in evidence
 - Scores 0-100; growthPotential and riskLevel must be Low|Medium|High
 - investmentMetrics.stampDuty must use correct nation tax (Scotland LBTT + ADS at 8% from 5 Dec 2024, never 6%)
-- Populate propertyWorks (extensions, planning applications, value impact, certainty) from council records when present
+- Populate propertyWorks (extensions, planning applications, value impact, certainty) from council records when present — exact door matches only
 - Populate riskTones for every risk field (positive|caution|negative|neutral). Approved value-adding extensions = positive for planningDevelopments; low flood = positive; freehold with no issues = positive for leaseholdIssues
-- Populate marketEvidence from research (asking vs solds, competing supply, £/sqft if known, negotiation levers) — never invent listings
-- Populate dueDiligence thoroughly: EPC/energy, broadband/mobile, tenure/legal, council tax/parking, purchase cost stack, other environmental flags, ownership/chain notes, and 6–10 recommendedNextSteps
-- If extensions/works are evidenced, valuation bands and forecasts MUST reflect the improved property — not the original footprint
+- Populate marketEvidence from Land Registry + research — never invent listings
+- Populate dueDiligence thoroughly; EPC must reflect AUTHORITATIVE EPC when matched
+- If extensions/works are evidenced at this address, valuation bands and forecasts MUST reflect the improved property — not the original footprint
 - If no works found in public sources, say so in propertyWorks`,
       },
     ],
@@ -302,7 +315,7 @@ Requirements:
         )
         .join(" | ");
       if (!pw.certainty || /low until|manually confirm/i.test(pw.certainty)) {
-        pw.certainty = `High for planning refs listed — sourced directly from ${planning.council} online planning portal. Confirm build quality and building control with a surveyor.`;
+        pw.certainty = `Matched on house number + street tokens from ${planning.council} online planning portal (${planning.matchedToProperty.length} application(s)). Confirm build quality and building control with a surveyor.`;
       }
       if (!pw.valueImpact || /confirm any completed/i.test(pw.valueImpact)) {
         pw.valueImpact =
@@ -315,6 +328,14 @@ Requirements:
   }
   applyStampDutyEstimate(analysis, input.buyerGoal);
   refineRiskTones(analysis);
+  if (facts) {
+    applyPropertyFactLocks(analysis, facts, {
+      bedrooms: input.scrap.bedrooms,
+      bathrooms: input.scrap.bathrooms,
+      propertyType: input.scrap.propertyType,
+      price: input.scrap.price,
+    });
+  }
   const valuation = analysis.valuation as { fair?: string; conservative?: string; optimistic?: string } | undefined;
   analysis.offerStrategy = sanitizeOfferStrategy(
     analysis.offerStrategy as {

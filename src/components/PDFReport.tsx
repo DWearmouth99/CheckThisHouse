@@ -1,5 +1,15 @@
 import React from 'react';
 import { BuyerGoal, PropertyAnalysis } from '../types';
+import { formatChartAxisLabel } from '../lib/reportWritingEngine';
+import {
+  chartAxisTicks,
+  formatGbpFull,
+  forecastAssumptionsSentence,
+  type ForecastMilestones,
+} from '../lib/deterministicForecasts';
+import { modeLabels } from '../lib/reportModeLabels';
+import { ratingOrBlank } from '../lib/notOnRecordRules';
+import { scrubEpcUrlsInText } from '../lib/epcLinkFormat';
 
 interface PDFReportProps {
   analysis: PropertyAnalysis;
@@ -199,8 +209,10 @@ function ScoreDial({ score }: { score: number }) {
 /** Pure SVG line chart — reliable under html-to-image (unlike Recharts axes) */
 function AppreciationChart({
   points,
+  bands,
 }: {
-  points: { label: string; value: number }[];
+  points: { label: string; value: number; display: string }[];
+  bands?: { low: number; high: number }[];
 }) {
   const w = 720;
   const h = 168;
@@ -212,15 +224,18 @@ function AppreciationChart({
   if (vals.length < 2) {
     return <p className="text-[11px] text-slate-500 py-6 text-center">Insufficient forecast data to plot.</p>;
   }
-  const min = Math.min(...vals) * 0.96;
-  const max = Math.max(...vals) * 1.04;
-  const span = Math.max(max - min, 1);
+  const rawMin = Math.min(...vals, ...(bands || []).map((b) => b.low));
+  const rawMax = Math.max(...vals, ...(bands || []).map((b) => b.high));
+  const ticks = chartAxisTicks(rawMin * 0.96, rawMax * 1.04);
+  const axisMin = ticks[0] ?? 0;
+  const axisMax = ticks[ticks.length - 1] ?? axisMin + 25000;
+  const span = Math.max(axisMax - axisMin, 1);
   const innerW = w - padL - padR;
   const innerH = h - padT - padB;
 
   const coords = points.map((p, i) => {
     const x = padL + (i / Math.max(points.length - 1, 1)) * innerW;
-    const y = padT + innerH - ((p.value - min) / span) * innerH;
+    const y = padT + innerH - ((p.value - axisMin) / span) * innerH;
     return { ...p, x, y };
   });
 
@@ -228,22 +243,38 @@ function AppreciationChart({
   const area =
     `${path} L ${coords[coords.length - 1].x.toFixed(1)} ${(padT + innerH).toFixed(1)} L ${coords[0].x.toFixed(1)} ${(padT + innerH).toFixed(1)} Z`;
 
-  const ticks = 4;
-  const yTicks = Array.from({ length: ticks + 1 }, (_, i) => min + (span * i) / ticks);
+  let bandPath = '';
+  if (bands && bands.length === points.length) {
+    const top = points.map((p, i) => {
+      const x = padL + (i / Math.max(points.length - 1, 1)) * innerW;
+      const y = padT + innerH - ((bands[i]!.high - axisMin) / span) * innerH;
+      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    });
+    const bot = [...points].reverse().map((p, ri) => {
+      const i = points.length - 1 - ri;
+      const x = padL + (i / Math.max(points.length - 1, 1)) * innerW;
+      const y = padT + innerH - ((bands[i]!.low - axisMin) / span) * innerH;
+      return `L ${x.toFixed(1)} ${y.toFixed(1)}`;
+    });
+    bandPath = `${top.join(' ')} ${bot.join(' ')} Z`;
+  }
+
+  const yTicks = ticks;
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
       {yTicks.map((t, i) => {
-        const y = padT + innerH - ((t - min) / span) * innerH;
+        const y = padT + innerH - ((t - axisMin) / span) * innerH;
         return (
           <g key={i}>
             <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#eef2f6" strokeWidth={1} />
             <text x={padL - 6} y={y + 3} textAnchor="end" fontSize={9} fill={MUTED} fontFamily="Manrope, sans-serif">
-              {formatGbp(t)}
+              {formatChartAxisLabel(t)}
             </text>
           </g>
         );
       })}
+      {bandPath ? <path d={bandPath} fill={GREEN} fillOpacity={0.08} /> : null}
       <path d={area} fill={GREEN} fillOpacity={0.12} />
       <path d={path} fill="none" stroke={GREEN} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
       {coords.map((c, i) => (
@@ -253,7 +284,7 @@ function AppreciationChart({
             {c.label}
           </text>
           <text x={c.x} y={c.y - 8} textAnchor="middle" fontSize={8} fill={NAVY} fontWeight={700} fontFamily="Manrope, sans-serif">
-            {formatGbp(c.value)}
+            {c.display}
           </text>
         </g>
       ))}
@@ -461,29 +492,43 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
     new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const basePrice = parseMoney(price) || parseMoney(valuation?.fair) || 300000;
+  const milestones = (analysis as { forecastMilestones?: ForecastMilestones }).forecastMilestones;
 
-  const forecastPoint = (raw: string | undefined, years: number) => {
-    const asMoney = parseMoney(raw);
-    if (asMoney && asMoney > 1000) return asMoney;
-    const pct = parsePercent(raw);
-    if (pct != null) return basePrice * (1 + pct / 100);
-    const bare = parseFloat((raw || '').replace(/[^0-9.-]/g, ''));
-    if (Number.isFinite(bare) && Math.abs(bare) <= 80) {
-      return basePrice * (1 + bare / 100);
-    }
-    return basePrice * Math.pow(1.02, years);
-  };
+  const mkPoint = (label: string, value: number) => ({
+    label,
+    value,
+    display: formatGbpFull(value),
+  });
 
-  const chartPoints = [
-    { label: 'Now', value: basePrice },
-    { label: '1yr', value: forecastPoint(valuation?.forecast1y, 1) },
-    { label: '3yr', value: forecastPoint(valuation?.forecast3y, 3) },
-    { label: '5yr', value: forecastPoint(valuation?.forecast5y, 5) },
-    { label: '10yr', value: forecastPoint(valuation?.forecast10y, 10) },
-  ].map((p) => ({
-    ...p,
-    value: Number.isFinite(p.value) && p.value > 0 ? p.value : basePrice,
-  }));
+  const chartPoints = milestones
+    ? [
+        mkPoint('Now', milestones.baseValue),
+        mkPoint('1yr', milestones.forecast1y),
+        mkPoint('3yr', milestones.forecast3y),
+        mkPoint('5yr', milestones.forecast5y),
+        mkPoint('10yr', milestones.forecast10y),
+      ]
+    : [
+        mkPoint('Now', basePrice),
+        mkPoint('1yr', parseMoney(valuation?.forecast1y) || basePrice * 1.02),
+        mkPoint('3yr', parseMoney(valuation?.forecast3y) || basePrice * Math.pow(1.02, 3)),
+        mkPoint('5yr', parseMoney(valuation?.forecast5y) || basePrice * Math.pow(1.02, 5)),
+        mkPoint('10yr', parseMoney(valuation?.forecast10y) || basePrice * Math.pow(1.02, 10)),
+      ];
+
+  const chartBands = milestones?.bands
+    ? [
+        { low: milestones.baseValue, high: milestones.baseValue },
+        { low: milestones.bands.y1.low, high: milestones.bands.y1.high },
+        { low: milestones.bands.y3.low, high: milestones.bands.y3.high },
+        { low: milestones.bands.y5.low, high: milestones.bands.y5.high },
+        { low: milestones.bands.y10.low, high: milestones.bands.y10.high },
+      ]
+    : undefined;
+
+  const assumptionsLine = milestones
+    ? forecastAssumptionsSentence(milestones)
+    : null;
 
   const scoreItems = [
     { label: 'Value', value: scores?.valueForMoney ?? 0 },
@@ -536,14 +581,18 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
   ];
 
   const comps = (comparableSales || [])
-    .map((sale) => ({
-      address: cleanField(sale.address),
-      price: cleanField(sale.price),
-      soldDate: cleanField(sale.soldDate),
-      similarity: cleanField(sale.similarity),
-    }))
+    .map((sale) => {
+      const note = (sale as { note?: string }).note;
+      const similarity = cleanField(sale.similarity) || cleanField(note) || '';
+      return {
+        address: cleanField(sale.address),
+        price: cleanField(sale.price),
+        soldDate: cleanField(sale.soldDate),
+        similarity,
+      };
+    })
     .filter((sale) => sale.address || sale.price)
-    .slice(0, 10);
+    .slice(0, 6);
 
   const history = (soldHistory || [])
     .map((h) => ({
@@ -558,6 +607,26 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
   const prosList = (pros || []).slice(0, 8);
   const consList = (cons || []).slice(0, 8);
   const nextSteps = dueDiligence?.recommendedNextSteps?.filter(Boolean).slice(0, 10) || [];
+  const reportMode = analysis.reportMode;
+  const labels = modeLabels(reportMode || 'on_market');
+  const priceLabel =
+    analysis.priceLabel || labels.priceCoverLabel;
+  const showConfidence = analysis.showConfidence === true;
+  const recentlySold = reportMode === 'recently_sold';
+  const recentlySoldPanel = (analysis as {
+    recentlySoldPanel?: {
+      headline: string;
+      lastSoldLabel: string;
+      lastSoldPrice: string;
+      bullets: string[];
+    };
+  }).recentlySoldPanel;
+  const displayBaths = /not on record|unknown|confirm|not specified/i.test(String(bathrooms || ''))
+    ? ''
+    : bathrooms;
+  const displayBeds = /not on record|unknown|^not specified$/i.test(String(bedrooms || ''))
+    ? ''
+    : bedrooms;
 
   // 1 cover + summary + pros + valuation + [investor] + risks + area + diligence + comps + offer
   const TOTAL = showInvestment ? 10 : 9;
@@ -585,7 +654,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
             <div className="text-right text-[10px] font-mono pt-1" style={{ color: MUTED }}>
               <p>{reportDate}</p>
               <p className="mt-1 uppercase tracking-wider" style={{ color: '#94a3b8' }}>
-                Confidential buyer report
+                Property report
               </p>
             </div>
           </div>
@@ -601,13 +670,19 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
               {addressLine}
             </p>
 
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {[
-                ['Asking price', price],
-                ['Overall score', `${overall}/100`],
-                ['Risk level', scores?.riskLevel || '—'],
-                ['Confidence', `${scores?.confidenceScore ?? '—'}%`],
-              ].map(([l, v]) => (
+            <div
+              className={`grid gap-2 mb-4 ${showConfidence ? 'grid-cols-4' : 'grid-cols-3'}`}
+            >
+              {(
+                [
+                  [priceLabel, price],
+                  ['Overall score', `${overall}/100`],
+                  ['Risk level', scores?.riskLevel || '—'],
+                  ...(showConfidence
+                    ? ([['Confidence', `${scores?.confidenceScore ?? '—'}%`]] as [string, string][])
+                    : []),
+                ] as [string, string | undefined][]
+              ).map(([l, v]) => (
                 <div
                   key={l}
                   className="rounded-lg px-3 py-2"
@@ -617,7 +692,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                     {l}
                   </p>
                   <p className="text-[14px] font-bold mt-0.5" style={{ color: NAVY }}>
-                    {v}
+                    {v || '—'}
                   </p>
                 </div>
               ))}
@@ -627,13 +702,17 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
               className="grid grid-cols-5 gap-2 text-[11px] border-t pt-3"
               style={{ borderColor: LINE }}
             >
-              {[
-                ['Type', propertyType],
-                ['Beds', bedrooms],
-                ['Baths', bathrooms],
-                ['Town', location?.town],
-                ['Postcode', location?.postcode],
-              ].map(([l, v]) => (
+              {(
+                [
+                  ['Type', propertyType],
+                  ['Beds', displayBeds],
+                  ['Baths', displayBaths],
+                  ['Town', location?.town],
+                  ['Postcode', location?.postcode],
+                ] as [string, string | undefined][]
+              )
+                .filter(([, v]) => Boolean(v && String(v).trim()))
+                .map(([l, v]) => (
                 <div key={l}>
                   <p className="text-[8px] uppercase tracking-wide" style={{ color: MUTED }}>
                     {l}
@@ -777,25 +856,30 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           <div className="flex items-center justify-between mb-1.5 px-1">
             <SubHead>How value could change</SubHead>
             <p className="text-[9px]" style={{ color: MUTED }}>
-              Base asking {formatGbp(basePrice)}
+              {labels.chartBaseCaption(formatGbpFull(basePrice))}
             </p>
           </div>
-          <AppreciationChart points={chartPoints} />
+          <AppreciationChart points={chartPoints} bands={chartBands} />
+          {assumptionsLine ? (
+            <p className="text-[9px] mt-1.5 px-1" style={{ color: MUTED }}>
+              {assumptionsLine}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-4 gap-2.5 mb-4">
           {[
-            ['1-year', chartPoints[1]?.value],
-            ['3-year', chartPoints[2]?.value],
-            ['5-year', chartPoints[3]?.value],
-            ['10-year', chartPoints[4]?.value],
-          ].map(([label, num]) => (
+            ['1-year', chartPoints[1]],
+            ['3-year', chartPoints[2]],
+            ['5-year', chartPoints[3]],
+            ['10-year', chartPoints[4]],
+          ].map(([label, pt]) => (
             <div key={String(label)} className="rounded border px-2.5 py-2.5" style={{ borderColor: LINE, background: '#fafbfc' }}>
               <p className="text-[9px] font-bold uppercase" style={{ color: MUTED }}>
                 {label}
               </p>
               <p className="text-[13px] font-bold mt-0.5" style={{ color: NAVY }}>
-                {formatGbp(num as number)}
+                {(pt as { display?: string })?.display || '—'}
               </p>
             </div>
           ))}
@@ -803,7 +887,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
 
         <div className="grid grid-cols-2 gap-3.5 mb-3.5">
           <div className="rounded-lg border p-3" style={{ borderColor: LINE, background: NAVY_SOFT }}>
-            <SubHead>Is the asking price fair?</SubHead>
+            <SubHead>{labels.fairPriceBoxTitle}</SubHead>
             <p className="text-[11px] leading-relaxed" style={{ color: NAVY }}>
               {advanced?.undervaluedExplanation || 'No additional pricing narrative provided.'}
             </p>
@@ -962,9 +1046,17 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
         <div className="rounded-lg border px-3.5 py-2.5 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
           <SubHead>Crime in the area</SubHead>
           <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
-            <strong>{areaAnalysis?.crimeSafety?.rating || 'N/A'}</strong>
-            {areaAnalysis?.crimeSafety?.description ? ` — ${areaAnalysis.crimeSafety.description}` : ''}
+            <strong>
+              {(analysis as { verifiedCrime?: { label?: string } }).verifiedCrime?.label ||
+                areaAnalysis?.crimeSafety?.rating ||
+                'N/A'}
+            </strong>
           </p>
+          {areaAnalysis?.crimeSafety?.description ? (
+            <p className="text-[11px] leading-relaxed mt-1" style={{ color: '#1e293b' }}>
+              {areaAnalysis.crimeSafety.description}
+            </p>
+          ) : null}
         </div>
 
         <div className="rounded-lg border px-3.5 py-2.5" style={{ borderColor: LINE }}>
@@ -1003,8 +1095,8 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                     <td className="px-2 py-1.5 border-b border-slate-100" style={{ color: MUTED }}>
                       {s.distance}
                     </td>
-                    <td className="px-2 py-1.5 border-b border-slate-100 font-bold" style={{ color: GREEN }}>
-                      {s.rating}
+                    <td className="px-2 py-1.5 border-b border-slate-100">
+                      {ratingOrBlank(s.rating) || '—'}
                     </td>
                   </tr>
                 ))}
@@ -1097,7 +1189,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                 {label}
               </p>
               <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
-                {value || 'Confirm before offering.'}
+                {scrubEpcUrlsInText(String(value || 'Confirm before offering.'))}
               </p>
             </div>
           ))}
@@ -1210,61 +1302,103 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
 
       {/* ========== OFFERS ========== */}
       <PageShell page={pageOffer} total={TOTAL} address={addressLine}>
-        <SectionTitle>{showInvestment ? '9' : '8'}. What to offer & what to check</SectionTitle>
+        <SectionTitle>
+          {showInvestment ? '9' : '8'}.{' '}
+          {recentlySold ? 'Recently sold — what this means' : 'What to offer & what to check'}
+        </SectionTitle>
 
-        <div className="grid grid-cols-3 gap-2.5 mb-3">
-          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-3">
-            <p className="text-[9px] font-bold uppercase leading-snug text-rose-700">Opening offer</p>
-            <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
-              {offerStrategy?.lowOffer || 'N/A'}
-            </p>
-            <p className="text-[8px] mt-1 leading-snug text-rose-800/80">Realistic opener — not a lowball</p>
-          </div>
-          <div className="rounded-lg border-2 px-3 py-3" style={{ borderColor: GREEN, background: GREEN_SOFT }}>
-            <p className="text-[9px] font-bold uppercase leading-snug" style={{ color: GREEN }}>
-              Fair market target
-            </p>
-            <p className="text-[22px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
-              {offerStrategy?.fairOffer || 'N/A'}
-            </p>
-            <p className="text-[8px] mt-1 leading-snug" style={{ color: MUTED }}>
-              What a patient buyer should expect to pay
-            </p>
-          </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
-            <p className="text-[9px] font-bold uppercase leading-snug text-amber-800">Walk-away max</p>
-            <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
-              {offerStrategy?.premiumOffer || 'N/A'}
-            </p>
-            <p className="text-[8px] mt-1 leading-snug text-amber-900/80">Stop above this unless strategy changes</p>
-          </div>
-        </div>
+        {recentlySold ? (
+          <>
+            <div className="rounded-lg border-2 px-4 py-4 mb-3" style={{ borderColor: GREEN, background: GREEN_SOFT }}>
+              <p className="text-[9px] font-bold uppercase tracking-wide" style={{ color: GREEN }}>
+                {recentlySoldPanel?.lastSoldLabel || priceLabel}
+              </p>
+              <p className="text-[28px] font-bold mt-1 leading-tight" style={{ color: NAVY }}>
+                {recentlySoldPanel?.lastSoldPrice || price || '—'}
+              </p>
+              <p className="text-[11px] mt-2 leading-relaxed" style={{ color: '#1e293b' }}>
+                {recentlySoldPanel?.headline ||
+                  'This property recently completed and is not a live purchase opportunity.'}
+              </p>
+            </div>
+            <SubHead>What this means</SubHead>
+            <ul className="mb-3 space-y-1.5">
+              {(recentlySoldPanel?.bullets || []).map((tip, i) => (
+                <li key={i} className="flex gap-2.5 text-[10.5px] leading-relaxed items-start">
+                  <span className="font-mono shrink-0" style={{ color: GREEN }}>
+                    •
+                  </span>
+                  <span style={{ color: '#1e293b' }}>{tip}</span>
+                </li>
+              ))}
+            </ul>
+            {marketEvidence?.askingVsSoldEvidence && (
+              <div className="rounded-lg border px-3 py-2 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
+                <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
+                  <strong>Sale evidence:</strong> {marketEvidence.askingVsSoldEvidence}
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-2.5 mb-3">
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-3">
+                <p className="text-[9px] font-bold uppercase leading-snug text-rose-700">Opening offer</p>
+                <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
+                  {offerStrategy?.lowOffer || 'N/A'}
+                </p>
+                <p className="text-[8px] mt-1 leading-snug text-rose-800/80">Realistic opener — not a lowball</p>
+              </div>
+              <div className="rounded-lg border-2 px-3 py-3" style={{ borderColor: GREEN, background: GREEN_SOFT }}>
+                <p className="text-[9px] font-bold uppercase leading-snug" style={{ color: GREEN }}>
+                  Fair market target
+                </p>
+                <p className="text-[22px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
+                  {offerStrategy?.fairOffer || 'N/A'}
+                </p>
+                <p className="text-[8px] mt-1 leading-snug" style={{ color: MUTED }}>
+                  What a patient buyer should expect to pay
+                </p>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
+                <p className="text-[9px] font-bold uppercase leading-snug text-amber-800">Walk-away max</p>
+                <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
+                  {offerStrategy?.premiumOffer || 'N/A'}
+                </p>
+                <p className="text-[8px] mt-1 leading-snug text-amber-900/80">
+                  Stop above this unless strategy changes
+                </p>
+              </div>
+            </div>
 
-        {(marketEvidence?.askingVsSoldEvidence || marketEvidence?.negotiationLevers) && (
-          <div className="rounded-lg border px-3 py-2 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
-            <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
-              <strong>Evidence behind these figures:</strong> {marketEvidence?.askingVsSoldEvidence}
-            </p>
-            <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
-              <strong>Levers to use:</strong> {marketEvidence?.negotiationLevers}
-            </p>
-          </div>
+            {(marketEvidence?.askingVsSoldEvidence || marketEvidence?.negotiationLevers) && (
+              <div className="rounded-lg border px-3 py-2 mb-3" style={{ borderColor: LINE, background: '#fafbfc' }}>
+                <p className="text-[10px] leading-snug mb-1" style={{ color: '#1e293b' }}>
+                  <strong>Evidence behind these figures:</strong> {marketEvidence?.askingVsSoldEvidence}
+                </p>
+                <p className="text-[10px] leading-snug" style={{ color: '#1e293b' }}>
+                  <strong>Levers to use:</strong> {marketEvidence?.negotiationLevers}
+                </p>
+              </div>
+            )}
+
+            <SubHead>How to negotiate</SubHead>
+            <ol className="mb-3 space-y-1">
+              {(offerStrategy?.negotiationTips || []).slice(0, 8).map((tip, i) => (
+                <li key={i} className="flex gap-2.5 text-[10.5px] leading-relaxed items-start">
+                  <span
+                    className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 text-white leading-none"
+                    style={{ background: NAVY }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span style={{ color: '#1e293b' }}>{tip}</span>
+                </li>
+              ))}
+            </ol>
+          </>
         )}
-
-        <SubHead>How to negotiate</SubHead>
-        <ol className="mb-3 space-y-1">
-          {(offerStrategy?.negotiationTips || []).slice(0, 8).map((tip, i) => (
-            <li key={i} className="flex gap-2.5 text-[10.5px] leading-relaxed items-start">
-              <span
-                className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 text-white leading-none"
-                style={{ background: NAVY }}
-              >
-                {i + 1}
-              </span>
-              <span style={{ color: '#1e293b' }}>{tip}</span>
-            </li>
-          ))}
-        </ol>
 
         <div className="grid grid-cols-2 gap-3.5 mb-3">
           <div>

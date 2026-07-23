@@ -36,6 +36,7 @@ import { ReportTeaserModal, TeaserData } from './components/ReportTeaserModal';
 import { ConfirmListingAddressModal } from './components/ConfirmListingAddressModal';
 import { AddressAutocomplete } from './components/AddressAutocomplete';
 import { ReportGeneratingOverlay } from './components/ReportGeneratingOverlay';
+import { trackReportPurchaseConversion } from './lib/googleAds';
 
 const LOGO = '/checkthishouselogo.png';
 
@@ -205,6 +206,9 @@ export default function MarketingSite() {
     }
 
     if (checkout === 'success' && sessionId) {
+      // Google Ads — Report Purchase (once per Stripe session_id)
+      trackReportPurchaseConversion({ transactionId: sessionId });
+
       let pending: {
         mode?: LookupMode;
         url?: string;
@@ -644,7 +648,8 @@ export default function MarketingSite() {
                 transition={{ duration: 0.5, delay: 0.05 }}
                 className="font-display text-[1.65rem] leading-tight sm:text-3xl md:text-[2.1rem] md:leading-snug font-bold text-brand-navy max-w-xl mb-2.5 sm:mb-3"
               >
-                What matters most about a house — before you decide.
+                <span className="block">Don’t buy a house</span>
+                <span className="block">without checking it first.</span>
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -652,8 +657,9 @@ export default function MarketingSite() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-[15px] sm:text-lg text-brand-muted max-w-lg leading-relaxed mb-6 sm:mb-8"
               >
-                Look up any UK address — even if it isn’t for sale — and download a clear branded PDF
-                you can use before you offer, remortgage or sell.
+                Get the complete picture before you make your move — with property scores, valuation,
+                flood and damp risks, schools, crime, transport, sold prices and more, all in one
+                easy-to-read report.
               </motion.p>
 
               <motion.form

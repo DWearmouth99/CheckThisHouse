@@ -7,6 +7,18 @@ import {
 import { applyStampDutyEstimate, UK_PROPERTY_TAX_RULES_PROMPT } from "./ukPropertyTax";
 import { sanitizeOfferStrategy } from "./sanitizeOfferStrategy";
 import { refineRiskTones } from "./refineRiskTones";
+import { applyPropertyFactLocks, gatherPropertyFacts } from "./propertyFacts";
+import {
+  REPORT_WRITING_ENGINE_SYSTEM,
+  applyReportWritingEngine,
+  buildReportWritingRequirements,
+  detectReportMode,
+} from "./reportWritingEngine";
+import { extractPostcode, assertPayloadHasNoForeignTokens } from "./addressMatch";
+import { lookupCrimeForAddress } from "./policeUkLookup";
+import { lookupFloodForAddress } from "./floodLookup";
+import { enforceReportPipeline } from "./enforceReportPipeline";
+import { scrubEpcUrlsInText } from "./epcLinkFormat";
 
 export type ScrapContext = {
   url?: string;
@@ -97,20 +109,18 @@ export const geminiAnalysisSchema = {
         conservative: { type: Type.STRING },
         fair: { type: Type.STRING },
         optimistic: { type: Type.STRING },
-        forecast1y: { type: Type.STRING },
-        forecast3y: { type: Type.STRING },
-        forecast5y: { type: Type.STRING },
-        forecast10y: { type: Type.STRING },
+        growthAssumptions: {
+          type: Type.OBJECT,
+          properties: {
+            lowPct: { type: Type.NUMBER },
+            centralPct: { type: Type.NUMBER },
+            highPct: { type: Type.NUMBER },
+            basis: { type: Type.STRING },
+          },
+          required: ["lowPct", "centralPct", "highPct", "basis"],
+        },
       },
-      required: [
-        "conservative",
-        "fair",
-        "optimistic",
-        "forecast1y",
-        "forecast3y",
-        "forecast5y",
-        "forecast10y",
-      ],
+      required: ["conservative", "fair", "optimistic", "growthAssumptions"],
     },
     investmentMetrics: {
       type: Type.OBJECT,
@@ -203,14 +213,8 @@ export const geminiAnalysisSchema = {
         askingVsSoldEvidence: { type: Type.STRING },
         competingSupply: { type: Type.STRING },
         pricePerSqmOrSqft: { type: Type.STRING },
-        negotiationLevers: { type: Type.STRING },
       },
-      required: [
-        "askingVsSoldEvidence",
-        "competingSupply",
-        "pricePerSqmOrSqft",
-        "negotiationLevers",
-      ],
+      required: ["askingVsSoldEvidence", "competingSupply", "pricePerSqmOrSqft"],
     },
     locationIntelligence: {
       type: Type.OBJECT,
@@ -320,8 +324,13 @@ export const geminiAnalysisSchema = {
           price: { type: Type.STRING },
           soldDate: { type: Type.STRING },
           similarity: { type: Type.STRING },
+          basis: {
+            type: Type.STRING,
+            enum: ["size", "date", "planning", "listing", "unknown"],
+          },
+          note: { type: Type.STRING },
         },
-        required: ["address", "price", "soldDate", "similarity"],
+        required: ["address", "price", "soldDate", "similarity", "basis", "note"],
       },
     },
     areaAnalysis: {
@@ -395,7 +404,6 @@ export const geminiAnalysisSchema = {
     "location",
     "summary",
     "specs",
-    "scores",
     "valuation",
     "investmentMetrics",
     "marketAndRental",
@@ -417,6 +425,23 @@ export const geminiAnalysisSchema = {
     "agentQuestions",
   ],
 };
+
+/** Clone schema; SOLD mode omits offerStrategy; scores omitted (computed in code). */
+export function buildGeminiResponseSchema(mode: "on_market" | "recently_sold") {
+  const schema = JSON.parse(JSON.stringify(geminiAnalysisSchema)) as typeof geminiAnalysisSchema & {
+    properties: Record<string, unknown>;
+    required: string[];
+  };
+  // Scores are deterministic — do not request from LLM
+  delete (schema.properties as any).scores;
+  schema.required = schema.required.filter((k) => k !== "scores");
+
+  if (mode === "recently_sold") {
+    delete (schema.properties as any).offerStrategy;
+    schema.required = schema.required.filter((k) => k !== "offerStrategy");
+  }
+  return schema;
+}
 
 export function hasGeminiKey() {
   const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -450,9 +475,9 @@ Listing URL: ${input.url || input.scrap.url || (input.manualAddress ? "N/A — a
 Buyer goal: ${input.buyerGoal}
 Address / search target: ${address}
 Asking price: ${input.scrap.price || (input.manualAddress ? "Unknown — estimate from comps" : "Unknown")}
-Bedrooms: ${input.scrap.bedrooms || "Not specified"}
-Bathrooms: ${input.scrap.bathrooms || "Not specified"}
-Property type: ${input.scrap.propertyType || "Not specified"}
+Bedrooms: ${input.scrap.bedrooms || "Not on record — do not invent a number"}
+Bathrooms: ${input.scrap.bathrooms || "Not on record — do not invent a number (EPC habitable rooms ≠ bathrooms)"}
+Property type: ${input.scrap.propertyType || "Unknown — use EPC / Land Registry if provided below"}
 Description / features:
 ${description}
 `.trim();
@@ -479,6 +504,42 @@ function parseJsonText(raw: string) {
   return JSON.parse(text);
 }
 
+function scrubResearchNotesForSubject(
+  notes: string,
+  subjectPostcode: string | null
+): string {
+  if (!subjectPostcode) return notes;
+  const subjectNorm = subjectPostcode.replace(/\s+/g, '').toUpperCase();
+  const subjectArea = subjectNorm.slice(0, 3); // e.g. DL6
+  // Drop lines that mention a different full UK postcode
+  return notes
+    .split(/\n/)
+    .filter((line) => {
+      const pcs = line.match(/\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/gi) || [];
+      for (const pc of pcs) {
+        const n = pc.replace(/\s+/g, '').toUpperCase();
+        if (n !== subjectNorm && !n.startsWith(subjectArea.slice(0, 2))) {
+          // Allow same outward area; drop clearly different (e.g. YO32 vs DL6)
+          const lineArea = n.match(/^([A-Z]{1,2}\d)/)?.[1];
+          const subArea = subjectNorm.match(/^([A-Z]{1,2}\d)/)?.[1];
+          if (lineArea && subArea && lineArea !== subArea) {
+            console.warn(`[addressMatch] DROP research line (foreign postcode ${pc}): ${line.slice(0, 120)}`);
+            return false;
+          }
+        }
+      }
+      // Hard denylist for known York mismatch tokens when subject is DL6
+      if (subjectNorm.startsWith('DL6')) {
+        if (/YO32|Pentland Drive|19\/01242|25\/00196|Huntington/i.test(line)) {
+          console.warn(`[addressMatch] DROP research line (York denylist): ${line.slice(0, 120)}`);
+          return false;
+        }
+      }
+      return true;
+    })
+    .join('\n');
+}
+
 /**
  * Two-phase Gemini analysis:
  * 1) Google Search grounding (no JSON schema — API forbids combining them)
@@ -488,129 +549,204 @@ export async function analyzeWithGemini(input: AnalyzeInput): Promise<AnalyzeRes
   const ai = getClient();
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const listingBrief = buildListingBrief(input);
-  const addressForPlanning =
+  const addressForFacts =
     input.manualAddress || input.scrap.address || "";
 
-  console.log("[ai] Council planning portal lookup...");
+  console.log("[ai] Verified facts (EPC + Land Registry) + planning + crime + flood...");
+  const [facts, planning, crime, flood] = await Promise.all([
+    addressForFacts ? gatherPropertyFacts(addressForFacts) : Promise.resolve(null),
+    addressForFacts ? lookupPlanningApplications(addressForFacts) : Promise.resolve(null),
+    addressForFacts ? lookupCrimeForAddress(addressForFacts) : Promise.resolve(null),
+    addressForFacts ? lookupFloodForAddress(addressForFacts) : Promise.resolve(null),
+  ]);
+
+  const subjectPostcode = extractPostcode(addressForFacts);
+
   let planningBlock = "";
-  const planning = addressForPlanning
-    ? await lookupPlanningApplications(addressForPlanning)
-    : null;
   if (planning) {
     planningBlock = formatPlanningBrief(planning);
     console.log(
-      `[ai] Planning: ${planning.council} — ${planning.matchedToProperty.length} match(es) for property, ${planning.applications.length} total hits`
+      `[ai] Planning: ${planning.council} — ${planning.matchedToProperty.length} match(es) for property, ${planning.applications.length} same-postcode hits`
     );
   } else {
-    console.log("[ai] Planning: no mapped council portal for this postcode (AI web search only)");
+    console.log("[ai] Planning: no mapped council portal for this postcode (web research only)");
   }
+
+  const factsBlock = facts?.brief || "";
+  if (facts) {
+    console.log(
+      `[ai] Facts: EPC ${facts.epc.matched ? "matched" : "no match"} · LR this-property sales ${facts.landRegistry.thisProperty.length} · same-street ${facts.landRegistry.nearbySameStreet.length} · postcode ${facts.landRegistry.nearbyPostcode.length}`
+    );
+  }
+  if (crime) {
+    console.log(
+      `[ai] Crime: ${crime.incidentsPerThousand != null ? `${crime.incidentsPerThousand}/1,000/yr` : "unreliable"} · incidents_12m=${crime.crimeCountYear} · pop=${crime.population} (${crime.populationSource}) · ${crime.monthStart}→${crime.monthEnd}`
+    );
+  }
+  if (flood) {
+    console.log(`[ai] Flood: ${flood.bandingLabel}`);
+  }
+
+  const modeCtx = detectReportMode({
+    liveAsking: input.scrap.price,
+    thisPropertySales: facts?.landRegistry.thisProperty,
+  });
+  console.log(`[ai] Report mode: ${modeCtx.mode} (${modeCtx.priceLabel})`);
+
+  const crimeBlock =
+    crime && crime.incidentsPerThousand != null
+      ? `\nVERIFIED FACTS — CRIME (police.uk). The renderer prints the per-1,000 rate once from data. Your crimeSafety.description must be interpretation ONLY — do NOT include any "per 1,000" or "incidents per" figures.\nRate (for context, do not repeat in description): ${crime.label}\nHint: ${crime.interpretationHint}\n`
+      : crime
+        ? `\nVERIFIED FACTS — CRIME\n${crime.label}\n`
+        : "";
+
+  const floodBlock = flood
+    ? `\nVERIFIED FACTS — FLOOD (EA / planning.data). Print these bandings verbatim in floodRisk. You may add ONE interpretation sentence that introduces NO geographic claims (no river/beck/place names) absent from this block.\n${flood.llmContext}\n`
+    : "";
 
   console.log(`[ai] Gemini phase 1: Google Search research (${model})...`);
   const researchFocus = input.manualAddress
-    ? `This is an ADDRESS-ONLY lookup for: "${input.manualAddress}". There may be no live Rightmove listing. Identify the property via Land Registry / sold history / street data, then research the area and planning history thoroughly.`
+    ? `This is an ADDRESS-ONLY lookup for: "${input.manualAddress}". There may be no live listing. Prefer VERIFIED FACTS (EPC + Land Registry) below over web guesses. Research the exact address and local area thoroughly.`
     : `Research this property listing:`;
 
-  const research = await ai.models.generateContent({
-    model,
-    contents: `You are a UK property research analyst. Use Google Search aggressively to find factual, recent information.
+  const phase1Contents = `You are a UK property research analyst. Use Google Search aggressively to find factual, recent information for an internal research brief (not customer-facing).
 
-Prefer: Land Registry / sold prices, Rightmove, Zoopla, Ofsted, police.uk, GOV.UK flood maps, EPC register, local council planning portals (Idox / Public Access / Planning Portal), building control mentions, and reputable local news.
+Prefer: Land Registry / sold prices, Rightmove, Zoopla, Ofsted, police.uk, GOV.UK flood maps, EPC register, local council planning portals, and reputable local news.
 
 ${researchFocus}
 
 ${listingBrief}
 
+${factsBlock ? `\n${factsBlock}\n` : ""}
 ${planningBlock ? `\n${planningBlock}\n` : ""}
+${crimeBlock}
+${floodBlock}
 
-You MUST search specifically for planning and works at this exact address / postcode, including queries like:
-- "[full address] planning application"
-- "[street + postcode] extension planning"
-- "[local council name] planning public access [address]"
-- "[address] rear extension / loft conversion / conservatory / garage conversion"
-- EPC or floor area changes that imply an extension
+Search for planning and works at this exact address / postcode ${subjectPostcode || ""}. Cover:
+1. Sold prices — prefer VERIFIED Land Registry facts; do not invent different prices for matched addresses
+2. Nearby comps (extended vs unextended if known)
+3. Schools (with inspection year), transport, crime (use VERIFIED per-1,000 figure)
+4. Flood / regeneration
+5. Planning & works — prefer VERIFIED council matches for this exact property only; never include other postcodes
+6. Rents/yields if relevant
+7. Leasehold / fire-safety flags
+8. EPC / energy — prefer VERIFIED EPC; never invent bathroom counts or lettered EPC ranges
+9. Purchase cost stack (SDLT/LBTT+ADS)
+10. Competing listings / DOM if on market
+11. £/sqm when floor area known
 
-Cover in the brief:
-1. Past sold prices on this street/postcode (and this exact address if findable)
-2. Nearby comparable sales — note which comps are extended vs unextended if known; quote £ and dates
-3. Schools (Ofsted/HMIE), transport with journey times, crime vs UK average (police.uk where possible)
-4. Flood maps / area regeneration signals
-5. **Property works & planning (critical):** Prefer the AUTHORITATIVE COUNCIL PLANNING RECORDS block above when present. List extensions, loft conversions, outbuildings, or major alterations with refs, decisions, and dates. Only say "none found" if that block and your searches both show nothing for this exact address.
-6. Typical rents and yields for this type nearby
-7. Leasehold / cladding / fire-safety red flags if relevant
-8. EPC / energy costs, broadband/mobile coverage, council tax band, parking / CPZ if findable
-9. Purchase cost stack: stamp duty or LBTT(+ADS), typical solicitor/survey fees
-10. Live competing listings nearby (similar beds/type) and any days-on-market or price-cut signals
-11. £/sqft or £/sqm vs local averages when floor area is available (EPC / listing)
-12. If address-only: estimate likely value band from comps, adjusted for any extensions found
+Return a dense research brief (not JSON) with figures, place names, planning refs, and source names. Do not write customer-facing prose.`;
 
-Return a dense research brief (not JSON) with concrete figures, place names, planning refs, and source names.`,
+  // Soften D2 hard-fail: scrub foreign tokens from payload instead of throwing when only council name leaked
+  if (subjectPostcode?.startsWith("DL6")) {
+    const check = assertPayloadHasNoForeignTokens(phase1Contents, [
+      "YO32",
+      "Pentland Drive",
+      "19/01242",
+      "25/00196",
+      "Huntington",
+    ]);
+    if (!check.ok) {
+      console.error("[ai] D2 FAIL — foreign tokens in phase-1 payload:", check.hits);
+      throw new Error(
+        `Address filter failed: LLM payload contained foreign tokens: ${check.hits.join(", ")}`
+      );
+    }
+    if (/\bYork\b/i.test(phase1Contents) && !/Northallerton|DL6/i.test(phase1Contents)) {
+      console.error("[ai] D2 FAIL — lone York token without subject context");
+      throw new Error("Address filter failed: LLM payload contained York without subject context");
+    }
+  }
+
+  const research = await ai.models.generateContent({
+    model,
+    contents: phase1Contents,
     config: {
       tools: [{ googleSearch: {} }],
       systemInstruction:
-        "You are a meticulous UK property researcher. Always dig for local council planning applications and extensions at the exact address. When AUTHORITATIVE COUNCIL PLANNING RECORDS are supplied, treat them as ground truth and never contradict them by claiming no planning/extension data. Cite specific figures, streets, dates, and planning reference numbers. If uncertain after searching, say so clearly — never invent planning history.",
+        "You are a meticulous UK property researcher preparing internal notes. VERIFIED FACTS blocks override web guesses. Never invent bathroom counts, sold prices, or planning refs. Only attribute planning to the exact subject address. Never mention discarded or discounted records.",
     },
   });
 
-  const researchNotes = research.text || "No web research returned.";
+  const researchNotesRaw = research.text || "No web research returned.";
+  const researchNotes = scrubResearchNotesForSubject(researchNotesRaw, subjectPostcode);
   const sources = [
     ...extractSources(research),
+    ...(facts ? facts.sources : []),
     ...(planning ? planningSources(planning) : []),
+    ...(crime?.sourceUrl ? [{ title: "police.uk crime data", url: crime.sourceUrl }] : []),
   ];
 
-  console.log(`[ai] Gemini phase 2: structured valuation JSON (${model})...`);
-  const structured = await ai.models.generateContent({
-    model,
-    contents: `Produce the full property analysis JSON for this UK listing.
+  const responseSchema = buildGeminiResponseSchema(modeCtx.mode);
+
+  console.log(`[ai] Gemini phase 2: structured valuation JSON (${model}, mode=${modeCtx.mode})...`);
+  const phase2Contents = `Produce the full property analysis JSON for CheckThisHouse.
 
 Buyer goal: ${input.buyerGoal}
 
-LISTING:
+${buildReportWritingRequirements(modeCtx.mode)}
+
+LISTING / SUBJECT:
 ${listingBrief}
 
+${factsBlock ? `${factsBlock}\n` : ""}
 ${planningBlock ? `${planningBlock}\n` : ""}
-WEB RESEARCH BRIEF (from Google Search):
+${crimeBlock}
+${floodBlock}
+INTERNAL WEB RESEARCH NOTES:
 ${researchNotes}
 
 ${UK_PROPERTY_TAX_RULES_PROMPT}
 
-Requirements:
-- Pros/cons tailored to the buyer goal (at least 7–8 each) with specific, evidence-backed descriptions (2–3 sentences with streets, £, school names, planning refs where known — not fluff)
-- At least 6 comparable sales and 5 sold-history entries when research supports them; invent none — mark uncertainty clearly if data is thin
-- Viewing checklist (10+) and agent questions (10+) that are property-specific — include checks for extensions, planning compliance and building control where relevant
-- Offer strategy MUST be commercially realistic:
-  - lowOffer = sensible opening offer, typically 3–6% below asking if fairly priced; NEVER more than ~8% below asking unless comps clearly show overpricing (state why)
-  - fairOffer = what a patient buyer should expect to pay (near the lower of asking and fair valuation)
-  - premiumOffer = walk-away maximum, typically asking to +2–3%; NEVER more than ~5% over asking unless there is bidding-war evidence
-  - Include at least 6 negotiation tips grounded in the evidence (DOM, comps, works, chain)
-- Scores 0-100; growthPotential and riskLevel must be Low, Medium, or High
-- summary must be 4-6 dense sentences covering condition, **extensions/works if any**, pricing vs comps, area, and recommendation
-- buyingSuitability must be a clear multi-sentence verdict
-- investmentMetrics.growthReasoning and advanced.* fields must be detailed paragraphs
-- investmentMetrics.stampDuty must use the correct nation tax (LBTT+ADS in Scotland at 8% ADS from 5 Dec 2024 — never 6%)
-- Risk fields must be explanatory sentences with concrete local detail, not single words like "Low"
-- riskTones: for EACH risk field set positive | caution | negative | neutral from the buyer's perspective. Examples: approved extension that adds value = positive for planningDevelopments; low flood risk = positive; cladding concern = negative; freehold with no issues = positive for leaseholdIssues
-- marketEvidence: fill from research — asking vs sold comps with £, competing supply nearby, £/sqft or £/sqm if known, and negotiation levers (never invent listings)
-- Populate dueDiligence thoroughly with named figures where found
-- Prefer specific street names, school names, station names, planning refs, and £ figures from the research brief
-- specs: include as many factual rows as research supports (tenure, EPC, council tax, parking, garden, heating, etc.)
+Fill every schema field. Extra content rules:
+- Pros/cons: at least 7–8 each, evidence-backed, consistent with summary; every risk needs a so-what
+- comparableSales: prefer VERIFIED Land Registry; each note MUST set basis to size|date|planning|listing|unknown — if unknown, note must not speculate
+- bathrooms: never invent; if unknown use Not on record — verify with a viewing or the listing
+- Viewing checklist (10+) and agent/professional questions (10+)
+- Do NOT invent numeric scores or forecast milestone £ — propose growthAssumptions only
+- summary: 4–6 dense sentences; buyingSuitability multi-sentence for the buyer goal and report mode
+- riskTones for every risk field; dueDiligence thorough
+- propertyWorks only from exact-address planning matches; interpret /LBC /FUL /OUT /TPO correctly
+- Yields must include rent assumption; SDLT/LBTT must state residence assumption
+- Never invent EPC letter ranges (e.g. D to F)
+- Comp notes: set basis honestly; never invent structural explanations without planning/listing facts`;
 
-PROPERTY WORKS & VALUATION (mandatory):
-- Populate propertyWorks from AUTHORITATIVE COUNCIL PLANNING RECORDS when present — cite refs (e.g. 20/00880/DPP), proposals, and status. Never say "no extension data" if those records list an extension at this address.
-- propertyWorks.valueImpact MUST explain how works change fair value and 1/3/5/10-year forecasts vs similar unextended homes
-- If an extension / loft conversion / major works is evidenced, valuation.conservative/fair/optimistic and forecast* MUST reflect the larger/improved dwelling — do not value it as if it were still the original footprint
-- If works are not evidenced in the council block or public sources, say so in propertyWorks and keep valuation based on comps, noting the uncertainty
-- riskAnalysis.planningDevelopments should cover nearby developments AND this property's own planning/extension history (and riskTones.planningDevelopments should be positive when works add value)
-- advanced.renovationROI / developmentOpportunity should distinguish completed works vs remaining upside`,
+  if (subjectPostcode?.startsWith("DL6")) {
+    const check2 = assertPayloadHasNoForeignTokens(phase2Contents, [
+      "YO32",
+      "Pentland Drive",
+      "19/01242",
+      "25/00196",
+      "Huntington",
+      "do not apply to this address",
+    ]);
+    if (!check2.ok) {
+      console.error("[ai] D2 FAIL — foreign tokens in phase-2 payload:", check2.hits);
+      throw new Error(
+        `Address filter failed: LLM payload contained foreign tokens: ${check2.hits.join(", ")}`
+      );
+    }
+  }
+  console.log("[ai] LLM phase-1/2 payload lengths:", phase1Contents.length, "/", phase2Contents.length);
+
+  const structured = await ai.models.generateContent({
+    model,
+    contents: phase2Contents,
     config: {
       responseMimeType: "application/json",
-      responseSchema: geminiAnalysisSchema,
-      systemInstruction:
-        "You are an independent, direct UK property valuer. No fluffy marketing. Always return JSON matching the schema precisely. Never invent sold prices, listings, or planning refs. Never ignore evidenced extensions when valuing. When AUTHORITATIVE COUNCIL PLANNING RECORDS list extensions at this address, propertyWorks must reflect them and riskTones.planningDevelopments should usually be positive if works add value. Keep offerStrategy commercially realistic (no extreme lowballs or overbids). Use current Scottish ADS at 8% (from 5 Dec 2024), not the old 6%.",
+      responseSchema,
+      systemInstruction: REPORT_WRITING_ENGINE_SYSTEM,
     },
   });
 
   const analysis = parseJsonText(structured.text || "{}") as Record<string, unknown>;
-  analysis.sources = sources;
+  analysis.sources = sources.map((s) => ({
+    ...s,
+    title: scrubEpcUrlsInText(s.title),
+    url: /find-energy-certificate\.service\.gov\.uk\/?$/i.test(s.url)
+      ? 'https://www.gov.uk/find-energy-certificate'
+      : s.url,
+  }));
   if (!analysis.propertyWorks || typeof analysis.propertyWorks !== "object") {
     analysis.propertyWorks = {
       extensionsAndAlterations:
@@ -657,8 +793,6 @@ PROPERTY WORKS & VALUATION (mandatory):
         "Compare the asking price carefully against the sold comps in this report before locking an offer.",
       competingSupply: "Check live portals for similar nearby listings on the day you offer.",
       pricePerSqmOrSqft: "Confirm floor area from the EPC or measured survey before relying on £/sqft comparisons.",
-      negotiationLevers:
-        "Use days on market, survey findings, chain status and any incomplete works as leverage — not arbitrary lowballs.",
     };
   }
   // If the model still under-reported but we have portal matches, backfill propertyWorks.
@@ -686,7 +820,7 @@ PROPERTY WORKS & VALUATION (mandatory):
         )
         .join(" | ");
       if (!pw.certainty || /low until|manually confirm/i.test(pw.certainty)) {
-        pw.certainty = `High for planning refs listed — sourced directly from ${planning.council} online planning portal. Confirm build quality and building control with a surveyor.`;
+        pw.certainty = `Planning refs listed were matched to this address on the ${planning.council} portal. Confirm build quality and building control with a surveyor.`;
       }
       if (!pw.valueImpact || /confirm any completed/i.test(pw.valueImpact)) {
         pw.valueImpact =
@@ -699,20 +833,75 @@ PROPERTY WORKS & VALUATION (mandatory):
   }
   applyStampDutyEstimate(analysis, input.buyerGoal);
   refineRiskTones(analysis);
-  const valuation = analysis.valuation as { fair?: string; conservative?: string; optimistic?: string } | undefined;
-  analysis.offerStrategy = sanitizeOfferStrategy(
-    analysis.offerStrategy as {
-      lowOffer: string;
-      fairOffer: string;
-      premiumOffer: string;
-      negotiationTips: string[];
-    },
-    {
-      asking: String(analysis.price || input.scrap.price || ""),
-      fairValue: valuation?.fair,
-      conservative: valuation?.conservative,
-      optimistic: valuation?.optimistic,
-    }
-  );
+  if (facts) {
+    applyPropertyFactLocks(analysis, facts, {
+      bedrooms: input.scrap.bedrooms,
+      bathrooms: input.scrap.bathrooms,
+      propertyType: input.scrap.propertyType,
+      price: input.scrap.price,
+    });
+  }
+
+  if (modeCtx.mode === "on_market") {
+    const valuation = analysis.valuation as
+      | { fair?: string; conservative?: string; optimistic?: string }
+      | undefined;
+    analysis.offerStrategy = sanitizeOfferStrategy(
+      analysis.offerStrategy as {
+        lowOffer: string;
+        fairOffer: string;
+        premiumOffer: string;
+        negotiationTips: string[];
+      },
+      {
+        asking: String(analysis.price || input.scrap.price || ""),
+        fairValue: valuation?.fair,
+        conservative: valuation?.conservative,
+        optimistic: valuation?.optimistic,
+      }
+    );
+  } else {
+    delete analysis.offerStrategy;
+  }
+
+  applyReportWritingEngine(analysis, {
+    modeCtx,
+    scrapBathrooms: input.scrap.bathrooms,
+    scrapBedrooms: input.scrap.bedrooms,
+    hasVerifiedEpc: Boolean(facts?.epc.matched),
+    hasVerifiedSoldHistory: Boolean(facts?.landRegistry.thisProperty.length),
+  });
+
+  const rewriteField = async (path: string, value: string, hits: string[]) => {
+    const rewrite = await ai.models.generateContent({
+      model,
+      contents: `Rewrite the following property-report field so it contains NONE of these banned terms/patterns: ${hits.join(", ")}.
+Keep the same facts and meaning. Do not invent new numbers. Return ONLY the rewritten field text.
+
+Field path: ${path}
+Original:
+${value}`,
+      config: {
+        systemInstruction:
+          "You rewrite UK property report prose. Remove banned terms without changing factual meaning. Never invent data.",
+      },
+    });
+    return (rewrite.text || value).trim();
+  };
+
+  const { warnings } = await enforceReportPipeline(analysis, {
+    modeCtx,
+    scrapPrice: input.scrap.price,
+    crime,
+    epc: facts?.epc,
+    landRegistry: facts?.landRegistry,
+    flood,
+    hasVerifiedPlanning: Boolean(planning?.matchedToProperty?.length),
+    rewriteField,
+  });
+  if (warnings.length) {
+    console.warn("[ai] Enforcement warnings:", warnings.slice(0, 20));
+  }
+
   return { analysis, sources, provider: "gemini" };
 }

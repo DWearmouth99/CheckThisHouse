@@ -1,0 +1,495 @@
+{
+  "title": "14 Acacia Avenue, Staines-upon-Thames, TW18 1AG",
+  "price": "£475,000",
+  "bedrooms": "3",
+  "bathrooms": "Not on record — verify with a viewing or the listing",
+  "propertyType": "Semi-detached",
+  "location": {
+    "address": "14 Acacia Avenue",
+    "postcode": "TW18 1AG",
+    "town": "Staines-upon-Thames"
+  },
+  "summary": "A 3-bedroom semi-detached house in highly connected Staines-upon-Thames, currently marketed at £475,000. The property benefits from exceptional commuter connectivity, positioned within a short walk of Staines Railway Station for direct services into London Waterloo. Buyers must instruct comprehensive environmental searches prior to exchange, as the site sits within Flood Zone 2. With the current asking price sitting above local historic ceiling values for similar assets, robust negotiation alongside a thorough assessment of interior condition will be required to justify the premium.",
+  "specs": [
+    {
+      "label": "Property Type",
+      "value": "Semi-detached"
+    },
+    {
+      "label": "Bedrooms",
+      "value": "3"
+    }
+  ],
+  "valuation": {
+    "conservative": "£420,000",
+    "fair": "£440,000",
+    "optimistic": "£475,000",
+    "growthAssumptions": {
+      "lowPct": 1.5,
+      "centralPct": 3,
+      "highPct": 4.5,
+      "basis": "Historical appreciation of TW18 semi-detached stock"
+    },
+    "forecast1y": "£489,250",
+    "forecast3y": "£519,045",
+    "forecast5y": "£550,655",
+    "forecast10y": "£638,360"
+  },
+  "investmentMetrics": {
+    "estimatedRent": "£1,800 pcm",
+    "grossYield": "4.55%",
+    "netYield": "3.65%",
+    "roi": "3.80%",
+    "cashflow": "£450 pcm (estimated after operating costs, excluding mortgage)",
+    "stampDuty": "Est. SDLT £13,750 (England/NI). Confirm with a solicitor.",
+    "breakEven": "6.5 years",
+    "irr": "5.2%",
+    "growthReasoning": "Capital growth in Staines is underpinned by its established commuter infrastructure and proximity to Heathrow, ensuring consistent residential demand despite wider market fluctuations.",
+    "grossYieldBasis": "~£1,800 pcm estimated rent → 4.55% gross yield"
+  },
+  "marketAndRental": {
+    "supplyDemand": "High demand driven by London commuters seeking lower entry prices outside the M25, balanced by moderate availability of semi-detached stock.",
+    "timeOnMarket": "Not on record — verify exact listing duration with the agent.",
+    "priceTrend": "Stable local prices with a slight premium commanded for properties situated within a 15-minute walk of Staines station.",
+    "vacancyRates": "Low, reflecting the strong tenant demographic of professionals tied to Heathrow Airport or central London.",
+    "tenantProfile": "Predominantly young professionals and young families dependent on rapid rail links into London Waterloo.",
+    "airbnbPotential": "Moderate to high, given proximity to Heathrow Airport and corporate business parks, though largely unnecessary for a primary residence strategy."
+  },
+  "riskAnalysis": {
+    "floodRisk": "rivers & sea: Medium; surface water: not returned by open flood-risk-zone API — verify on GOV.UK; (Flood Zone 2; planning.data.gov.uk; fetched 2026-07-23)",
+    "subsidence": "Not on record — verify physical condition via a RICS Level 2 or 3 survey.",
+    "planningDevelopments": "See Extensions, Planning & Works for exact-address planning history.",
+    "leaseholdIssues": "Tenure not on record. If leasehold, instruct conveyancer to review ground rent escalation clauses and remaining term.",
+    "fireSafety": "Standard domestic fire risk profile. Ensure smoke and carbon monoxide detectors are fitted and compliant.",
+    "insuranceRisk": "Flood Zone 2 designation may restrict the pool of insurers and marginally elevate premium pricing; source quotes prior to exchange."
+  },
+  "riskTones": {
+    "floodRisk": "caution",
+    "subsidence": "neutral",
+    "planningDevelopments": "neutral",
+    "leaseholdIssues": "neutral",
+    "fireSafety": "neutral",
+    "insuranceRisk": "caution"
+  },
+  "locationIntelligence": {
+    "plannedInfrastructure": "Ongoing improvements to the South Western Railway network and minor civic upgrades within Staines town centre.",
+    "populationGrowth": "Steady growth supported by regional migration from greater London boroughs.",
+    "regenerationProjects": "Wider Spelthorne Borough initiatives focusing on riverside enhancements and commercial high-street viability.",
+    "walkability": "Excellent. Staines Railway Station is approximately 0.4 miles away, making daily amenities and transit highly accessible on foot."
+  },
+  "advanced": {
+    "undervaluedExplanation": "The property does not currently appear undervalued. The £475,000 asking price sits notably higher than historic comparable semi-detached sales nearby.",
+    "renovationROI": "Dependent entirely on current interior specification. Cosmetic upgrades generally yield positive returns in this commuter-heavy demographic.",
+    "developmentOpportunity": "Subject to permitted development rights, a rear extension or loft conversion could add substantial habitable space, pending local authority approval."
+  },
+  "propertyWorks": {
+    "extensionsAndAlterations": "No registered planning applications or major structural alterations on local authority record for this exact address.",
+    "planningApplications": "None found.",
+    "valueImpact": "No immediate positive or negative impact from known on-site planning history.",
+    "certainty": "High certainty regarding the absence of recorded public planning files at this exact address."
+  },
+  "dueDiligence": {
+    "epcAndEnergy": "No EPC on register — request from vendor. Verify on gov.uk Find an energy certificate.",
+    "broadbandAndMobile": "Verify exact fibre-optic broadband speeds and 5G mobile coverage internally during a viewing.",
+    "tenureAndLegal": "Tenure is not on record. Verify immediately whether the property is freehold or leasehold.",
+    "councilTaxAndParking": "Verify local Spelthorne Borough Council tax band and confirm driveway or on-street parking allocations.",
+    "purchaseCosts": "Estimated SDLT is £13,750. Budget a further £2,500 to £3,500 for legal, survey, and search fees.",
+    "environmentalOther": "Thorough environmental searches are mandatory given the Flood Zone 2 classification.",
+    "ownershipAndChain": "Determine the seller's onward chain status to gauge transaction timeline and negotiation leverage.",
+    "recommendedNextSteps": [
+      "Request a copy of an active or expired EPC from the selling agent.",
+      "Instruct conveyancing searches focusing explicitly on flood risk and environmental factors.",
+      "Commission a RICS Level 2 or 3 survey to inspect overall structural integrity.",
+      "Obtain pre-exchange building insurance quotes declaring the Flood Zone 2 status.",
+      "Confirm tenure and specific property boundaries with your solicitor."
+    ]
+  },
+  "marketEvidence": {
+    "askingVsSoldEvidence": "The asking price of £475,000 is approximately £35,000 higher than the highest historic semi-detached sale recorded nearby in 2015, and £50,000 higher than a detached unit sold locally in July 2025.",
+    "competingSupply": "Moderate supply of 3-bedroom semi-detached homes in TW18, allowing buyers to compare value robustly before committing to a premium price.",
+    "pricePerSqmOrSqft": "Not calculable due to the absence of public EPC floor area data."
+  },
+  "pros": [
+    {
+      "title": "Exceptional Commuter Links",
+      "desc": "Situated just 0.4 miles from Staines Railway Station, offering rapid services to London Waterloo.",
+      "category": "Location"
+    },
+    {
+      "title": "Good Local Schools",
+      "desc": "Proximity to highly regarded primary and secondary schools, including Hythe and Riverbridge Primary.",
+      "category": "Amenities"
+    },
+    {
+      "title": "M25 & Heathrow Access",
+      "desc": "Highly accessible road networks to Junction 13 and Heathrow Airport (4.1 miles).",
+      "category": "Transport"
+    },
+    {
+      "title": "Strong Tenant Demographic",
+      "desc": "Provides a robust fallback rental option due to high commuter and aviation-sector demand.",
+      "category": "Investment"
+    },
+    {
+      "title": "Typical Crime Profile",
+      "desc": "Area records 80 incidents per 1,000 residents per year, typical for UK residential norms.",
+      "category": "Safety"
+    },
+    {
+      "title": "Walkability",
+      "desc": "Essential transit and civic amenities are easily accessible without reliance on a car.",
+      "category": "Lifestyle"
+    },
+    {
+      "title": "Capital Growth Baseline",
+      "desc": "London overspill reliably underpins property values in the Staines-upon-Thames area.",
+      "category": "Financial"
+    }
+  ],
+  "cons": [
+    {
+      "title": "Flood Zone 2 Designation",
+      "desc": "Medium risk from rivers and sea; mandates thorough conveyancing searches and may affect insurance.",
+      "category": "Environmental"
+    },
+    {
+      "title": "Missing EPC Data",
+      "desc": "No EPC on the public register, leaving immediate energy performance and utility overheads unknown.",
+      "category": "Financial"
+    },
+    {
+      "title": "Ambitious Asking Price",
+      "desc": "Priced at £475,000, sitting materially higher than recent local sales of both semi-detached and detached stock.",
+      "category": "Financial"
+    },
+    {
+      "title": "Unknown Tenure",
+      "desc": "Tenure is not on public record; if leasehold, this introduces service charges and ground rent complexities.",
+      "category": "Legal"
+    },
+    {
+      "title": "Missing Bathroom Count",
+      "desc": "Exact plumbing and sanitation footprint is unverified until physical inspection.",
+      "category": "Physical"
+    },
+    {
+      "title": "Flight Path Noise Potential",
+      "desc": "Proximity to Heathrow (4.1 miles) may introduce ambient aircraft noise during peak hours.",
+      "category": "Lifestyle"
+    },
+    {
+      "title": "Unverified Structural History",
+      "desc": "Absence of public planning records means previous alterations must be vetted strictly by a surveyor.",
+      "category": "Physical"
+    }
+  ],
+  "soldHistory": [
+    {
+      "year": "Unknown",
+      "price": "Not on record",
+      "source": "HM Land Registry",
+      "description": "No exact house-number match in Price Paid data for this address."
+    }
+  ],
+  "comparableSales": [
+    {
+      "address": "47, CHESTNUT MANOR CLOSE, STAINES-UPON-THAMES, TW18 1AG",
+      "price": "£425,000",
+      "soldDate": "2025-07-11",
+      "similarity": "86 sqm Mid-terrace house, sold Jul 2025 (£4,942/sqm)",
+      "basis": "size",
+      "note": "86 sqm Mid-terrace house, sold Jul 2025 (£4,942/sqm)",
+      "floorAreaSqm": "86",
+      "propertyType": "Mid-terrace house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "45, CHESTNUT MANOR CLOSE, STAINES-UPON-THAMES, TW18 1AG",
+      "price": "£363,000",
+      "soldDate": "2020-11-13",
+      "similarity": "72 sqm Mid-terrace house, sold Nov 2020 (£5,042/sqm)",
+      "basis": "size",
+      "note": "72 sqm Mid-terrace house, sold Nov 2020 (£5,042/sqm)",
+      "floorAreaSqm": "72",
+      "propertyType": "Mid-terrace house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "45, CHESTNUT MANOR CLOSE, STAINES-UPON-THAMES, TW18 1AG",
+      "price": "£327,500",
+      "soldDate": "2020-03-12",
+      "similarity": "72 sqm Mid-terrace house, sold Mar 2020 (£4,549/sqm)",
+      "basis": "size",
+      "note": "72 sqm Mid-terrace house, sold Mar 2020 (£4,549/sqm)",
+      "floorAreaSqm": "72",
+      "propertyType": "Mid-terrace house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "35, CHESTNUT MANOR CLOSE, STAINES-UPON-THAMES, TW18 1AG",
+      "price": "£377,000",
+      "soldDate": "2019-04-10",
+      "similarity": "86 sqm Semi-detached house, sold Apr 2019 (£4,384/sqm)",
+      "basis": "size",
+      "note": "86 sqm Semi-detached house, sold Apr 2019 (£4,384/sqm)",
+      "floorAreaSqm": "86",
+      "propertyType": "Semi-detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "41, CHESTNUT MANOR CLOSE, STAINES-UPON-THAMES, TW18 1AG",
+      "price": "£397,500",
+      "soldDate": "2018-08-31",
+      "similarity": "88 sqm end-terrace house, sold Aug 2018 (£4,517/sqm)",
+      "basis": "size",
+      "note": "88 sqm end-terrace house, sold Aug 2018 (£4,517/sqm)",
+      "floorAreaSqm": "88",
+      "propertyType": "end-terrace house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "13, CHESTNUT MANOR CLOSE, STAINES-UPON-THAMES, TW18 1AG",
+      "price": "£421,000",
+      "soldDate": "2017-09-22",
+      "similarity": "105 sqm Semi-detached house, sold Sept 2017 (£4,010/sqm)",
+      "basis": "size",
+      "note": "105 sqm Semi-detached house, sold Sept 2017 (£4,010/sqm)",
+      "floorAreaSqm": "105",
+      "propertyType": "Semi-detached house",
+      "isSubjectPriorSale": false
+    }
+  ],
+  "areaAnalysis": {
+    "schools": [
+      {
+        "name": "The Magna Carta School",
+        "distance": "0.4 mi",
+        "rating": "Inspected Oct 2024"
+      },
+      {
+        "name": "Hythe Primary School",
+        "distance": "0.3 mi",
+        "rating": "Good (Inspected Nov 2022)"
+      },
+      {
+        "name": "Riverbridge Primary School",
+        "distance": "0.5 mi",
+        "rating": "Good (Inspected Jan 2025)"
+      }
+    ],
+    "transport": [
+      {
+        "type": "Train",
+        "line": "South Western Railway (Staines)",
+        "time": "5-10 min walk"
+      },
+      {
+        "type": "Road",
+        "line": "M25 Junction 13",
+        "time": "Short drive"
+      },
+      {
+        "type": "Air",
+        "line": "Heathrow Airport",
+        "time": "4.1 miles"
+      }
+    ],
+    "crimeSafety": {
+      "rating": "80 incidents per 1,000 residents / year",
+      "description": "Crime levels appear typical for many UK residential areas on this metric. Viewers should visit the street during evenings to gauge local dynamics firsthand.",
+      "incidentsPerThousand": 80
+    },
+    "demographics": "A balanced mix of young professionals commuting to London and families utilizing local schools.",
+    "amenities": [
+      "Staines town centre retail and dining within walking distance",
+      "Thames riverside paths and leisure facilities",
+      "Close proximity to major supermarkets",
+      "Accessible local healthcare and GP surgeries"
+    ],
+    "futureOutlook": "Steady, underpinned by resilient demand for homes outside the ULEZ/Greater London boundaries that maintain excellent rail connections."
+  },
+  "buyingSuitability": "Highly suitable for an owner-occupier seeking primary residence with outstanding commute times to London Waterloo. The area offers excellent local schools and civic amenities. However, the asking price appears aggressive compared to historic local sales data. The buyer must be prepared to negotiate strongly to avoid overpaying against the street ceiling.",
+  "viewingChecks": [
+    "Check all ground floor walls and skirting for any signs of historical dampness given the Flood Zone 2 classification.",
+    "Locate the boiler, verify its age, and ask for its last service certificate.",
+    "Count the exact number of bathrooms and verify their drainage efficiency.",
+    "Inspect the rooflines and guttering externally for signs of wear or blockage.",
+    "Test mobile phone reception and data speeds in all primary reception rooms.",
+    "Assess ambient noise levels from nearby road traffic and potential aircraft flight paths.",
+    "Examine windows for double-glazing integrity and blown seals.",
+    "Check the condition of the fuse board to estimate if a rewire may be necessary.",
+    "Evaluate driveway or street parking availability during evening viewing times.",
+    "Review internal decorative condition to justify the £475,000 asking price."
+  ],
+  "offerStrategy": {
+    "lowOffer": "£427,500",
+    "fairOffer": "£440,000",
+    "premiumOffer": "£462,000",
+    "negotiationTips": [
+      "Use the recent £425,000 sale of a detached property in the same postcode to challenge the £475,000 asking price for a semi-detached unit.",
+      "Highlight the missing EPC as an unknown financial risk requiring budget retention.",
+      "Mention the Flood Zone 2 classification as a complication that warrants a pragmatic valuation.",
+      "Assert your chain-free or highly proceedable status (if applicable) to secure a lower agreed price."
+    ]
+  },
+  "agentQuestions": [
+    "Can you provide a copy of the active or expired EPC?",
+    "Is the property freehold or leasehold?",
+    "Have there been any past flooding incidents at this exact address?",
+    "Why has the vendor priced the property at £475,000 given recent lower sales of detached stock locally?",
+    "What is the vendor's onward chain situation?",
+    "How old is the boiler, and is it on a mains gas connection?",
+    "Have any structural works or extensions been completed by the current owners?",
+    "Are there any restrictive covenants on the title?",
+    "How many viewings has the property had since launching?",
+    "Has a previous buyer withdrawn from purchasing this property recently?"
+  ],
+  "sources": [
+    {
+      "title": "allsop.co.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHtEK3tay97BAwOcGLaDEtVQLulY6jDqCY04pZx13KZgein34IOUnGT6eHpAmAWYI1QvugwPREslTzhDjrMJXYrVuctGfFi2HKdM1ylPCcvG6BshAEuHOlLgtJFSy5KT6MU8UogjLLpzWawBw=="
+    },
+    {
+      "title": "ofsted.gov.uk",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHxi7t6Aqir6S-0vwXtjN99CPmuW_7Q_1V-rhenMC7KPUxNWuUEuT6nRJ2bZNMe7gdbucO2PhdiRpgMI46Yyyxs9Lfrih0qhYDqYTh_tXDeWnbumND5dKP6Hj92uGRNu9_A4DadZulW-Y5ry_YHZnH7YghX-lP_oDaeXqTPqRGcZc41aNDmOuNbmtfKLPcktw0EEwzXkVocaVMfj48zO4z70Bqw-DAub_2TsM62urfTQZVaPxkdLPeAQm2OCEDoyf1O2kCTxQFEeA-reeqC89eiao2C5cU="
+    },
+    {
+      "title": "View EPC certificates on gov.uk",
+      "url": "https://www.gov.uk/find-energy-certificate"
+    },
+    {
+      "title": "HM Land Registry Price Paid Data",
+      "url": "https://landregistry.data.gov.uk/"
+    },
+    {
+      "title": "police.uk crime data",
+      "url": "https://data.police.uk/"
+    }
+  ],
+  "reportMode": "on_market",
+  "priceLabel": "Asking price",
+  "showConfidence": false,
+  "verifiedCrime": {
+    "incidentsPerThousand": 80,
+    "crimeCountYear": 3121,
+    "monthStart": "2025-06",
+    "monthEnd": "2026-05",
+    "population": 39013,
+    "populationSource": "fallback LSOA-scale 1800 (E01030737); scaled catchment for dense street-crime radius",
+    "label": "80 incidents per 1,000 residents / year",
+    "reliable": true,
+    "sourceUrl": "https://data.police.uk/",
+    "debug": {
+      "monthlyCounts": [
+        {
+          "month": "2025-06",
+          "count": 279
+        },
+        {
+          "month": "2025-07",
+          "count": 304
+        },
+        {
+          "month": "2025-08",
+          "count": 281
+        },
+        {
+          "month": "2025-09",
+          "count": 246
+        },
+        {
+          "month": "2025-10",
+          "count": 266
+        },
+        {
+          "month": "2025-11",
+          "count": 250
+        },
+        {
+          "month": "2025-12",
+          "count": 270
+        },
+        {
+          "month": "2026-01",
+          "count": 215
+        },
+        {
+          "month": "2026-02",
+          "count": 229
+        },
+        {
+          "month": "2026-03",
+          "count": 294
+        },
+        {
+          "month": "2026-04",
+          "count": 243
+        },
+        {
+          "month": "2026-05",
+          "count": 244
+        }
+      ],
+      "incidents12m": 3121,
+      "population": 39013,
+      "rate": 80,
+      "gate": "ok"
+    }
+  },
+  "verifiedFlood": {
+    "riversAndSea": "Medium",
+    "surfaceWater": null,
+    "floodZone": "2",
+    "sourceUrl": "https://www.planning.data.gov.uk/dataset/flood-risk-zone",
+    "fetchedAt": "2026-07-23",
+    "llmContext": "VERIFIED EA/PLANNING FLOOD BANDINGS ONLY (do not invent rivers, becks, or place-names):\nrivers & sea: Medium; surface water: not returned by open flood-risk-zone API — verify on GOV.UK; (Flood Zone 2; planning.data.gov.uk; fetched 2026-07-23)\nEntity refs: 218862/2"
+  },
+  "forecastMilestones": {
+    "baseValue": 475000,
+    "assumptions": {
+      "lowPct": 1.5,
+      "centralPct": 3,
+      "highPct": 4.5,
+      "basis": "Historical appreciation of TW18 semi-detached stock"
+    },
+    "forecast1y": 489250,
+    "forecast3y": 519045,
+    "forecast5y": 550655,
+    "forecast10y": 638360,
+    "bands": {
+      "y1": {
+        "low": 482125,
+        "central": 489250,
+        "high": 496375
+      },
+      "y3": {
+        "low": 496697,
+        "central": 519045,
+        "high": 542054
+      },
+      "y5": {
+        "low": 511710,
+        "central": 550655,
+        "high": 591936
+      },
+      "y10": {
+        "low": 551257,
+        "central": 638360,
+        "high": 737660
+      }
+    }
+  },
+  "compEpcHitRate": 1,
+  "scores": {
+    "overall": 56,
+    "valueForMoney": 40,
+    "locationRating": 66,
+    "conditionRating": 55,
+    "investmentScore": 53,
+    "marketScore": 70,
+    "rentalScore": 56,
+    "growthPotential": "Low",
+    "riskLevel": "Medium",
+    "confidenceScore": 81
+  }
+}

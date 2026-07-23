@@ -220,6 +220,29 @@ export interface PropertyAnalysis {
   agentQuestions: string[]; // smart questions to ask the listing agent
   sources: { title: string; url: string }[]; // grounding search URLs
   scrapedImages?: string[]; // list of scraped listing image URLs
+  /** Set by report-writing engine post-process */
+  reportMode?: 'on_market' | 'recently_sold';
+  priceLabel?: string;
+  showConfidence?: boolean;
+  /** Mode B panel — replaces offerStrategy figures */
+  recentlySoldPanel?: {
+    headline: string;
+    lastSoldLabel: string;
+    lastSoldPrice: string;
+    lastSoldDate: string;
+    bullets: string[];
+  };
+  forecastMilestones?: {
+    forecast1y: number;
+    forecast3y: number;
+    forecast5y: number;
+    forecast10y: number;
+    baseValue: number;
+  };
+  verifiedCrime?: {
+    incidentsPerThousand: number | null;
+    label: string;
+  };
 }
 
 export interface SavedAnalysis {

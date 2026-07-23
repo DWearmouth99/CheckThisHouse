@@ -606,6 +606,7 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
       const result = await analyzeWithOpenAI({
         url: normalizedUrl || undefined,
         pastedText,
+        manualAddress: manualAddress || undefined,
         buyerGoal: selectedGoal,
         scrap,
       });
