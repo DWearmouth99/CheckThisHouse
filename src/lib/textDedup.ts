@@ -54,8 +54,16 @@ export function collectLongTextBlocks(
   }
   if (value && typeof value === 'object') {
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      // Skip internal verified mirrors and short checklist arrays
-      if (k === 'verifiedCrime' || k === 'forecastMilestones' || k === 'sources') continue;
+      // Skip internal verified mirrors, code-owned assumption objects, and short checklist arrays
+      if (
+        k === 'verifiedCrime' ||
+        k === 'verifiedSchools' ||
+        k === 'verifiedTransport' ||
+        k === 'forecastMilestones' ||
+        k === 'growthAssumptions' ||
+        k === 'sources'
+      )
+        continue;
       if (Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length < 120)) continue;
       out.push(...collectLongTextBlocks(v, path ? `${path}.${k}` : k, minLen));
     }

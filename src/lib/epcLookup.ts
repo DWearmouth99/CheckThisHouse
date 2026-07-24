@@ -21,6 +21,9 @@ const EPC_API_BASE_BASIC = 'https://epc.opendatacommunities.org/api/v1/domestic'
 const EPC_HTML_SEARCH =
   'https://find-energy-certificate.service.gov.uk/find-a-certificate/search-by-postcode';
 
+/** Cached postcode → EPC candidates (one API/HTML call per postcode). */
+const epcPostcodeCache = new Map<string, EpcRecord[]>();
+
 export type EpcRecord = {
   address: string;
   postcode: string;
@@ -36,6 +39,12 @@ export type EpcRecord = {
   lodgementDate: string;
   certificateUrl: string;
   source: 'api' | 'register-html';
+  /** Part 10.8a — construction age band when present on certificate / open data */
+  constructionAgeBand?: string;
+  wallsDescription?: string;
+  roofDescription?: string;
+  windowsDescription?: string;
+  floorDescription?: string;
 };
 
 export type EpcLookup = {
@@ -45,6 +54,66 @@ export type EpcLookup = {
   error?: string;
 };
 
+/** Canonical England & Wales RdSAP construction age bands (whitelist). */
+export const EPC_AGE_BAND_CANONICAL = [
+  'before 1900',
+  '1900-1929',
+  '1930-1949',
+  '1950-1966',
+  '1967-1975',
+  '1976-1982',
+  '1983-1990',
+  '1991-1995',
+  '1996-2002',
+  '2003-2006',
+  '2007-2011',
+  '2007 onwards',
+  '2012 onwards',
+] as const;
+
+/**
+ * Validate + normalise an EPC construction age band.
+ * Rejects certificate-number fragments (e.g. 0620-8409) and unknown strings.
+ */
+export function normalizeConstructionAgeBand(raw?: string | null): string | null {
+  if (!raw?.trim()) return null;
+  let s = raw.replace(/\s+/g, ' ').trim();
+  s = s.replace(/^england\s+and\s+wales\s*:\s*/i, '').trim();
+  s = s.replace(/[–—]/g, '-');
+  const lower = s.toLowerCase();
+
+  if (/^(before|pre)[\s-]*1900$/i.test(lower)) return 'before 1900';
+
+  const onwards = lower.match(/^(2007|2012)\s+onwards$/);
+  if (onwards) return `${onwards[1]} onwards`;
+
+  const range = lower.match(/^(\d{4})\s*-\s*(\d{4})$/);
+  if (range) {
+    const a = Number(range[1]);
+    const b = Number(range[2]);
+    if (a < 1600 || b > 2100 || a > b || b - a > 80) return null;
+    const canon = `${a}-${b}`;
+    if ((EPC_AGE_BAND_CANONICAL as readonly string[]).includes(canon)) return canon;
+    if (a === 2007 && b >= 2011) return '2007 onwards';
+    if (a >= 2012) return '2012 onwards';
+    return null;
+  }
+
+  return (EPC_AGE_BAND_CANONICAL as readonly string[]).includes(lower) ? lower : null;
+}
+
+/** Human-readable display: "1930–1949", "before 1900", "2007 onwards". */
+export function formatAgeBandDisplay(band: string | null | undefined): string {
+  const n = normalizeConstructionAgeBand(band);
+  if (!n) return '';
+  if (n === 'before 1900' || /onwards$/i.test(n)) return n;
+  return n.replace('-', '–');
+}
+
+export function isValidConstructionAgeBand(raw?: string | null): boolean {
+  return normalizeConstructionAgeBand(raw) != null;
+}
+
 function normalizePc(pc: string): string {
   return pc.toUpperCase().replace(/\s+/g, ' ').trim();
 }
@@ -53,38 +122,122 @@ function compactPc(pc: string): string {
   return normalizePc(pc).replace(/\s+/g, '');
 }
 
-function parseHouseToken(address: string): string | null {
-  const withoutPc = address
+/**
+ * First address line before postcode / first comma — the PAON/house identity line.
+ * LR: "MONKS HOUSE, CROSS LANE, NORTHALLERTON DL6 3ND" → "MONKS HOUSE"
+ * EPC: "Monks House, Cross Lane" → "Monks House"
+ */
+export function firstAddressLine(address: string): string {
+  const withoutPc = String(address || '')
     .replace(UK_POSTCODE_RE, '')
-    .replace(/,/g, ' ')
-    .replace(/\s+/g, ' ')
     .trim();
-  const flat = withoutPc.match(/^(?:flat|apartment|apt|unit|suite)\s+([a-z0-9-]+)\b/i);
-  if (flat) return flat[1]!.toUpperCase();
-  const m = withoutPc.match(/^(\d+[A-Z]?)\b/i);
-  if (m) return m[1]!.toUpperCase();
-  // Named house e.g. "Pentland Cross Lane Northallerton"
-  const named = withoutPc.match(/^([A-Za-z][A-Za-z0-9'-]{1,40})\b/);
-  return named ? named[1]!.toUpperCase() : null;
+  const first = withoutPc.split(',')[0] || withoutPc;
+  return first.trim();
 }
 
+/** Uppercase, strip punctuation, collapse whitespace. */
+export function normalizeAddressLine(line: string): string {
+  return String(line || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * House-name / number identity tokens from a normalised first line.
+ * - "1 CROSS LANE" → "1"
+ * - "FLAT 2A SOMETHING" → "2A"
+ * - "MONKS HOUSE" → "MONKS HOUSE"
+ */
+export function houseIdentityKey(normalizedFirstLine: string): string {
+  const s = normalizedFirstLine.trim();
+  if (!s) return '';
+  const flat = s.match(/^(?:FLAT|APARTMENT|APT|UNIT|SUITE)\s+([A-Z0-9-]+)\b/);
+  if (flat) return flat[1]!;
+  const num = s.match(/^(\d+[A-Z]?)\b/);
+  if (num) return num[1]!;
+  return s;
+}
+
+/**
+ * Match a Land Registry / listing address to an EPC certificate address using
+ * normalised first-line house-name/number tokens (not naive substring on PAON alone).
+ */
+export function epcAddressMatchesComp(epcAddress: string, compAddress: string): boolean {
+  const compKey = houseIdentityKey(normalizeAddressLine(firstAddressLine(compAddress)));
+  const epcKey = houseIdentityKey(normalizeAddressLine(firstAddressLine(epcAddress)));
+  if (!compKey || !epcKey) return false;
+  if (compKey === epcKey) return true;
+  // Named-house prefix: "MONKS HOUSE" vs "MONKS HOUSE CROSS LANE" (single-line EPC)
+  if (!/^\d/.test(compKey) && !/^\d/.test(epcKey)) {
+    return (
+      epcKey.startsWith(compKey + ' ') ||
+      compKey.startsWith(epcKey + ' ') ||
+      normalizeAddressLine(firstAddressLine(epcAddress)).startsWith(compKey + ' ') ||
+      normalizeAddressLine(firstAddressLine(compAddress)).startsWith(epcKey + ' ')
+    );
+  }
+  return false;
+}
+
+/** @deprecated internal alias — prefer epcAddressMatchesComp */
 function addressMatches(epcAddress: string, target: string): boolean {
-  const house = parseHouseToken(target);
-  if (!house) return false;
-  const a = epcAddress.toUpperCase().replace(/\s+/g, ' ');
-  const re = new RegExp(`(?:^|\\b)${house.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
-  if (!re.test(a)) return false;
-  // Prefer street token overlap
-  const streetBits = target
-    .replace(UK_POSTCODE_RE, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !/^(flat|apartment|apt|unit|suite|the)$/i.test(w))
-    .slice(1, 4);
-  if (streetBits.length === 0) return true;
-  const al = epcAddress.toLowerCase();
-  return streetBits.some((w) => al.includes(w));
+  return epcAddressMatchesComp(epcAddress, target);
+}
+
+function lodgementTime(iso: string): number {
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? t : 0;
+}
+
+/** Among certificates for the same address, prefer the most recently lodged. */
+export function pickMostRecentlyLodged(certs: EpcRecord[]): EpcRecord | null {
+  if (!certs.length) return null;
+  return [...certs].sort(
+    (a, b) => lodgementTime(b.lodgementDate) - lodgementTime(a.lodgementDate)
+  )[0]!;
+}
+
+export type EpcMatchDecision = {
+  compAddress: string;
+  matched: boolean;
+  certAddress?: string;
+  floorAreaSqm?: string;
+  lodgementDate?: string;
+  reason: string;
+};
+
+/**
+ * Match one comp address against a postcode's certificate list.
+ * Logs every decision (matched cert / no-match).
+ */
+export function matchCompToEpcCertificates(
+  compAddress: string,
+  certificates: EpcRecord[]
+): { cert: EpcRecord | null; decision: EpcMatchDecision } {
+  const hits = certificates.filter((c) => epcAddressMatchesComp(c.address, compAddress));
+  const cert = pickMostRecentlyLodged(hits);
+  const decision: EpcMatchDecision = cert
+    ? {
+        compAddress,
+        matched: true,
+        certAddress: cert.address,
+        floorAreaSqm: cert.floorAreaSqm || undefined,
+        lodgementDate: cert.lodgementDate || undefined,
+        reason: hits.length > 1
+          ? `matched ${hits.length} certs → most recent lodgement ${cert.lodgementDate || 'unknown'}`
+          : `matched cert "${cert.address}"`,
+      }
+    : {
+        compAddress,
+        matched: false,
+        reason: `no-match (first-line key="${houseIdentityKey(normalizeAddressLine(firstAddressLine(compAddress)))}")`,
+      };
+  console.log(
+    `[comps/epc] ${decision.matched ? 'MATCH' : 'NO-MATCH'} ${compAddress} → ${decision.reason}`
+  );
+  return { cert, decision };
 }
 
 function bearerToken(): string {
@@ -196,7 +349,68 @@ function rowFromApi(r: Record<string, unknown>, postcode: string, apiBase: strin
       ? `https://find-energy-certificate.service.gov.uk/energy-certificate/${encodeURIComponent(lmk)}`
       : 'https://find-energy-certificate.service.gov.uk/',
     source: 'api',
+    constructionAgeBand: normalizeConstructionAgeBand(
+      String(
+        r['construction-age-band'] ||
+          r.constructionAgeBand ||
+          r.construction_age_band ||
+          r.propertyAgeBand ||
+          ''
+      )
+    ) || '',
+    wallsDescription: String(
+      r['walls-description'] || r.wallsDescription || r.walls_description || ''
+    ).trim(),
+    roofDescription: String(
+      r['roof-description'] || r.roofDescription || r.roof_description || ''
+    ).trim(),
+    windowsDescription: String(
+      r['windows-description'] || r.windowsDescription || r.windows_description || ''
+    ).trim(),
+    floorDescription: String(
+      r['floor-description'] || r.floorDescription || r.floor_description || ''
+    ).trim(),
   };
+}
+
+/** Parse gov.uk certificate HTML table rows (th → first td). */
+export function parseEpcFabricFromHtml(html: string): Partial<EpcRecord> {
+  const out: Partial<EpcRecord> = {};
+  const rowRe =
+    /<th[^>]*>\s*([^<]+?)\s*<\/th>\s*<td[^>]*>\s*([^<]+?)\s*<\/td>/gi;
+  let m: RegExpExecArray | null;
+  const seen = new Set<string>();
+  while ((m = rowRe.exec(html)) !== null) {
+    const lab = m[1]!.replace(/\s+/g, ' ').trim().toLowerCase();
+    const val = m[2]!.replace(/\s+/g, ' ').trim();
+    if (!val || seen.has(lab)) continue;
+    seen.add(lab);
+    if (lab === 'wall' || lab === 'walls') out.wallsDescription = val;
+    else if (lab === 'roof') {
+      out.roofDescription = out.roofDescription
+        ? `${out.roofDescription}; ${val}`
+        : val;
+    } else if (lab === 'window' || lab === 'windows') out.windowsDescription = val;
+    else if (lab === 'floor' && !/square metres/i.test(val)) out.floorDescription = val;
+    else if (lab === 'main heating' && !/^main heating$/i.test(val)) out.heating = val;
+    else if (lab === 'construction age band' || lab === 'property age band') {
+      const normalised = normalizeConstructionAgeBand(val);
+      if (normalised) out.constructionAgeBand = normalised;
+    } else if (lab === 'built form') out.builtForm = val;
+  }
+  // Definition-list only — NEVER bare \d{4}-\d{4} (matches cert numbers like 0620-8409)
+  if (!out.constructionAgeBand) {
+    const labeled =
+      html.match(
+        /Construction age band[\s\S]{0,200}?(?:<dd[^>]*>|<td[^>]*>)\s*([^<]+)/i
+      )?.[1] ||
+      html.match(
+        /England and Wales:\s*([^<\n]+)/i
+      )?.[1];
+    const normalised = normalizeConstructionAgeBand(labeled?.replace(/\s+/g, ' ').trim());
+    if (normalised) out.constructionAgeBand = normalised;
+  }
+  return out;
 }
 
 async function searchEpcApi(postcode: string): Promise<EpcRecord[]> {
@@ -234,6 +448,61 @@ async function searchEpcApi(postcode: string): Promise<EpcRecord[]> {
           ? data
           : [];
   return rows.map((r: Record<string, unknown>) => rowFromApi(r, postcode, apiBase));
+}
+
+/**
+ * One postcode call → all domestic certificates (API preferred, HTML fallback).
+ * Used by subject lookup and by mechanical comps matching.
+ */
+export async function fetchEpcCertificatesForPostcode(postcode: string): Promise<EpcRecord[]> {
+  const pc = normalizePc(postcode);
+  if (!pc) return [];
+  const key = compactPc(pc);
+  const cached = epcPostcodeCache.get(key);
+  if (cached) return cached;
+
+  let candidates: EpcRecord[] = [];
+  let lastErr = '';
+  if (hasEpcApiCredentials()) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        candidates = await searchEpcApi(pc);
+        if (candidates.length) break;
+      } catch (err: any) {
+        lastErr = err?.message || String(err);
+        console.warn(`[epc] API attempt ${attempt + 1} failed:`, lastErr);
+        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  if (candidates.length === 0) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        candidates = await searchEpcHtml(pc);
+        if (candidates.length) break;
+      } catch (err: any) {
+        lastErr = err?.message || String(err);
+        console.warn(`[epc] HTML attempt ${attempt + 1} failed:`, lastErr);
+        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  if (!candidates.length && lastErr) {
+    console.warn('[epc] postcode batch empty after retries:', lastErr);
+  }
+  epcPostcodeCache.set(key, candidates);
+  return candidates;
+}
+
+/** Test helper — seed / clear the postcode certificate cache. */
+export function __setEpcPostcodeCacheForTests(postcode: string, records: EpcRecord[] | null): void {
+  const key = compactPc(postcode);
+  if (records == null) epcPostcodeCache.delete(key);
+  else epcPostcodeCache.set(key, records);
+}
+
+export function __clearEpcPostcodeCacheForTests(): void {
+  epcPostcodeCache.clear();
 }
 
 async function searchEpcHtml(postcode: string): Promise<EpcRecord[]> {
@@ -316,41 +585,28 @@ export async function lookupEpc(address: string): Promise<EpcLookup> {
   let candidates: EpcRecord[] = [];
   let error: string | undefined;
 
-  if (hasEpcApiCredentials()) {
-    try {
-      candidates = await searchEpcApi(postcode);
-    } catch (err: any) {
-      error = err?.message || 'EPC API failed.';
+  try {
+    candidates = await fetchEpcCertificatesForPostcode(postcode);
+    if (!candidates.length) {
+      error = 'No EPC certificates found for this postcode on the public register.';
     }
+  } catch (err: any) {
+    error = err?.message || 'EPC register lookup failed.';
   }
 
-  if (candidates.length === 0) {
-    try {
-      candidates = await searchEpcHtml(postcode);
-      if (!candidates.length && !error) {
-        error = 'No EPC certificates found for this postcode on the public register.';
-      }
-    } catch (err: any) {
-      error = error || err?.message || 'EPC register lookup failed.';
-    }
-  }
-
-  const matched =
-    candidates.find((c) => addressMatches(c.address, address)) ||
-    candidates.find((c) => addressMatches(`${c.address} ${c.postcode}`, address)) ||
-    null;
+  const { cert: matchedRaw } = matchCompToEpcCertificates(address, candidates);
 
   // P4: search API often omits TOTAL_FLOOR_AREA — enrich from the public certificate page
-  let enriched = matched;
-  if (matched) {
-    enriched = await enrichFromCertificateHtml(matched);
+  let enriched = matchedRaw;
+  if (matchedRaw) {
+    enriched = await enrichFromCertificateHtml(matchedRaw);
     if (enriched.floorAreaSqm) {
       console.log(
         `[epc] floor area from certificate page: ${enriched.floorAreaSqm} m² (source field present)`
       );
     } else {
       console.log(
-        `[epc] TOTAL_FLOOR_AREA absent after certificate page enrich for ${matched.certificateUrl} (field missing from source HTML)`
+        `[epc] TOTAL_FLOOR_AREA absent after certificate page enrich for ${matchedRaw.certificateUrl} (field missing from source HTML)`
       );
     }
   }
@@ -366,7 +622,16 @@ export async function enrichFromCertificateHtml(record: EpcRecord): Promise<EpcR
   if (!record.certificateUrl || !/energy-certificate\//i.test(record.certificateUrl)) {
     return { ...record, floorAreaSqm: record.floorAreaSqm || '' };
   }
-  if (record.floorAreaSqm && record.heating && record.propertyType) return record;
+  const needsFabric =
+    !record.wallsDescription ||
+    !record.roofDescription ||
+    !record.windowsDescription ||
+    !record.floorDescription ||
+    !record.constructionAgeBand ||
+    !record.floorAreaSqm ||
+    !record.heating ||
+    !record.propertyType;
+  if (!needsFabric) return record;
   try {
     const res = await fetch(record.certificateUrl, {
       headers: {
@@ -384,21 +649,32 @@ export async function enrichFromCertificateHtml(record: EpcRecord): Promise<EpcR
       html.match(/([\d.]+)\s*square metres/i)?.[1] ||
       html.match(/total floor area[\s\S]{0,120}?([\d.]+)/i)?.[1] ||
       '';
-    const heating =
+    const heatingRaw =
       html.match(/Main heating[\s\S]{0,200}?<dd[^>]*>\s*([^<]+)/i)?.[1]?.trim() ||
-      html.match(/main heating[^<]{0,40}/i)?.[0] ||
       '';
+    const heating = heatingRaw.replace(/\s+/g, ' ').trim();
+    const heatingClean = /^main heating$/i.test(heating) ? '' : heating;
     const propType =
       html.match(/Property type[\s\S]{0,120}?<dd[^>]*>\s*([^<]+)/i)?.[1]?.trim() || '';
     const potential =
       html.match(/Potential rating[\s\S]{0,80}?\b([A-G])\b/i)?.[1]?.toUpperCase() || '';
+    const fabric = parseEpcFabricFromHtml(html);
 
     return {
       ...record,
       floorAreaSqm: record.floorAreaSqm || (floor ? String(Number(floor)) : ''),
-      heating: record.heating || heating.replace(/\s+/g, ' ').trim(),
+      heating: record.heating || fabric.heating || heatingClean,
       propertyType: record.propertyType || propType,
       potentialRating: record.potentialRating || potential,
+      builtForm: record.builtForm || fabric.builtForm || '',
+      constructionAgeBand:
+        normalizeConstructionAgeBand(record.constructionAgeBand) ||
+        normalizeConstructionAgeBand(fabric.constructionAgeBand) ||
+        '',
+      wallsDescription: record.wallsDescription || fabric.wallsDescription || '',
+      roofDescription: record.roofDescription || fabric.roofDescription || '',
+      windowsDescription: record.windowsDescription || fabric.windowsDescription || '',
+      floorDescription: record.floorDescription || fabric.floorDescription || '',
     };
   } catch (err: any) {
     console.warn('[epc] certificate enrich failed:', err?.message || err);
@@ -406,24 +682,20 @@ export async function enrichFromCertificateHtml(record: EpcRecord): Promise<EpcR
   }
 }
 
-/** Cached postcode→EPC candidates for comps (P3). */
-const epcPostcodeCache = new Map<string, EpcRecord[]>();
-
-export async function lookupEpcForAddressCached(address: string): Promise<EpcRecord | null> {
+/** Cached postcode→EPC candidates for comps (P3 / Part 6). */
+export async function lookupEpcForAddressCached(
+  address: string,
+  fallbackPostcode?: string | null
+): Promise<EpcRecord | null> {
   const pcMatch = address.match(UK_POSTCODE_RE);
-  const postcode = pcMatch ? normalizePc(pcMatch[1]!) : null;
+  const postcode = pcMatch
+    ? normalizePc(pcMatch[1]!)
+    : fallbackPostcode
+      ? normalizePc(fallbackPostcode)
+      : null;
   if (!postcode) return null;
-  let candidates = epcPostcodeCache.get(compactPc(postcode));
-  if (!candidates) {
-    const lookup = await lookupEpc(address);
-    candidates = lookup.candidates;
-    epcPostcodeCache.set(compactPc(postcode), candidates);
-    if (lookup.matched) return lookup.matched;
-  }
-  const hit =
-    candidates.find((c) => addressMatches(c.address, address)) ||
-    candidates.find((c) => addressMatches(`${c.address} ${c.postcode}`, address)) ||
-    null;
+  const candidates = await fetchEpcCertificatesForPostcode(postcode);
+  const { cert: hit } = matchCompToEpcCertificates(address, candidates);
   if (hit && !hit.floorAreaSqm) return enrichFromCertificateHtml(hit);
   return hit;
 }
@@ -441,8 +713,13 @@ export function formatEpcBrief(result: EpcLookup): string {
     lines.push(`Matched certificate for this property (${e.source}):`);
     lines.push(`- Address on certificate: ${e.address}`);
     if (e.currentRating) lines.push(`- Current EPC band: ${e.currentRating}${e.potentialRating ? ` (potential ${e.potentialRating})` : ''}`);
+    if (e.constructionAgeBand) lines.push(`- Construction age band: ${e.constructionAgeBand}`);
     if (e.propertyType) lines.push(`- Property type: ${e.propertyType}${e.builtForm ? ` / ${e.builtForm}` : ''}`);
     if (e.floorAreaSqm) lines.push(`- Total floor area: ${e.floorAreaSqm} m²`);
+    if (e.wallsDescription) lines.push(`- Walls: ${e.wallsDescription}`);
+    if (e.roofDescription) lines.push(`- Roof: ${e.roofDescription}`);
+    if (e.windowsDescription) lines.push(`- Windows: ${e.windowsDescription}`);
+    if (e.floorDescription) lines.push(`- Floor: ${e.floorDescription}`);
     if (e.habitableRooms) lines.push(`- Habitable rooms: ${e.habitableRooms} (not bathroom count)`);
     if (e.heating) lines.push(`- Main heating: ${e.heating}`);
     if (e.mainFuel) lines.push(`- Main fuel: ${e.mainFuel}`);

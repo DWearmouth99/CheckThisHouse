@@ -18,6 +18,9 @@ export type LandRegistrySale = {
   amount: number;
   date: string;
   propertyType: string;
+  /** Price Paid estate type when present (freehold / leasehold) */
+  estateType?: string;
+  newBuild?: boolean;
   /** Display address for PDF / AI */
   addressLabel: string;
 };
@@ -121,7 +124,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX lrppi: <http://landregistry.data.gov.uk/def/ppi/>
 PREFIX lrcommon: <http://landregistry.data.gov.uk/def/common/>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-SELECT ?paon ?saon ?street ?town ?postcode ?amount ?date ?propertyType
+SELECT ?paon ?saon ?street ?town ?postcode ?amount ?date ?propertyType ?estateType ?newBuild
 WHERE {
   VALUES ?postcode {"${pc}"^^xsd:string}
   ?addr lrcommon:postcode ?postcode .
@@ -133,6 +136,8 @@ WHERE {
   OPTIONAL { ?addr lrcommon:street ?street }
   OPTIONAL { ?addr lrcommon:town ?town }
   OPTIONAL { ?transx lrppi:propertyType/skos:prefLabel ?propertyType }
+  OPTIONAL { ?transx lrppi:estateType/skos:prefLabel ?estateType }
+  OPTIONAL { ?transx lrppi:newBuild ?newBuild }
 }
 ORDER BY DESC(?date)
 LIMIT 80
@@ -156,6 +161,8 @@ LIMIT 80
   for (const b of bindings) {
     const amount = Number(lit(b, 'amount'));
     if (!Number.isFinite(amount) || amount <= 0) continue;
+    const estateRaw = lit(b, 'estateType');
+    const newBuildRaw = lit(b, 'newBuild');
     const sale: LandRegistrySale = {
       paon: lit(b, 'paon'),
       saon: lit(b, 'saon'),
@@ -165,12 +172,23 @@ LIMIT 80
       amount,
       date: lit(b, 'date'),
       propertyType: lit(b, 'propertyType'),
+      estateType: normaliseEstateType(estateRaw) || undefined,
+      newBuild:
+        /true|yes|1/i.test(newBuildRaw) ? true : /false|no|0/i.test(newBuildRaw) ? false : undefined,
       addressLabel: '',
     };
     sale.addressLabel = saleLabel(sale);
     sales.push(sale);
   }
   return sales;
+}
+
+function normaliseEstateType(raw?: string): string | null {
+  if (!raw?.trim()) return null;
+  const s = raw.replace(/^.*\//, '').trim().toLowerCase();
+  if (/freehold/.test(s)) return 'freehold';
+  if (/leasehold/.test(s)) return 'leasehold';
+  return null;
 }
 
 /** Fallback Linked Data API (same dataset, different transport). */
@@ -189,6 +207,9 @@ async function ldaSales(postcode: string): Promise<LandRegistrySale[]> {
     const addr = item?.propertyAddress || {};
     const amount = Number(item?.pricePaid);
     if (!Number.isFinite(amount) || amount <= 0) continue;
+    const estateRaw = String(
+      item?.estateType?.prefLabel || item?.estateType || item?.estate_type || ''
+    );
     const sale: LandRegistrySale = {
       paon: String(addr.paon || '').trim(),
       saon: String(addr.saon || '').trim(),
@@ -198,6 +219,13 @@ async function ldaSales(postcode: string): Promise<LandRegistrySale[]> {
       amount,
       date: String(item?.transactionDate || '').slice(0, 10),
       propertyType: String(item?.propertyType || '').replace(/^.*\//, ''),
+      estateType: normaliseEstateType(estateRaw) || undefined,
+      newBuild:
+        typeof item?.newBuild === 'boolean'
+          ? item.newBuild
+          : /true|yes/i.test(String(item?.newBuild || ''))
+            ? true
+            : undefined,
       addressLabel: '',
     };
     sale.addressLabel = saleLabel(sale);

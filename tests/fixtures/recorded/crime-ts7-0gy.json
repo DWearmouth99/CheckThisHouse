@@ -1,0 +1,24 @@
+{
+  "postcode": "TS7 0GY",
+  "lat": 54.5281,
+  "lng": -1.1702,
+  "lsoa21cd": "E01012000",
+  "crimeCountYear": 42,
+  "monthEnd": "2026-05",
+  "monthStart": "2025-06",
+  "population": 1600,
+  "populationSource": "ONS Census 2021 (fixture)",
+  "incidentsPerThousand": 26.3,
+  "label": "26.3 incidents per 1,000 residents (12 months to May 2026, police.uk)",
+  "interpretationHint": "Local crime is relatively low for the region.",
+  "sourceUrl": "https://data.police.uk/",
+  "reliable": true,
+  "status": "ok",
+  "debug": {
+    "monthlyCounts": [],
+    "incidents12m": 42,
+    "population": 1600,
+    "rate": 26.3,
+    "gate": "ok"
+  }
+}

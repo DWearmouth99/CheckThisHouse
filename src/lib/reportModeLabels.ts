@@ -11,12 +11,25 @@ export type ModeLabels = {
   priceCoverLabel: string;
 };
 
-export function modeLabels(mode: ReportMode): ModeLabels {
+export function modeLabels(mode: ReportMode, hasLiveAsking = true): ModeLabels {
   const sold = mode === 'recently_sold';
+  const estimated = !sold && !hasLiveAsking;
   return {
     chartBaseCaption: (baseFormatted) =>
-      sold ? `Base: last sold price (${baseFormatted})` : `Base asking ${baseFormatted}`,
-    fairPriceBoxTitle: sold ? 'Was the sale price fair?' : 'Is the asking price fair?',
-    priceCoverLabel: sold ? 'Last Sold Price' : 'Asking price',
+      sold
+        ? `Base: last sold price (${baseFormatted})`
+        : estimated
+          ? `Base estimated value ${baseFormatted}`
+          : `Base asking ${baseFormatted}`,
+    fairPriceBoxTitle: sold
+      ? 'Was the sale price fair?'
+      : estimated
+        ? 'Is the estimated value fair?'
+        : 'Is the asking price fair?',
+    priceCoverLabel: sold
+      ? 'Last Sold Price'
+      : estimated
+        ? 'Estimated value'
+        : 'Asking price',
   };
 }

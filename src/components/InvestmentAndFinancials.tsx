@@ -21,7 +21,12 @@ export function InvestmentAndFinancials({ analysis }: InvestmentAndFinancialsPro
             <Coins className="w-4 h-4 text-emerald-600" />
             <span className="text-xs font-sans uppercase tracking-wider font-semibold">Gross Yield</span>
           </div>
-          <p className="font-display font-bold text-2xl text-slate-900">{investmentMetrics.grossYield}</p>
+          <p className="font-display font-bold text-2xl text-slate-900">
+            {investmentMetrics.grossYield || '—'}
+          </p>
+          {!investmentMetrics.grossYield ? (
+            <p className="text-xs text-slate-400 mt-1">Yield omitted — no rent basis with source</p>
+          ) : null}
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-2 text-slate-500">

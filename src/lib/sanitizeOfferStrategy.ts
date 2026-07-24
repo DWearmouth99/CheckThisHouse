@@ -18,7 +18,9 @@ function parseMoney(raw?: string): number | null {
 
 function formatOfferGbp(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return "—";
-  return `£${Math.round(n).toLocaleString("en-GB")}`;
+  // Walk-away / offer bands: nearest £1,000 (commercial UK convention)
+  const rounded = Math.round(n / 1000) * 1000;
+  return `£${rounded.toLocaleString("en-GB")}`;
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -103,9 +105,15 @@ export function sanitizeOfferStrategy(
     if (prem! > ceiling) prem = ceiling;
   }
 
-  // Respect valuation envelope when present
-  if (cons && low! < cons * 0.95) low = Math.round(cons * 0.95);
-  if (opt && prem! > opt * 1.02) prem = Math.round(opt * 1.02);
+  // Respect valuation envelope when present — but never override a live asking band
+  // (stale LLM fair/conservative must not yank offers away from the listing ask)
+  if (!asking) {
+    if (cons && low! < cons * 0.95) low = Math.round(cons * 0.95);
+    if (opt && prem! > opt * 1.02) prem = Math.round(opt * 1.02);
+  } else if (fairVal && Math.abs(asking - fairVal) / fairVal <= 0.15) {
+    if (cons && low! < cons * 0.95) low = Math.round(cons * 0.95);
+    if (opt && prem! > opt * 1.02) prem = Math.round(opt * 1.02);
+  }
 
   // Enforce ordering: opener ≤ fair ≤ walk-away
   if (fair! < low!) fair = low!;

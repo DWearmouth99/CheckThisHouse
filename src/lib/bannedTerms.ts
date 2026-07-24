@@ -15,7 +15,36 @@ export const BANNED_TERMS = [
   'have been disregarded',
   'not established',
   'reason for price difference not established',
+  // Plumbing / internal mechanics (customer PDF must never show these)
+  'endpoint',
+  'fetched',
+  'parser',
+  'pipeline',
+  'payload',
+  'open data feed',
+  'open flood-risk-zone api',
+  'flood-risk-zone api',
 ] as const;
+
+/** Standalone plumbing tokens scanned case-insensitively as whole words / URL shapes. */
+export const PLUMBING_JARGON_RES: RegExp[] = [
+  /\bAPI\b/,
+  /\bendpoint\b/i,
+  /\bfetched\b/i,
+  /\bparser\b/i,
+  /\bpipeline\b/i,
+  /\bpayload\b/i,
+  /\bopen data feed\b/i,
+  /https?:\/\/[^\s)\]"'<>]+/i,
+];
+
+export function findPlumbingHits(text: string): string[] {
+  const hits: string[] = [];
+  for (const re of PLUMBING_JARGON_RES) {
+    if (re.test(text)) hits.push(re.source);
+  }
+  return hits;
+}
 
 /** Prefer grammar-preserving substitutions only as last resort after rewrite retries. */
 export const BANNED_SUBSTITUTIONS: { re: RegExp; replacement: string }[] = [
@@ -29,6 +58,11 @@ export const BANNED_SUBSTITUTIONS: { re: RegExp; replacement: string }[] = [
   { re: /\brecords supplied\b/gi, replacement: 'public records' },
   { re: /\breason for price difference not established\.?/gi, replacement: '' },
   { re: /\bnot established\b/gi, replacement: '' },
+  { re: /\bnot returned by open flood-risk-zone API[^.]*\.?/gi, replacement: 'not available from official records — check the GOV.UK long-term flood risk service.' },
+  { re: /\bfetched\s+\d{4}-\d{2}-\d{2}/gi, replacement: '' },
+  { re: /\bopen flood-risk-zone API\b/gi, replacement: 'official flood records' },
+  { re: /https?:\/\/checker\.ofcom\.org\.uk[^\s)\]"'<>]*/gi, replacement: "Ofcom's broadband checker" },
+  { re: /https?:\/\/[^\s)\]"'<>]+/gi, replacement: '' },
 ];
 
 /** Forbidden speculative EPC letter ranges in customer text. */
@@ -37,7 +71,8 @@ export const EPC_RANGE_RE =
 
 export function findBannedHits(text: string): string[] {
   const lower = text.toLowerCase();
-  return BANNED_TERMS.filter((t) => lower.includes(t.toLowerCase()));
+  const termHits = BANNED_TERMS.filter((t) => lower.includes(t.toLowerCase()));
+  return [...termHits, ...findPlumbingHits(text)];
 }
 
 export function applyBannedSubstitutions(text: string): string {

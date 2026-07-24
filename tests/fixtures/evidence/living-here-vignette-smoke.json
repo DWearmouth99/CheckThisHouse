@@ -1,0 +1,68 @@
+{
+  "ranAt": "2026-07-23T19:28:43.990Z",
+  "model": "gemini-3.1-pro-preview",
+  "address": "Pentland, Cross Lane, Northallerton, DL6 3ND",
+  "vignette": "A weekend morning in Ingleby Arncliffe often begins with a walk along the Coast to Coast Walk, which passes directly through the area. Afterwards, residents can stop for a coffee at The Joiners Shop or pick up everyday essentials from the nearby Londis. Those looking to extend their route might head towards the Cleveland Way or explore the paths through Swinegar Plantation. The morning typically concludes with a quiet lunch at The Blue Bell Inn.",
+  "themeLines": {},
+  "groundingLog": [
+    {
+      "at": "2026-07-23T19:28:43.987Z",
+      "decision": "pass",
+      "detail": "attempt 1: all names grounded"
+    }
+  ],
+  "allowlistNames": [
+    "the joiners shop",
+    "the blue bell inn",
+    "the orchard cafe",
+    "cote ghyll mill yha",
+    "the rusty bike",
+    "coast to coast walk richmond to robin hood s bay",
+    "cleveland way",
+    "swinegar plantation",
+    "pity me wood",
+    "wiske bank plantation",
+    "old lane plantation",
+    "londis",
+    "texaco",
+    "north yorkshire dental care service",
+    "tesco pharmacy",
+    "mayford house surgery",
+    "northallerton",
+    "cross lane",
+    "ingleby arncliffe",
+    "saturday",
+    "sunday",
+    "north",
+    "south",
+    "east",
+    "west",
+    "yorkshire",
+    "england",
+    "uk"
+  ],
+  "poiNames": {
+    "foodDrink": [
+      "The Joiners Shop",
+      "The Blue Bell Inn",
+      "The Orchard Cafe",
+      "Cote Ghyll Mill (YHA)",
+      "The Rusty Bike"
+    ],
+    "walksOutdoors": [
+      "Coast to Coast Walk (Richmond to Robin Hood’s Bay)",
+      "Cleveland Way",
+      "Swinegar Plantation",
+      "Pity Me Wood",
+      "Wiske Bank Plantation",
+      "Old Lane Plantation"
+    ],
+    "everyday": [
+      "Londis",
+      "Texaco",
+      "North Yorkshire Dental Care Service",
+      "Tesco Pharmacy",
+      "Mayford House Surgery"
+    ]
+  }
+}

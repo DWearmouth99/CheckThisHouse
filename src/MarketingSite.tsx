@@ -30,6 +30,7 @@ import { isInvalidListingUrl, validateListingUrl } from './lib/listingUrl';
 import { isInvalidAddress, validateUkAddress } from './lib/ukAddress';
 import { REPORT_CONTENTS, INVESTOR_REPORT_CONTENTS } from './lib/reportContents';
 import { assessListingPaymentGate } from './lib/listingPaymentGate';
+import { assessReportCoverage } from './lib/ukCoverage';
 import { listingNeedsAddressConfirm } from './lib/listingAddressConfirm';
 import { EmbeddedCheckoutModal } from './components/EmbeddedCheckoutModal';
 import { ReportTeaserModal, TeaserData } from './components/ReportTeaserModal';
@@ -116,6 +117,10 @@ export default function MarketingSite() {
   const [addressHint, setAddressHint] = useState<string | null>(null);
   const [readyDismissed, setReadyDismissed] = useState(false);
   const [priceLabel, setPriceLabel] = useState('£4.99');
+  const [compareAtLabel, setCompareAtLabel] = useState<string | null>('£9.99');
+  const [promoCaption, setPromoCaption] = useState<string | null>(
+    'July offer — was £9.99, now £4.99 until 31 July'
+  );
   const [paywallEnabled, setPaywallEnabled] = useState(true);
   const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
@@ -125,6 +130,9 @@ export default function MarketingSite() {
   const [teaserOpen, setTeaserOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmingAddress, setConfirmingAddress] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
   const isBusy =
     phase === 'analyzing' ||
@@ -138,6 +146,16 @@ export default function MarketingSite() {
       .then((r) => r.json())
       .then((data) => {
         if (data?.priceLabel) setPriceLabel(data.priceLabel);
+        if (typeof data?.compareAtLabel === 'string' && data.compareAtLabel) {
+          setCompareAtLabel(data.compareAtLabel);
+        } else if (data && 'compareAtLabel' in data) {
+          setCompareAtLabel(null);
+        }
+        if (typeof data?.promoCaption === 'string' && data.promoCaption) {
+          setPromoCaption(data.promoCaption);
+        } else if (data && 'promoCaption' in data) {
+          setPromoCaption(null);
+        }
         if (typeof data?.paywallEnabled === 'boolean') setPaywallEnabled(data.paywallEnabled);
         if (typeof data?.publishableKey === 'string' && data.publishableKey.startsWith('pk_')) {
           setPublishableKey(data.publishableKey);
@@ -260,6 +278,14 @@ export default function MarketingSite() {
     return validateUkAddress(address);
   }, [address]);
 
+  const coverageGate = useMemo(() => {
+    if (!address.trim()) return null;
+    return assessReportCoverage(address);
+  }, [address]);
+
+  const showWaitlist =
+    Boolean(coverageGate && !coverageGate.supported && coverageGate.waitlistRegion);
+
   const handleUrlChange = (value: string) => {
     setUrl(value);
     setError(null);
@@ -274,8 +300,15 @@ export default function MarketingSite() {
   const handleAddressChange = (value: string) => {
     setAddress(value);
     setError(null);
+    setWaitlistStatus('idle');
+    setWaitlistError(null);
     if (!value.trim()) {
       setAddressHint(null);
+      return;
+    }
+    const coverage = assessReportCoverage(value);
+    if (!coverage.supported && coverage.waitlistRegion) {
+      setAddressHint(coverage.message);
       return;
     }
     const result = validateUkAddress(value);
@@ -283,6 +316,30 @@ export default function MarketingSite() {
     setAddressHint(
       isInvalidAddress(result) ? null : `Looks good — ${result.postcode || 'UK address'}`
     );
+  };
+
+  const joinWaitlist = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!coverageGate?.waitlistRegion) return;
+    setWaitlistStatus('saving');
+    setWaitlistError(null);
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: waitlistEmail.trim(),
+          region: coverageGate.waitlistRegion,
+          postcode: coverageGate.postcode || '',
+        }),
+      });
+      const data = await readJsonResponse(response);
+      if (!response.ok) throw new Error(data.error || 'Could not join waitlist.');
+      setWaitlistStatus('done');
+    } catch (err: unknown) {
+      setWaitlistStatus('error');
+      setWaitlistError(err instanceof Error ? err.message : 'Could not join waitlist.');
+    }
   };
 
   const startCheckout = async (opts: {
@@ -368,6 +425,7 @@ export default function MarketingSite() {
     pricePerBedroom: data.pricePerBedroom || null,
     locationHint: data.locationHint || null,
     researchPlan: Array.isArray(data.researchPlan) ? data.researchPlan.filter(Boolean) : [],
+    previewFacts: data.previewFacts && typeof data.previewFacts === 'object' ? data.previewFacts : null,
   });
 
   const openAddressConfirm = (next?: TeaserData | null) => {
@@ -402,6 +460,7 @@ export default function MarketingSite() {
           pricePerBedroom: null,
           locationHint: null,
           researchPlan: [],
+          previewFacts: null,
         };
       }
       return {
@@ -425,6 +484,13 @@ export default function MarketingSite() {
     e.preventDefault();
 
     if (lookupMode === 'address') {
+      const coverage = assessReportCoverage(address);
+      if (!coverage.supported && coverage.waitlistRegion) {
+        setError(coverage.message);
+        setAddressHint(coverage.message);
+        return;
+      }
+
       const result = validateUkAddress(address);
       if (isInvalidAddress(result)) {
         setError(result.error);
@@ -655,12 +721,47 @@ export default function MarketingSite() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-[15px] sm:text-lg text-brand-muted max-w-lg leading-relaxed mb-6 sm:mb-8"
+                className={`text-[15px] sm:text-lg text-brand-muted max-w-lg leading-relaxed ${
+                  paywallEnabled ? 'mb-3 sm:mb-4' : 'mb-6 sm:mb-8'
+                }`}
               >
                 Get the complete picture before you make your move — with property scores, valuation,
                 flood and damp risks, schools, crime, transport, sold prices and more, all in one
-                easy-to-read report.
+                easy-to-read report. Covers the whole UK.
               </motion.p>
+
+              {paywallEnabled && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.12 }}
+                  className="mb-6 sm:mb-8 inline-flex flex-wrap items-center gap-x-2.5 gap-y-1"
+                >
+                  {compareAtLabel ? (
+                    <>
+                      <span className="inline-flex items-center rounded-md bg-brand-green text-white text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-1">
+                        July sale
+                      </span>
+                      <span className="inline-flex items-baseline gap-2 text-brand-navy">
+                        <span className="text-base text-brand-muted/80 line-through decoration-brand-muted/60">
+                          {compareAtLabel}
+                        </span>
+                        <span className="text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight">
+                          {priceLabel}
+                        </span>
+                        <span className="text-sm font-medium text-brand-muted">paid PDF</span>
+                      </span>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-baseline gap-2 text-brand-navy">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-brand-muted">
+                        Paid PDF
+                      </span>
+                      <span className="text-xl font-extrabold tabular-nums">{priceLabel}</span>
+                    </span>
+                  )}
+                </motion.div>
+              )}
 
               <motion.form
                 initial={{ opacity: 0, y: 12 }}
@@ -748,21 +849,62 @@ export default function MarketingSite() {
                           phase === 'previewing' ||
                           ((phase === 'ready' || phase === 'downloading') && !readyDismissed)
                         }
-                        placeholder="Start with a postcode, e.g. PA2 8TR"
+                        placeholder="Start with a postcode, e.g. EH22 2RB"
                         hintId="address-hint"
                       />
                     </label>
                     {addressHint && (
                       <p
                         id="address-hint"
-                        className="text-xs break-words text-brand-green"
+                        className={`text-xs break-words ${
+                          showWaitlist ? 'text-amber-800' : 'text-brand-green'
+                        }`}
                       >
                         {addressHint}
                       </p>
                     )}
+                    {showWaitlist && (
+                      <div
+                        className="rounded-xl border border-amber-200 bg-amber-50/90 px-3.5 py-3 space-y-2"
+                        data-testid="coverage-waitlist"
+                      >
+                        <p className="text-sm text-amber-950 leading-relaxed">
+                          We don&apos;t yet cover {coverageGate?.waitlistRegion} — our
+                          official-record sources differ there. Join the waitlist.
+                        </p>
+                        {waitlistStatus === 'done' ? (
+                          <p className="text-sm font-semibold text-brand-green">
+                            You&apos;re on the list — we&apos;ll email when we launch there.
+                          </p>
+                        ) : (
+                          <form onSubmit={joinWaitlist} className="flex flex-col sm:flex-row gap-2">
+                            <input
+                              type="email"
+                              required
+                              autoComplete="email"
+                              value={waitlistEmail}
+                              onChange={(e) => setWaitlistEmail(e.target.value)}
+                              placeholder="you@email.com"
+                              className="brand-input text-sm py-2.5 flex-1"
+                              aria-label="Waitlist email"
+                            />
+                            <button
+                              type="submit"
+                              disabled={waitlistStatus === 'saving'}
+                              className="min-h-[44px] inline-flex items-center justify-center px-4 rounded-xl bg-brand-navy text-white text-sm font-semibold disabled:opacity-60"
+                            >
+                              {waitlistStatus === 'saving' ? 'Saving…' : 'Join waitlist'}
+                            </button>
+                          </form>
+                        )}
+                        {waitlistError && (
+                          <p className="text-xs text-rose-700">{waitlistError}</p>
+                        )}
+                      </div>
+                    )}
                     <p className="text-[11px] text-brand-muted leading-relaxed -mt-1">
-                      Enter a full postcode to list every property there, or type your house number +
-                      postcode to jump straight to yours.
+                      Enter a full UK postcode to list every property there, or type your house
+                      number + postcode to jump straight to yours.
                     </p>
                   </>
                 )}
@@ -786,7 +928,7 @@ export default function MarketingSite() {
                   <div className="sm:pt-[22px]">
                     <button
                       type="submit"
-                      disabled={isBusy}
+                      disabled={isBusy || showWaitlist}
                       className="w-full sm:w-auto min-h-[48px] sm:min-h-0 inline-flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green-mid disabled:opacity-60 text-white font-semibold text-sm px-6 py-3.5 rounded-xl transition shadow-[0_8px_24px_rgba(31,122,69,0.25)]"
                     >
                       {phase === 'redirecting' ? (
@@ -796,11 +938,12 @@ export default function MarketingSite() {
                       ) : phase === 'analyzing' || phase === 'previewing' ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />{' '}
-                          {phase === 'previewing' ? 'Loading preview…' : 'Generating…'}
+                          {phase === 'previewing' ? 'Loading free preview…' : 'Generating…'}
                         </>
                       ) : paywallEnabled ? (
                         <>
-                          Get report <ArrowRight className="w-4 h-4" />
+                          Generate Free Preview
+                          <ArrowRight className="w-4 h-4" />
                         </>
                       ) : (
                         <>
@@ -819,9 +962,22 @@ export default function MarketingSite() {
                 )}
 
                 <p className="text-[11px] text-brand-muted pt-1 leading-relaxed">
-                  {paywallEnabled
-                    ? `Pay securely on this page via Stripe · ${priceLabel} for one full PDF · `
-                    : ''}
+                  {paywallEnabled ? (
+                    <>
+                      Free in-browser preview first · unlock the full PDF for{' '}
+                      {compareAtLabel ? (
+                        <>
+                          <span className="line-through text-brand-muted/80">{compareAtLabel}</span>{' '}
+                          <span className="font-semibold text-brand-navy">{priceLabel}</span>
+                        </>
+                      ) : (
+                        <span className="font-semibold text-brand-navy">{priceLabel}</span>
+                      )}{' '}
+                      ·{' '}
+                    </>
+                  ) : (
+                    ''
+                  )}
                   <span className="max-md:block max-md:mt-1">
                     {lookupMode === 'address'
                       ? 'Start with a postcode and pick the exact property — the most accurate way to run a report.'
@@ -979,8 +1135,8 @@ export default function MarketingSite() {
                 },
                 {
                   n: '03',
-                  title: 'Download your PDF',
-                  body: 'A branded 9–10 page report you can keep for yourself, take to viewings, share with family, or send to a surveyor and solicitor.',
+                  title: 'Pay once & download your PDF',
+                  body: `A branded 9–10 page report${compareAtLabel ? ` — July sale ${priceLabel} (was ${compareAtLabel})` : ` for ${priceLabel}`} · keep it for viewings, family, surveyor or solicitor.`,
                 },
               ].map((step) => (
                 <li key={step.n} className="relative">
@@ -1003,7 +1159,11 @@ export default function MarketingSite() {
             {[
               {
                 q: 'What is CheckThisHouse?',
-                a: 'CheckThisHouse turns any UK address into a clear multi-page PDF. You get summary and scores, fair value signals for your goal, pros and cons, flood/damp/lease/fire/insurance risks, crime in the area, schools nearby, transport links, shops and amenities, sold prices nearby, and practical next steps. Buy to let also gets rental yield and ROI sections.',
+                a: 'CheckThisHouse turns any UK address into a clear multi-page PDF. You get summary and scores, fair value signals for your goal, pros and cons, flood/damp/lease/fire/insurance risks, crime in the area, schools nearby, transport links, shops and amenities, sold prices nearby, and practical next steps. Buy to let also gets rental yield and ROI sections. Some official sources differ by nation — the report says so when a dataset does not cover that nation yet.',
+              },
+              {
+                q: 'Where do you cover?',
+                a: 'The whole UK — England, Wales, Scotland and Northern Ireland. Where a national register differs (for example Police Scotland vs police.uk, or Registers of Scotland vs HM Land Registry), the report states that clearly instead of inventing figures.',
               },
               {
                 q: 'Can I look up my own house — or one that isn’t for sale?',
@@ -1082,6 +1242,8 @@ export default function MarketingSite() {
         open={teaserOpen && !checkoutOpen && !confirmOpen && (phase === 'preview' || phase === 'redirecting')}
         teaser={teaser}
         priceLabel={priceLabel}
+        compareAtLabel={compareAtLabel}
+        promoCaption={promoCaption}
         unlocking={phase === 'redirecting'}
         onClose={() => {
           setTeaserOpen(false);
@@ -1128,6 +1290,8 @@ export default function MarketingSite() {
         clientSecret={checkoutClientSecret}
         publishableKey={publishableKey}
         priceLabel={priceLabel}
+        compareAtLabel={compareAtLabel}
+        promoCaption={promoCaption}
         onClose={() => {
           setCheckoutOpen(false);
           setCheckoutClientSecret(null);
@@ -1162,9 +1326,9 @@ export default function MarketingSite() {
               <div className="flex items-center gap-3">
                 <Loader2 className="w-5 h-5 text-brand-green animate-spin shrink-0" />
                 <div>
-                  <p className="font-display font-bold text-lg">Loading preview</p>
+                  <p className="font-display font-bold text-lg">Loading free preview</p>
                   <p className="text-xs text-brand-muted mt-0.5">
-                    Pulling listing basics — no charge, no AI yet
+                    Pulling free preview facts — no charge yet
                   </p>
                 </div>
               </div>

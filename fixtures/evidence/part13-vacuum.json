@@ -1,0 +1,38 @@
+{
+  "hasLiveAsking": false,
+  "priceLabel": "Estimated value",
+  "price": "£410,000",
+  "valuation": {
+    "conservative": "£390,000",
+    "fair": "£410,000",
+    "optimistic": "£430,000",
+    "forecast1y": "£420,000",
+    "forecast3y": "£442,000",
+    "forecast5y": "£464,000",
+    "forecast10y": "£525,000",
+    "growthAssumptions": {
+      "lowPct": 0.5,
+      "centralPct": 2.5,
+      "highPct": 4.5,
+      "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 1 over 10 years (n=0, years=0)"
+    }
+  },
+  "scores": {
+    "overall": 85,
+    "valueForMoney": 0,
+    "locationRating": 90,
+    "conditionRating": 0,
+    "investmentScore": 67,
+    "marketScore": 70,
+    "rentalScore": 73,
+    "growthPotential": "Medium",
+    "riskLevel": "Low",
+    "confidenceScore": 57,
+    "valueForMoneyStatus": "insufficient",
+    "locationRatingStatus": "scored",
+    "conditionRatingStatus": "insufficient",
+    "marketScoreStatus": "scored",
+    "scoredComponentCount": 2,
+    "overallBasis": "based on 2 of 4 components"
+  }
+}

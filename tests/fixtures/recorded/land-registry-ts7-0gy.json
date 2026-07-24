@@ -1,0 +1,32 @@
+{
+  "postcode": "TS7 0GY",
+  "thisProperty": [
+    {
+      "addressLabel": "3A GYPSY LANE, NUNTHORPE, MIDDLESBROUGH, TS7 0GY",
+      "amount": 245000,
+      "date": "2019-06-21",
+      "propertyType": "semi-detached",
+      "newBuild": false,
+      "estateType": "freehold"
+    }
+  ],
+  "nearbySameStreet": [
+    {
+      "addressLabel": "5 GYPSY LANE, NUNTHORPE, MIDDLESBROUGH, TS7 0GY",
+      "amount": 260000,
+      "date": "2023-03-10",
+      "propertyType": "semi-detached",
+      "newBuild": false,
+      "estateType": "freehold"
+    },
+    {
+      "addressLabel": "7 GYPSY LANE, NUNTHORPE, MIDDLESBROUGH, TS7 0GY",
+      "amount": 238000,
+      "date": "2022-11-04",
+      "propertyType": "semi-detached",
+      "newBuild": false,
+      "estateType": "freehold"
+    }
+  ],
+  "nearbyPostcode": []
+}

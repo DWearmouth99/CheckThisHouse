@@ -1,0 +1,81 @@
+{
+  "pentland": {
+    "frontPage": [
+      {
+        "id": "c3-suspended-flood1",
+        "insightClass": 3,
+        "headline": "Suspended floors + Flood Zone 1 → check ventilation",
+        "text": "With a suspended floor on the EPC (\"Suspended, no insulation (assumed)\") and rivers & sea: Very Low; Flood Zone 1, prioritise underfloor ventilation and damp checks — Flood Zone 1 is not a free pass on timber voids.",
+        "derivedFrom": [
+          "epc.floor",
+          "flood.zone"
+        ]
+      },
+      {
+        "id": "c3-oil-heating",
+        "insightClass": 3,
+        "headline": "Oil heating — tank and running-cost checks",
+        "text": "Main heating is recorded as \"Boiler and radiators, oil\" — budget for tank compliance, delivery access and running-cost volatility versus mains gas.",
+        "derivedFrom": [
+          "epc.heating"
+        ]
+      },
+      {
+        "id": "c1-cavity-partial",
+        "insightClass": 1,
+        "headline": "Certificate confirms a typical 1950–1966 fabric detail — worth checking",
+        "text": "Post-war cavity walls of this era were typically built with little or partial insulation. Typical for the era — and this certificate records: \"Cavity wall, as built, partial insulation (assumed)\". Check: Read the EPC walls line and confirm any later insulation."
+      }
+    ],
+    "eraTitle": "Living with a 1950–1966 detached",
+    "insightIds": [
+      "c3-suspended-flood1",
+      "c3-oil-heating",
+      "c1-cavity-partial",
+      "c1-suspended-floors",
+      "c2-crimeVsNational",
+      "c2-epcVsEra",
+      "c2-floorAreaPercentile",
+      "c2-growthVsSector",
+      "c2-psmVsComps"
+    ]
+  },
+  "gypsy": {
+    "frontPage": [
+      {
+        "id": "c3-suspended-flood1",
+        "insightClass": 3,
+        "headline": "Suspended floors + Flood Zone 1 → check ventilation",
+        "text": "With a suspended floor on the EPC (\"Suspended, no insulation (assumed)\") and rivers & sea: Very Low; Flood Zone 1, prioritise underfloor ventilation and damp checks — Flood Zone 1 is not a free pass on timber voids.",
+        "derivedFrom": [
+          "epc.floor",
+          "flood.zone"
+        ]
+      },
+      {
+        "id": "c1-cavity-walls",
+        "insightClass": 1,
+        "headline": "Certificate confirms a typical 1930–1949 fabric detail — worth checking",
+        "text": "Homes of this era commonly have cavity walls that were uninsulated when built unless later filled. Typical for the era — and this certificate records: \"Cavity wall, as built, no insulation (assumed)\". Check: Ask for evidence of cavity-wall insulation and check the EPC walls wording."
+      },
+      {
+        "id": "c1-drainage",
+        "insightClass": 1,
+        "headline": "What is typical for a 1930–1949 home — and what to check",
+        "text": "Original clay drainage of this era is often nearing end of life. Check: Budget for a drainage CCTV survey before exchange."
+      }
+    ],
+    "eraTitle": "Living with a 1930–1949 semi-detached",
+    "insightIds": [
+      "c3-suspended-flood1",
+      "c1-cavity-walls",
+      "c1-suspended-floors",
+      "c1-drainage",
+      "c1-bay-single-skin",
+      "c2-crimeVsNational",
+      "c2-epcVsEra",
+      "c2-floorAreaPercentile",
+      "c2-psmVsComps"
+    ]
+  }
+}

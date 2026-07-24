@@ -1,0 +1,1213 @@
+{
+  "areaAnalysis": {
+    "crimeSafety": {
+      "incidentsPerThousand": 33.5,
+      "rating": "33.5 incidents per 1,000 residents (12 months to May 2026, police.uk)"
+    },
+    "schools": [
+      {
+        "distance": "2.3 miles",
+        "name": "Osmotherley Primary School",
+        "ofsted": "Good",
+        "ofstedDate": "25/05/2023",
+        "ofstedNewerDate": "",
+        "rating": "Good (May 2023)"
+      },
+      {
+        "distance": "3.5 miles",
+        "name": "Hutton Rudby Primary School",
+        "ofsted": "Good",
+        "ofstedDate": "19/09/2023",
+        "ofstedNewerDate": "",
+        "rating": "Good (Sept 2023)"
+      },
+      {
+        "distance": "6.5 miles",
+        "name": "Northallerton School & Sixth Form College",
+        "ofsted": "Good",
+        "ofstedDate": "13/01/2022",
+        "ofstedNewerDate": "24/03/2026",
+        "rating": "Good (Jan 2022) · report card Mar 2026"
+      },
+      {
+        "distance": "6.8 miles",
+        "name": "Conyers School",
+        "ofsted": "Good",
+        "ofstedDate": "27/09/2023",
+        "ofstedNewerDate": "",
+        "rating": "Good (Sept 2023)"
+      }
+    ],
+    "transport": [
+      {
+        "line": "Yarm Rail Station",
+        "time": "6.7 miles",
+        "type": "Rail"
+      },
+      {
+        "line": "Northallerton Rail Station",
+        "time": "7.0 miles",
+        "type": "Rail"
+      },
+      {
+        "line": "Hill Top",
+        "time": "0.1 miles",
+        "type": "Bus"
+      },
+      {
+        "line": "A19",
+        "time": "1.5 miles",
+        "type": "Road"
+      },
+      {
+        "line": "A1(M)",
+        "time": "6.6 miles",
+        "type": "Road"
+      }
+    ]
+  },
+  "bathrooms": "Not on record — verify with a viewing or the listing",
+  "bedrooms": "4",
+  "compEpcHitRate": 0.8,
+  "comparableSales": [
+    {
+      "address": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "basis": "date",
+      "isSubjectPriorSale": true,
+      "note": "This property's previous sale — Apr 2006",
+      "price": "£485,000",
+      "propertyType": "detached",
+      "similarity": "This property's previous sale — Apr 2006",
+      "soldDate": "2006-04-07"
+    },
+    {
+      "address": "MONKS HOUSE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "basis": "size",
+      "floorAreaSqm": "191",
+      "isSubjectPriorSale": false,
+      "note": "191 sqm Semi-detached house, sold Jul 2025 (£1,623/sqm)",
+      "price": "£310,000",
+      "propertyType": "Semi-detached house",
+      "similarity": "191 sqm Semi-detached house, sold Jul 2025 (£1,623/sqm)",
+      "soldDate": "2025-07-31"
+    },
+    {
+      "address": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "basis": "size",
+      "floorAreaSqm": "153",
+      "isSubjectPriorSale": false,
+      "note": "153 sqm Detached house, sold Aug 2023 (£2,941/sqm)",
+      "price": "£450,000",
+      "propertyType": "Detached house",
+      "similarity": "153 sqm Detached house, sold Aug 2023 (£2,941/sqm)",
+      "soldDate": "2023-08-24"
+    },
+    {
+      "address": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "basis": "size",
+      "floorAreaSqm": "186",
+      "isSubjectPriorSale": false,
+      "note": "186 sqm Detached house, sold May 2021 (£2,634/sqm)",
+      "price": "£490,000",
+      "propertyType": "Detached house",
+      "similarity": "186 sqm Detached house, sold May 2021 (£2,634/sqm)",
+      "soldDate": "2021-05-19"
+    },
+    {
+      "address": "OAKLANDS, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "basis": "date",
+      "isSubjectPriorSale": false,
+      "note": "detached, sold Mar 2020",
+      "price": "£275,000",
+      "propertyType": "detached",
+      "similarity": "detached, sold Mar 2020",
+      "soldDate": "2020-03-11"
+    },
+    {
+      "address": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "basis": "size",
+      "floorAreaSqm": "153",
+      "isSubjectPriorSale": false,
+      "note": "153 sqm Detached house, sold Nov 2014 (£2,157/sqm)",
+      "price": "£330,000",
+      "propertyType": "Detached house",
+      "similarity": "153 sqm Detached house, sold Nov 2014 (£2,157/sqm)",
+      "soldDate": "2014-11-11"
+    }
+  ],
+  "comparativeStats": [
+    {
+      "basis": "TOTAL_FLOOR_AREA vs type distribution (n≈120000)",
+      "comparator": "detached homes (DL EPC open-data summary)",
+      "displayValue": "91",
+      "id": "floorAreaPercentile",
+      "sampleSize": 120000,
+      "unit": "percentile",
+      "value": 91
+    },
+    {
+      "basis": "Subject £/sqm vs 4 matched comps",
+      "comparator": "street / sector comps £/sqm median",
+      "displayValue": "20.4",
+      "id": "psmVsComps",
+      "sampleSize": 4,
+      "unit": "percent",
+      "value": 20.4
+    },
+    {
+      "basis": "EPC band D vs era modal D",
+      "comparator": "most common D for this era; top quarter ~C",
+      "displayValue": "D",
+      "id": "epcVsEra",
+      "sampleSize": 1,
+      "unit": "band",
+      "value": 0
+    },
+    {
+      "basis": "police.uk rate vs static national median",
+      "comparator": "national median 78 per 1,000",
+      "displayValue": "33.5",
+      "id": "crimeVsNational",
+      "sampleSize": 1,
+      "unit": "rate",
+      "value": -57.1
+    },
+    {
+      "basis": "Subject sale-to-sale growth vs sector CAGR",
+      "comparator": "sector average 2.5% over same period",
+      "displayValue": "1.6",
+      "id": "growthVsSector",
+      "sampleSize": 1,
+      "unit": "percent",
+      "value": -0.9
+    }
+  ],
+  "dataCoverage": {
+    "failedLine": "Flood risk: unavailable at generation",
+    "ok": 7,
+    "sources": [
+      {
+        "id": "landRegistry",
+        "label": "HM Land Registry",
+        "status": "ok"
+      },
+      {
+        "id": "epc",
+        "label": "EPC register",
+        "status": "ok"
+      },
+      {
+        "id": "crime",
+        "label": "police.uk",
+        "status": "ok"
+      },
+      {
+        "detail": "unavailable at generation",
+        "id": "flood",
+        "label": "Flood risk",
+        "status": "failed"
+      },
+      {
+        "id": "planning",
+        "label": "Planning portal",
+        "status": "skipped"
+      },
+      {
+        "id": "schools",
+        "label": "GIAS / Ofsted",
+        "status": "ok"
+      },
+      {
+        "id": "naptan",
+        "label": "NaPTAN",
+        "status": "ok"
+      },
+      {
+        "id": "livingHere",
+        "label": "Living Here POIs",
+        "status": "ok"
+      },
+      {
+        "id": "compsEpc",
+        "label": "Comps EPC match",
+        "status": "ok"
+      }
+    ],
+    "summaryLine": "7 of 8 official sources returned data",
+    "total": 8
+  },
+  "dueDiligence": {
+    "epcCertificateUrl": "gov.uk EPC certificate 2140-3052-0206-9665-0204",
+    "purchaseCosts": "SDLT £23,620 (primary residence, standard rates); conveyancing ~£1,800; survey ~£650–£1,100."
+  },
+  "eraProfile": {
+    "ageBand": "1950-1966",
+    "issues": [
+      {
+        "confirmedByEpc": true,
+        "id": "cavity-partial"
+      },
+      {
+        "confirmedByEpc": true,
+        "id": "suspended-floors"
+      }
+    ],
+    "propertyType": "Detached house",
+    "title": "Living with a 1950–1966 detached"
+  },
+  "finalizedBy": "finalizeReport",
+  "forecastMilestones": {
+    "assumptions": {
+      "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 3 over 10 years (n=5, years=5)",
+      "centralPct": 2.5,
+      "highPct": 4.5,
+      "lowPct": 0.5
+    },
+    "bands": {
+      "y1": {
+        "central": 689210,
+        "high": 702658,
+        "low": 675762
+      },
+      "y10": {
+        "central": 860729,
+        "high": 1044217,
+        "low": 706787
+      },
+      "y3": {
+        "central": 724101,
+        "high": 767320,
+        "low": 682537
+      },
+      "y5": {
+        "central": 760759,
+        "high": 837933,
+        "low": 689379
+      }
+    },
+    "baseValue": 672400,
+    "forecast10y": 860729,
+    "forecast1y": 689210,
+    "forecast3y": 724101,
+    "forecast5y": 760759
+  },
+  "frontPageInsights": [
+    {
+      "derivedFrom": [
+        "epc.heating"
+      ],
+      "id": "c3-oil-heating",
+      "insightClass": 3
+    },
+    {
+      "id": "c1-cavity-partial",
+      "insightClass": 1
+    },
+    {
+      "id": "c2-crimeVsNational",
+      "insightClass": 2,
+      "statId": "crimeVsNational"
+    }
+  ],
+  "growthAssumptions": {
+    "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 3 over 10 years (n=5, years=5)",
+    "centralPct": 2.5,
+    "highPct": 4.5,
+    "lowPct": 0.5
+  },
+  "growthSinceLastSale": {
+    "fromDate": "2006-04-07",
+    "fromPrice": "£485,000",
+    "label": "+38.6% from £485,000 (2006-04-07) to £672,400 (2026-04-01)",
+    "percent": 38.6,
+    "toDate": "2026-04-01",
+    "toPrice": "£672,400"
+  },
+  "hasLiveAsking": false,
+  "insights": [
+    {
+      "derivedFrom": [
+        "epc.heating"
+      ],
+      "id": "c3-oil-heating",
+      "insightClass": 3,
+      "rankScore": 91,
+      "section": "dueDiligence"
+    },
+    {
+      "id": "c1-cavity-partial",
+      "insightClass": 1,
+      "rankScore": 80,
+      "section": "dueDiligence"
+    },
+    {
+      "id": "c1-suspended-floors",
+      "insightClass": 1,
+      "rankScore": 79,
+      "section": "dueDiligence"
+    },
+    {
+      "id": "c2-crimeVsNational",
+      "insightClass": 2,
+      "rankScore": 40,
+      "section": "area",
+      "statId": "crimeVsNational"
+    },
+    {
+      "id": "c2-epcVsEra",
+      "insightClass": 2,
+      "rankScore": 40,
+      "section": "dueDiligence",
+      "statId": "epcVsEra"
+    },
+    {
+      "id": "c2-floorAreaPercentile",
+      "insightClass": 2,
+      "rankScore": 40,
+      "section": "summary",
+      "statId": "floorAreaPercentile"
+    },
+    {
+      "id": "c2-growthVsSector",
+      "insightClass": 2,
+      "rankScore": 40,
+      "section": "valuation",
+      "statId": "growthVsSector"
+    },
+    {
+      "id": "c2-psmVsComps",
+      "insightClass": 2,
+      "rankScore": 40,
+      "section": "valuation",
+      "statId": "psmVsComps"
+    }
+  ],
+  "investmentMetrics": {
+    "estimatedRent": "£2,000",
+    "stampDuty": "Est. SDLT £23,620 (England/NI). Confirm with a solicitor."
+  },
+  "livingHere": {
+    "everyday": [
+      {
+        "category": "supermarket",
+        "distanceMiles": 0.5,
+        "lat": 54.4048129,
+        "lng": -1.3203875,
+        "name": "Londis",
+        "source": "osm"
+      },
+      {
+        "category": "petrol",
+        "distanceMiles": 6,
+        "lat": 54.3482898,
+        "lng": -1.4320559,
+        "name": "Texaco",
+        "source": "osm"
+      },
+      {
+        "category": "dentist",
+        "distanceMiles": 6.3,
+        "lat": 54.3418299,
+        "lng": -1.4313394,
+        "name": "North Yorkshire Dental Care Service",
+        "source": "osm"
+      },
+      {
+        "category": "pharmacy",
+        "distanceMiles": 6.5,
+        "lat": 54.3379065,
+        "lng": -1.4316896,
+        "name": "Tesco Pharmacy",
+        "source": "osm"
+      },
+      {
+        "category": "gp",
+        "distanceMiles": 7.4,
+        "lat": 54.3283568,
+        "lng": -1.4465364,
+        "name": "Mayford House Surgery",
+        "source": "osm"
+      }
+    ],
+    "foodDrink": [
+      {
+        "category": "cafe",
+        "distanceMiles": 0.1,
+        "fhrsId": "1851492",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2024-09-17T00:00:00",
+        "lat": 54.3994726,
+        "lng": -1.309347,
+        "name": "The Joiners Shop",
+        "source": "fsa"
+      },
+      {
+        "category": "pub",
+        "distanceMiles": 0.2,
+        "fhrsId": "1851093",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2025-05-21T00:00:00",
+        "lat": 54.3990024,
+        "lng": -1.3088466,
+        "name": "The Blue Bell Inn",
+        "source": "fsa"
+      },
+      {
+        "category": "cafe",
+        "distanceMiles": 1.4,
+        "fhrsId": "1851150",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2026-06-18T00:00:00",
+        "lat": 54.3798073,
+        "lng": -1.3108976,
+        "name": "The Orchard Cafe",
+        "source": "fsa"
+      },
+      {
+        "category": "restaurant",
+        "distanceMiles": 1.9,
+        "fhrsId": "1850996",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2024-08-28T00:00:00",
+        "lat": 54.3765165,
+        "lng": -1.2902882,
+        "name": "Cote Ghyll Mill (YHA)",
+        "source": "fsa"
+      },
+      {
+        "category": "cafe",
+        "distanceMiles": 1.9,
+        "fhrsId": "1851216",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2026-07-14T00:00:00",
+        "lat": 54.41329,
+        "lng": -1.2702394,
+        "name": "The Rusty Bike",
+        "source": "fsa"
+      }
+    ],
+    "placesEnabled": false,
+    "walksOutdoors": [
+      {
+        "category": "trail",
+        "distanceMiles": 0,
+        "isNationalTrail": true,
+        "lat": 54.4003519,
+        "lng": -1.3117931,
+        "name": "Coast to Coast Walk (Richmond to Robin Hood’s Bay)",
+        "source": "osm"
+      },
+      {
+        "category": "trail",
+        "distanceMiles": 1,
+        "isNationalTrail": true,
+        "lat": 54.3916338,
+        "lng": -1.2933262,
+        "name": "Cleveland Way",
+        "source": "osm"
+      },
+      {
+        "category": "wood",
+        "distanceMiles": 0.8,
+        "lat": 54.4124223,
+        "lng": -1.3130097,
+        "name": "Swinegar Plantation",
+        "source": "osm"
+      },
+      {
+        "category": "wood",
+        "distanceMiles": 1.2,
+        "lat": 54.4009023,
+        "lng": -1.3408013,
+        "name": "Pity Me Wood",
+        "source": "osm"
+      },
+      {
+        "category": "wood",
+        "distanceMiles": 1.7,
+        "lat": 54.4141342,
+        "lng": -1.346094,
+        "name": "Wiske Bank Plantation",
+        "source": "osm"
+      },
+      {
+        "category": "wood",
+        "distanceMiles": 1.8,
+        "lat": 54.4252105,
+        "lng": -1.3245605,
+        "name": "Old Lane Plantation",
+        "source": "osm"
+      }
+    ]
+  },
+  "location": {
+    "address": "Pentland, Cross Lane",
+    "postcode": "DL6 3ND",
+    "town": "Northallerton"
+  },
+  "marketEvidence": {
+    "pricePerSqmOrSqft": "About £3,172/m² using last LR sale £672,400 ÷ EPC floor area 212 m² (indicative only)."
+  },
+  "price": "£672,400",
+  "priceLabel": "Last Sold Price (Apr 2026)",
+  "propertyType": "Detached",
+  "propertyWorks": {},
+  "reportMode": "recently_sold",
+  "reportRegion": "england",
+  "riskAnalysis": {
+    "floodRisk": "Flood risk could not be verified from Environment Agency / planning.data — check GOV.UK flood maps."
+  },
+  "riskTones": {
+    "fireSafety": "neutral",
+    "floodRisk": "positive",
+    "insuranceRisk": "neutral",
+    "leaseholdIssues": "positive",
+    "planningDevelopments": "neutral",
+    "subsidence": "neutral"
+  },
+  "scores": {
+    "conditionRating": 65,
+    "conditionRatingStatus": "scored",
+    "confidenceScore": 93,
+    "growthPotential": "Medium",
+    "investmentScore": 61,
+    "locationRating": 82,
+    "locationRatingStatus": "scored",
+    "marketScore": 70,
+    "marketScoreStatus": "scored",
+    "overall": 65,
+    "overallBasis": "based on 4 of 4 components",
+    "rentalScore": 66,
+    "riskLevel": "Low",
+    "scoredComponentCount": 4,
+    "valueForMoney": 40,
+    "valueForMoneyStatus": "scored"
+  },
+  "sectionCallouts": {
+    "area": {
+      "id": "c2-crimeVsNational",
+      "insightClass": 2
+    },
+    "dueDiligence": {
+      "id": "c3-oil-heating",
+      "insightClass": 3
+    },
+    "summary": {
+      "id": "c2-floorAreaPercentile",
+      "insightClass": 2
+    },
+    "valuation": {
+      "id": "c2-growthVsSector",
+      "insightClass": 2
+    }
+  },
+  "showConfidence": false,
+  "soldHistory": [
+    {
+      "description": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND — detached",
+      "price": "£672,400",
+      "source": "HM Land Registry Price Paid",
+      "year": "2026"
+    },
+    {
+      "description": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND — detached",
+      "price": "£485,000",
+      "source": "HM Land Registry Price Paid",
+      "year": "2006"
+    }
+  ],
+  "specs": [
+    {
+      "label": "Bedrooms",
+      "value": "4"
+    },
+    {
+      "label": "EPC rating",
+      "value": "D (potential D)"
+    },
+    {
+      "label": "Floor area",
+      "value": "212 sqm · EPC register"
+    },
+    {
+      "label": "Construction age",
+      "value": "1950–1966"
+    },
+    {
+      "label": "Walls (EPC)",
+      "value": "Cavity wall, as built, partial insulation (assumed)"
+    },
+    {
+      "label": "Roof (EPC)",
+      "value": "Pitched, 150 mm loft insulation; Roof room(s), limited insulation (assumed)"
+    },
+    {
+      "label": "Windows (EPC)",
+      "value": "Fully double glazed"
+    },
+    {
+      "label": "Floor (EPC)",
+      "value": "Suspended, no insulation (assumed)"
+    },
+    {
+      "label": "Main heating",
+      "value": "Boiler and radiators, oil"
+    },
+    {
+      "label": "Bathrooms",
+      "value": "Not on record — verify with a viewing or the listing"
+    }
+  ],
+  "title": "Pentland, Cross Lane, Northallerton",
+  "valuation": {
+    "conservative": "£650,000",
+    "fair": "£672,400",
+    "forecast10y": "£861,000",
+    "forecast1y": "£689,000",
+    "forecast3y": "£724,000",
+    "forecast5y": "£761,000",
+    "growthAssumptions": {
+      "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 3 over 10 years (n=5, years=5)",
+      "centralPct": 2.5,
+      "highPct": 4.5,
+      "lowPct": 0.5
+    },
+    "optimistic": "£695,000"
+  },
+  "verifiedCrime": {
+    "crimeCountYear": 58,
+    "debug": {
+      "gate": "ok",
+      "incidents12m": 58,
+      "monthlyCounts": [
+        {
+          "count": 5,
+          "month": "2025-06"
+        },
+        {
+          "count": 4,
+          "month": "2025-07"
+        },
+        {
+          "count": 6,
+          "month": "2025-08"
+        },
+        {
+          "count": 4,
+          "month": "2025-09"
+        },
+        {
+          "count": 4,
+          "month": "2025-10"
+        },
+        {
+          "count": 1,
+          "month": "2025-11"
+        },
+        {
+          "count": 7,
+          "month": "2025-12"
+        },
+        {
+          "count": 9,
+          "month": "2026-01"
+        },
+        {
+          "count": 3,
+          "month": "2026-02"
+        },
+        {
+          "count": 6,
+          "month": "2026-03"
+        },
+        {
+          "count": 7,
+          "month": "2026-04"
+        },
+        {
+          "count": 2,
+          "month": "2026-05"
+        }
+      ],
+      "population": 1732,
+      "rate": 33.5
+    },
+    "incidentsPerThousand": 33.5,
+    "label": "33.5 incidents per 1,000 residents (12 months to May 2026, police.uk)",
+    "lsoa21cd": "E01027627",
+    "monthEnd": "2026-05",
+    "monthStart": "2025-06",
+    "population": 1732,
+    "populationSource": "ONS Census 2021 usual residents via Nomis (E01027627)",
+    "reliable": true,
+    "sourceUrl": "https://data.police.uk/"
+  },
+  "verifiedFacts": {
+    "buyer.goal": {
+      "id": "buyer.goal",
+      "label": "Buyer goal",
+      "numerals": [],
+      "source": "user",
+      "value": "homebuyer primary residence"
+    },
+    "crime.label": {
+      "id": "crime.label",
+      "label": "Crime rate label",
+      "numerals": [
+        "33.5",
+        "1",
+        "000",
+        "12",
+        "2026"
+      ],
+      "source": "police.uk",
+      "value": "33.5 incidents per 1,000 residents (12 months to May 2026, police.uk)"
+    },
+    "crime.rate": {
+      "id": "crime.rate",
+      "label": "Crime rate per 1,000",
+      "numerals": [
+        "33.5"
+      ],
+      "source": "police.uk",
+      "value": 33.5
+    },
+    "epc.constructionAgeBand": {
+      "id": "epc.constructionAgeBand",
+      "label": "Construction age band",
+      "numerals": [
+        "1950",
+        "1966"
+      ],
+      "source": "EPC register",
+      "value": "1950-1966"
+    },
+    "epc.currentRating": {
+      "id": "epc.currentRating",
+      "label": "EPC current rating",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "D"
+    },
+    "epc.floor": {
+      "id": "epc.floor",
+      "label": "Floor description",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "Suspended, no insulation (assumed)"
+    },
+    "epc.floorAreaSqm": {
+      "id": "epc.floorAreaSqm",
+      "label": "EPC floor area (m²)",
+      "numerals": [
+        "212"
+      ],
+      "source": "EPC register",
+      "value": "212"
+    },
+    "epc.heating": {
+      "id": "epc.heating",
+      "label": "Main heating",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "Boiler and radiators, oil"
+    },
+    "epc.lodgementDate": {
+      "id": "epc.lodgementDate",
+      "label": "EPC lodgement date",
+      "numerals": [
+        "2025",
+        "07",
+        "10"
+      ],
+      "source": "EPC register",
+      "value": "2025-07-10"
+    },
+    "epc.potentialRating": {
+      "id": "epc.potentialRating",
+      "label": "EPC potential rating",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "D"
+    },
+    "epc.propertyType": {
+      "id": "epc.propertyType",
+      "label": "EPC property type",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "Detached house"
+    },
+    "epc.roof": {
+      "id": "epc.roof",
+      "label": "Roof description",
+      "numerals": [
+        "150"
+      ],
+      "source": "EPC register",
+      "value": "Pitched, 150 mm loft insulation; Roof room(s), limited insulation (assumed)"
+    },
+    "epc.walls": {
+      "id": "epc.walls",
+      "label": "Walls description",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "Cavity wall, as built, partial insulation (assumed)"
+    },
+    "epc.windows": {
+      "id": "epc.windows",
+      "label": "Windows description",
+      "numerals": [],
+      "source": "EPC register",
+      "value": "Fully double glazed"
+    },
+    "growth.centralPct": {
+      "id": "growth.centralPct",
+      "label": "Sector growth central %",
+      "numerals": [
+        "2.5"
+      ],
+      "source": "Land Registry CAGR",
+      "value": 2.5
+    },
+    "location.address": {
+      "id": "location.address",
+      "label": "Address",
+      "numerals": [],
+      "source": "input",
+      "value": "Pentland, Cross Lane"
+    },
+    "location.postcode": {
+      "id": "location.postcode",
+      "label": "Postcode",
+      "numerals": [
+        "6",
+        "3"
+      ],
+      "source": "input",
+      "value": "DL6 3ND"
+    },
+    "location.town": {
+      "id": "location.town",
+      "label": "Town",
+      "numerals": [],
+      "source": "input",
+      "value": "Northallerton"
+    },
+    "lr.lastSoldDate": {
+      "id": "lr.lastSoldDate",
+      "label": "Last sold date",
+      "numerals": [
+        "2026",
+        "04",
+        "01"
+      ],
+      "source": "HM Land Registry",
+      "value": "2026-04-01"
+    },
+    "lr.lastSoldPrice": {
+      "id": "lr.lastSoldPrice",
+      "label": "Last sold price",
+      "numerals": [
+        "672400"
+      ],
+      "source": "HM Land Registry",
+      "value": 672400
+    },
+    "lr.priorSoldDate": {
+      "id": "lr.priorSoldDate",
+      "label": "Prior sold date",
+      "numerals": [
+        "2006",
+        "04",
+        "07"
+      ],
+      "source": "HM Land Registry",
+      "value": "2006-04-07"
+    },
+    "lr.priorSoldPrice": {
+      "id": "lr.priorSoldPrice",
+      "label": "Prior sold price",
+      "numerals": [
+        "485000"
+      ],
+      "source": "HM Land Registry",
+      "value": 485000
+    },
+    "market.pricePerSqm": {
+      "id": "market.pricePerSqm",
+      "label": "£/sqm",
+      "numerals": [
+        "3",
+        "172",
+        "672",
+        "400",
+        "212"
+      ],
+      "source": "computed",
+      "value": "About £3,172/m² using last LR sale £672,400 ÷ EPC floor area 212 m² (indicative only)."
+    },
+    "planning.applications": {
+      "id": "planning.applications",
+      "label": "Planning applications",
+      "numerals": [],
+      "source": "council",
+      "value": "None matched."
+    },
+    "planning.extensions": {
+      "id": "planning.extensions",
+      "label": "Extensions / alterations",
+      "numerals": [],
+      "source": "council",
+      "value": "Not on record for this run."
+    },
+    "report.mode": {
+      "id": "report.mode",
+      "label": "Report mode",
+      "numerals": [],
+      "source": "code",
+      "value": "recently_sold"
+    },
+    "report.price": {
+      "id": "report.price",
+      "label": "Displayed price",
+      "numerals": [
+        "672",
+        "400"
+      ],
+      "source": "code",
+      "value": "£672,400"
+    },
+    "school.0.distance": {
+      "id": "school.0.distance",
+      "label": "School distance",
+      "numerals": [
+        "2.3"
+      ],
+      "source": "GIAS",
+      "value": "2.3 miles"
+    },
+    "school.0.name": {
+      "id": "school.0.name",
+      "label": "School",
+      "numerals": [],
+      "source": "GIAS",
+      "value": "Osmotherley Primary School"
+    },
+    "school.1.distance": {
+      "id": "school.1.distance",
+      "label": "School distance",
+      "numerals": [
+        "3.5"
+      ],
+      "source": "GIAS",
+      "value": "3.5 miles"
+    },
+    "school.1.name": {
+      "id": "school.1.name",
+      "label": "School",
+      "numerals": [],
+      "source": "GIAS",
+      "value": "Hutton Rudby Primary School"
+    },
+    "school.2.distance": {
+      "id": "school.2.distance",
+      "label": "School distance",
+      "numerals": [
+        "6.5"
+      ],
+      "source": "GIAS",
+      "value": "6.5 miles"
+    },
+    "school.2.name": {
+      "id": "school.2.name",
+      "label": "School",
+      "numerals": [],
+      "source": "GIAS",
+      "value": "Northallerton School & Sixth Form College"
+    },
+    "school.3.distance": {
+      "id": "school.3.distance",
+      "label": "School distance",
+      "numerals": [
+        "6.8"
+      ],
+      "source": "GIAS",
+      "value": "6.8 miles"
+    },
+    "school.3.name": {
+      "id": "school.3.name",
+      "label": "School",
+      "numerals": [],
+      "source": "GIAS",
+      "value": "Conyers School"
+    },
+    "transport.0.line": {
+      "id": "transport.0.line",
+      "label": "Transport",
+      "numerals": [],
+      "source": "NaPTAN",
+      "value": "Yarm Rail Station"
+    },
+    "transport.0.time": {
+      "id": "transport.0.time",
+      "label": "Transport distance",
+      "numerals": [
+        "6.7"
+      ],
+      "source": "NaPTAN",
+      "value": "6.7 miles"
+    },
+    "transport.1.line": {
+      "id": "transport.1.line",
+      "label": "Transport",
+      "numerals": [],
+      "source": "NaPTAN",
+      "value": "Northallerton Rail Station"
+    },
+    "transport.1.time": {
+      "id": "transport.1.time",
+      "label": "Transport distance",
+      "numerals": [
+        "7.0"
+      ],
+      "source": "NaPTAN",
+      "value": "7.0 miles"
+    },
+    "transport.2.line": {
+      "id": "transport.2.line",
+      "label": "Transport",
+      "numerals": [],
+      "source": "NaPTAN",
+      "value": "Hill Top"
+    },
+    "transport.2.time": {
+      "id": "transport.2.time",
+      "label": "Transport distance",
+      "numerals": [
+        "0.1"
+      ],
+      "source": "NaPTAN",
+      "value": "0.1 miles"
+    },
+    "transport.3.line": {
+      "id": "transport.3.line",
+      "label": "Transport",
+      "numerals": [
+        "19"
+      ],
+      "source": "NaPTAN",
+      "value": "A19"
+    },
+    "transport.3.time": {
+      "id": "transport.3.time",
+      "label": "Transport distance",
+      "numerals": [
+        "1.5"
+      ],
+      "source": "NaPTAN",
+      "value": "1.5 miles"
+    },
+    "transport.4.line": {
+      "id": "transport.4.line",
+      "label": "Transport",
+      "numerals": [
+        "1"
+      ],
+      "source": "NaPTAN",
+      "value": "A1(M)"
+    },
+    "transport.4.time": {
+      "id": "transport.4.time",
+      "label": "Transport distance",
+      "numerals": [
+        "6.6"
+      ],
+      "source": "NaPTAN",
+      "value": "6.6 miles"
+    }
+  },
+  "verifiedFlood": {
+    "reliable": false
+  },
+  "verifiedSchools": [
+    {
+      "distance": "2.3 miles",
+      "miles": 2.3,
+      "name": "Osmotherley Primary School",
+      "ofsted": "Good",
+      "ofstedDate": "25/05/2023",
+      "ofstedNewerDate": "",
+      "phase": "Primary",
+      "rating": "Good (May 2023)",
+      "urn": "121310"
+    },
+    {
+      "distance": "3.5 miles",
+      "miles": 3.5,
+      "name": "Hutton Rudby Primary School",
+      "ofsted": "Good",
+      "ofstedDate": "19/09/2023",
+      "ofstedNewerDate": "",
+      "phase": "Primary",
+      "rating": "Good (Sept 2023)",
+      "urn": "121361"
+    },
+    {
+      "distance": "6.5 miles",
+      "miles": 6.5,
+      "name": "Northallerton School & Sixth Form College",
+      "ofsted": "Good",
+      "ofstedDate": "13/01/2022",
+      "ofstedNewerDate": "24/03/2026",
+      "phase": "Secondary",
+      "rating": "Good (Jan 2022) · report card Mar 2026",
+      "urn": "146969"
+    },
+    {
+      "distance": "6.8 miles",
+      "miles": 6.8,
+      "name": "Conyers School",
+      "ofsted": "Good",
+      "ofstedDate": "27/09/2023",
+      "ofstedNewerDate": "",
+      "phase": "Secondary",
+      "rating": "Good (Sept 2023)",
+      "urn": "139318"
+    }
+  ],
+  "verifiedTransport": [
+    {
+      "atco": "9100YAAM",
+      "line": "Yarm Rail Station",
+      "miles": 6.7,
+      "time": "6.7 miles",
+      "type": "Rail"
+    },
+    {
+      "atco": "9100NLRTN",
+      "line": "Northallerton Rail Station",
+      "miles": 7,
+      "time": "7.0 miles",
+      "type": "Rail"
+    },
+    {
+      "atco": "3200YNA97221",
+      "line": "Hill Top",
+      "miles": 0.1,
+      "time": "0.1 miles",
+      "type": "Bus"
+    },
+    {
+      "line": "A19",
+      "miles": 1.5,
+      "time": "1.5 miles",
+      "type": "Road"
+    },
+    {
+      "line": "A1(M)",
+      "miles": 6.6,
+      "time": "6.6 miles",
+      "type": "Road"
+    }
+  ]
+}

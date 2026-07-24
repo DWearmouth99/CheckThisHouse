@@ -1,5 +1,6 @@
 import { validateUkAddress, isInvalidAddress } from './ukAddress';
 import { listingNeedsAddressConfirm } from './listingAddressConfirm';
+import { assessReportCoverage } from './ukCoverage';
 
 export type ListingPaymentIdentity = {
   limited?: boolean;
@@ -8,11 +9,19 @@ export type ListingPaymentIdentity = {
   portal?: string | null;
   address?: string | null;
   price?: string | null;
+  postcode?: string | null;
 };
 
 export type ListingPaymentGate =
   | { ok: true }
-  | { ok: false; reason: string; suggestAddressLookup: boolean };
+  | {
+      ok: false;
+      reason: string;
+      suggestAddressLookup: boolean;
+      /** Region waitlist — do not open Stripe */
+      outsideCoverage?: boolean;
+      waitlistRegion?: null;
+    };
 
 function isAddressMode(input: ListingPaymentIdentity): boolean {
   return input.mode === 'address' || input.host === 'address';
@@ -31,8 +40,22 @@ function portalLabel(input: ListingPaymentIdentity): string {
  * Hard gate before Stripe: listing reports need a readable property identity.
  * Address-mode lookups are allowed through (already validated / confirmed upstream).
  * Incomplete Rightmove street-only addresses should be confirmed via the door-number picker first.
+ * Outside-coverage regions (none currently) cannot purchase.
  */
 export function assessListingPaymentGate(input: ListingPaymentIdentity): ListingPaymentGate {
+  const coverage = assessReportCoverage(input.postcode || input.address);
+  if (!coverage.supported && coverage.waitlistRegion) {
+    return {
+      ok: false,
+      suggestAddressLookup: false,
+      outsideCoverage: true,
+      waitlistRegion: coverage.waitlistRegion,
+      reason:
+        coverage.message ||
+        `We don't yet cover ${coverage.waitlistRegion} — our official-record sources differ there. Join the waitlist.`,
+    };
+  }
+
   if (isAddressMode(input)) return { ok: true };
 
   const portal = portalLabel(input);

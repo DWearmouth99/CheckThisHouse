@@ -1,16 +1,17 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dns from "dns";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { analyzeWithGemini, hasGeminiKey } from "./src/lib/geminiAnalyze";
-import { analyzeWithOpenAI, hasOpenAIKey } from "./src/lib/openaiAnalyze";
 import { isInvalidListingUrl, validateListingUrl } from "./src/lib/listingUrl";
 import { checkRateLimit, clientIp } from "./src/lib/rateLimit";
 import { buildFullReportTeaserPlan } from "./src/lib/reportContents";
 import {
   createReportCheckoutSession,
   formatPriceLabel,
+  getPriceDisplay,
   getPublicBaseUrl,
   getReportPricePence,
   getStripePublishableKey,
@@ -25,6 +26,12 @@ import {
   resolveAddress,
   suggestAddresses,
 } from "./src/lib/idealPostcodes";
+import {
+  assessReportCoverage,
+  assertReportCoverage,
+  UnsupportedRegionError,
+} from "./src/lib/ukCoverage";
+import { buildTeaserPreviewFacts } from "./src/lib/teaserPreviewFacts";
 
 // Load environment variables (.env.local overrides .env)
 dotenv.config();
@@ -67,12 +74,15 @@ app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 app.get("/api/pricing", (_req, res) => {
-  const pence = getReportPricePence();
   const publishableKey = getStripePublishableKey();
+  const display = getPriceDisplay();
   res.json({
     paywallEnabled: isPaywallEnabled(),
-    pricePence: pence,
-    priceLabel: formatPriceLabel(pence),
+    pricePence: display.pricePence,
+    priceLabel: display.priceLabel,
+    compareAtPence: display.compareAtPence,
+    compareAtLabel: display.compareAtLabel,
+    promoCaption: display.promoCaption,
     currency: "gbp",
     publishableKey: publishableKey.startsWith("pk_") ? publishableKey : null,
     addressAutocomplete: hasIdealPostcodesKey(),
@@ -185,6 +195,15 @@ app.post("/api/checkout", async (req, res) => {
       if (isInvalidAddress(addr)) {
         return res.status(400).json({ error: addr.error });
       }
+      const coverage = assessReportCoverage(addr.address);
+      if (!coverage.supported && coverage.waitlistRegion) {
+        return res.status(451).json({
+          error: coverage.message,
+          code: "OUTSIDE_COVERAGE",
+          region: coverage.region,
+          waitlistRegion: coverage.waitlistRegion,
+        });
+      }
       propertyKey = addr.propertyKey;
       productDescription = "Single address property report";
     } else if (rawUrl) {
@@ -218,13 +237,16 @@ app.post("/api/checkout", async (req, res) => {
       productDescription,
     });
 
+    const display = getPriceDisplay();
     return res.json({
       success: true,
       sessionId: session.sessionId,
       clientSecret: session.clientSecret || null,
       mode: "embedded",
       publishableKey,
-      priceLabel: formatPriceLabel(),
+      priceLabel: display.priceLabel,
+      compareAtLabel: display.compareAtLabel,
+      promoCaption: display.promoCaption,
     });
   } catch (err: any) {
     console.error("[stripe] checkout error", err?.message || err);
@@ -247,6 +269,15 @@ app.post("/api/teaser", async (req, res) => {
       if (isInvalidAddress(addr)) {
         return res.status(400).json({ error: addr.error });
       }
+      const coverage = assessReportCoverage(addr.address);
+      if (!coverage.supported && coverage.waitlistRegion) {
+        return res.status(451).json({
+          error: coverage.message,
+          code: "OUTSIDE_COVERAGE",
+          region: coverage.region,
+          waitlistRegion: coverage.waitlistRegion,
+        });
+      }
 
       const cacheKey = addr.propertyKey;
       const cached = teaserCacheGet(cacheKey);
@@ -268,9 +299,11 @@ app.post("/api/teaser", async (req, res) => {
         });
       }
 
+      const previewFacts = await buildTeaserPreviewFacts(addr.address);
+
       const payload = {
         success: true,
-        limited: true,
+        limited: false,
         mode: "address" as const,
         listingUrl: "",
         portal: "Address lookup",
@@ -284,7 +317,7 @@ app.post("/api/teaser", async (req, res) => {
         keyFeatures: [] as string[],
         tenure: null,
         summary:
-          "Address lookup — we’ll research sold history, local area, risks and estimated value bands from public UK sources. No live asking price unless comps show one.",
+          "Free preview of this address — live public facts below. Unlock the full 9–10 page PDF for scores, valuation, schools, crime, offer strategy and more.",
         pricePerBedroom: null,
         locationHint: addr.locationHint,
         researchPlan: buildFullReportTeaserPlan({
@@ -294,6 +327,7 @@ app.post("/api/teaser", async (req, res) => {
           price: null,
           tenure: null,
         }),
+        previewFacts,
       };
 
       teaserCacheSet(cacheKey, payload);
@@ -386,6 +420,17 @@ app.post("/api/teaser", async (req, res) => {
         .slice(-2)
         .join(", ") || null;
 
+    const previewFacts = address
+      ? await buildTeaserPreviewFacts(address)
+      : {
+          floodRivers: null,
+          floodZone: null,
+          lastSoldPrice: null,
+          lastSoldDate: null,
+          nearbySoldSample: [] as { address: string; price: string; date: string }[],
+          unlockedHighlights: [] as string[],
+        };
+
     const payload = {
       success: true,
       limited,
@@ -411,6 +456,7 @@ app.post("/api/teaser", async (req, res) => {
         price,
         tenure,
       }),
+      previewFacts,
     };
 
     teaserCacheSet(listing.url, payload);
@@ -446,6 +492,34 @@ function teaserCacheSet(url: string, payload: Record<string, unknown>) {
 
 // Ensure the dev server starts DNS searches with IPv4 first to solve local proxy address bindings
 dns.setDefaultResultOrder("ipv4first");
+
+/** Collect waitlist emails for Scotland / NI coverage demand. */
+app.post("/api/waitlist", (req, res) => {
+  try {
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const region =
+      typeof req.body?.region === "string" ? req.body.region.trim() : "Scotland";
+    const postcode =
+      typeof req.body?.postcode === "string" ? req.body.postcode.trim().toUpperCase() : "";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Enter a valid email address." });
+    }
+    const dir = path.resolve(process.cwd(), "data");
+    fs.mkdirSync(dir, { recursive: true });
+    const line = JSON.stringify({
+      email,
+      region,
+      postcode,
+      at: new Date().toISOString(),
+    });
+    fs.appendFileSync(path.join(dir, "waitlist.jsonl"), line + "\n", "utf8");
+    console.log(`[waitlist] ${region} ${postcode || "—"} ${email}`);
+    return res.json({ success: true });
+  } catch (err: any) {
+    console.error("[waitlist]", err?.message || err);
+    return res.status(500).json({ error: "Could not join waitlist." });
+  }
+});
 
 /** Proxy listing photos so PDF export can embed them (avoids Rightmove CORS blocks). */
 app.get("/api/image-proxy", async (req: express.Request, res: express.Response) => {
@@ -504,6 +578,21 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
       return res.status(400).json({ error: addr.error });
     }
     manualAddress = addr.address;
+  }
+
+  try {
+    assertReportCoverage(manualAddress || rawAddress || undefined);
+  } catch (err: any) {
+    if (err instanceof UnsupportedRegionError || err?.code === "OUTSIDE_COVERAGE") {
+      console.error("[api] OUTSIDE_COVERAGE — refusing report generation:", err.message);
+      return res.status(451).json({
+        error: err.message,
+        code: "OUTSIDE_COVERAGE",
+        region: err.coverage?.region,
+        waitlistRegion: err.coverage?.waitlistRegion,
+      });
+    }
+    throw err;
   }
 
   if (!rawUrl && !pastedText && !manualAddress) {
@@ -584,41 +673,25 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
       description: scrapResult.description,
     };
 
-    // Gemini is primary (works with AI Studio keys). OpenAI only if a real key is set.
-    let analysis: Record<string, unknown>;
-    let sources: { title: string; url: string }[] = [];
-    let provider: "gemini" | "openai";
-
-    if (hasGeminiKey()) {
-      console.log("[ai] Using Gemini + Google Search research pipeline...");
-      const result = await analyzeWithGemini({
-        url: normalizedUrl || undefined,
-        pastedText,
-        manualAddress: manualAddress || undefined,
-        buyerGoal: selectedGoal,
-        scrap,
-      });
-      analysis = result.analysis;
-      sources = result.sources;
-      provider = "gemini";
-    } else if (hasOpenAIKey()) {
-      console.log("[ai] GEMINI_API_KEY missing — using OpenAI + web search...");
-      const result = await analyzeWithOpenAI({
-        url: normalizedUrl || undefined,
-        pastedText,
-        manualAddress: manualAddress || undefined,
-        buyerGoal: selectedGoal,
-        scrap,
-      });
-      analysis = result.analysis;
-      sources = result.sources;
-      provider = "openai";
-    } else {
+    // Gemini-only — OpenAI path is disabled; failures surface after Gemini errors (no silent fallback).
+    if (!hasGeminiKey()) {
       return res.status(401).json({
         error:
           "No AI provider configured. Set GEMINI_API_KEY in .env.local (https://aistudio.google.com/apikey).",
       });
     }
+
+    console.log("[ai] Using Gemini + Google Search research pipeline...");
+    const result = await analyzeWithGemini({
+      url: normalizedUrl || undefined,
+      pastedText,
+      manualAddress: manualAddress || undefined,
+      buyerGoal: selectedGoal,
+      scrap,
+    });
+    const analysis = result.analysis;
+    const sources = result.sources;
+    const provider = "gemini" as const;
 
     if (scrapResult.images && scrapResult.images.length > 0) {
       (analysis as any).scrapedImages = scrapResult.images;
@@ -637,6 +710,14 @@ app.post("/api/analyze", async (req: express.Request, res: express.Response) => 
     });
   } catch (error: any) {
     console.error("[api] Error during property analysis:", error);
+    if (error instanceof UnsupportedRegionError || error?.code === "OUTSIDE_COVERAGE") {
+      return res.status(451).json({
+        error: error.message,
+        code: "OUTSIDE_COVERAGE",
+        region: error.coverage?.region,
+        waitlistRegion: error.coverage?.waitlistRegion,
+      });
+    }
     const raw = error?.message || String(error) || "An unexpected error occurred during analysis.";
     const isModelGone = raw.includes("no longer available");
     const isAuthKeyIssue =

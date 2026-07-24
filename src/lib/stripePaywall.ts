@@ -61,6 +61,50 @@ export function formatPriceLabel(pence = getReportPricePence()): string {
   return `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`;
 }
 
+/** Was-price for July intro offer (display only — Stripe still charges getReportPricePence). */
+const JULY_COMPARE_AT_PENCE = 999;
+
+/**
+ * July 2026 intro: show £9.99 → £4.99 until end of month (Europe/London).
+ * After 31 Jul 2026, compare-at clears and UI shows the live price only.
+ */
+export function isJulyIntroPromoActive(now = new Date()): boolean {
+  // Inclusive through 31 July 2026 23:59:59 BST ≈ 2026-07-31T22:59:59Z / Aug 1 00:00 London
+  const end = new Date('2026-07-31T23:59:59+01:00');
+  return now.getTime() <= end.getTime();
+}
+
+export type PriceDisplay = {
+  pricePence: number;
+  priceLabel: string;
+  /** Struck-through was-price when a promo is live */
+  compareAtPence: number | null;
+  compareAtLabel: string | null;
+  /** Short badge / caption e.g. "July offer — ends 31 July" */
+  promoCaption: string | null;
+};
+
+export function getPriceDisplay(now = new Date()): PriceDisplay {
+  const pricePence = getReportPricePence();
+  const priceLabel = formatPriceLabel(pricePence);
+  if (isJulyIntroPromoActive(now) && pricePence < JULY_COMPARE_AT_PENCE) {
+    return {
+      pricePence,
+      priceLabel,
+      compareAtPence: JULY_COMPARE_AT_PENCE,
+      compareAtLabel: formatPriceLabel(JULY_COMPARE_AT_PENCE),
+      promoCaption: 'July offer — was £9.99, now £4.99 until 31 July',
+    };
+  }
+  return {
+    pricePence,
+    priceLabel,
+    compareAtPence: null,
+    compareAtLabel: null,
+    promoCaption: null,
+  };
+}
+
 export function getStripe(): Stripe {
   const key = getStripeSecretKey();
   if (!isValidStripeSecretKey(key)) {
@@ -128,6 +172,11 @@ export async function createReportCheckoutSession(opts: {
     product: 'property_report',
   };
 
+  const promo = getPriceDisplay();
+  const submitMessage = promo.promoCaption
+    ? `${promo.promoCaption}. You’ll get your CheckThisHouse PDF right after payment.`
+    : 'You’ll get your CheckThisHouse PDF right after payment.';
+
   if (uiMode === 'embedded') {
     const session = await stripe.checkout.sessions.create({
       ui_mode: 'embedded_page',
@@ -138,7 +187,7 @@ export async function createReportCheckoutSession(opts: {
       metadata,
       // Soft brand cues inside Stripe’s form (Dashboard branding still wins for logo/colours)
       custom_text: {
-        submit: { message: 'You’ll get your CheckThisHouse PDF right after payment.' },
+        submit: { message: submitMessage },
       },
     });
 

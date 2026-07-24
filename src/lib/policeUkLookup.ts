@@ -1,14 +1,24 @@
 /**
- * police.uk street-level crime → incidents per 1,000 residents / year.
- * Aggregates 12 months of monthly data; population from postcodes.io LSOA estimate.
+ * police.uk street-level crime within the property's Census 2021 LSOA,
+ * rate = 12-month total / ONS LSOA usual residents * 1000.
+ *
+ * Geography (matched): LSOA21 — incidents queried with police.uk poly= from the
+ * LSOA boundary; population is ONS Census 2021 usual residents for the same LSOA.
+ * (A 1-mile street radius would not match LSOA population — that mismatch caused
+ * nonsense rates like 0.7 when a hardcoded ~1800 denominator was used.)
  */
 
 import { extractPostcode } from './addressMatch';
+import {
+  emitOnsPopulationOperatorAction,
+  resolveOnsLsoaPopulation,
+} from './onsLsoaPopulation';
 
 export type CrimeLookup = {
   postcode: string;
   lat: number | null;
   lng: number | null;
+  lsoa21cd?: string | null;
   /** Total crimes across the 12-month window */
   crimeCountYear: number | null;
   /** Latest month in the window (YYYY-MM) */
@@ -16,7 +26,7 @@ export type CrimeLookup = {
   monthStart: string | null;
   population: number | null;
   populationSource: string;
-  /** Rate per 1,000 residents / year — null if outside sanity gate */
+  /** Rate per 1,000 residents / year — null if outside sanity gate or insufficient */
   incidentsPerThousand: number | null;
   /** Customer-facing rate line (or unreliable message) */
   label: string;
@@ -24,25 +34,37 @@ export type CrimeLookup = {
   interpretationHint: string;
   sourceUrl: string;
   reliable: boolean;
+  status?: 'ok' | 'insufficient_data' | 'suppressed';
   /** Debug log of inputs */
   debug: {
     monthlyCounts: { month: string; count: number }[];
     incidents12m: number;
     population: number;
     rate: number | null;
-    gate: 'ok' | 'too_low' | 'too_high' | 'missing';
+    gate: 'ok' | 'too_low' | 'too_high' | 'missing' | 'insufficient_data';
   };
 };
 
-const FALLBACK_LSOA_POP = 1800;
+export type CrimeRateFromMonths = {
+  status: 'ok' | 'insufficient_data' | 'suppressed';
+  rate: number | null;
+  total: number;
+  gate: CrimeLookup['debug']['gate'];
+  reliable: boolean;
+  label: string;
+};
+
 const RATE_MIN = 5;
 const RATE_MAX = 400;
-const UNRELIABLE =
+export const CRIME_UNRELIABLE =
   'Crime rate could not be reliably computed — view local data on police.uk';
+
+const LSOA_BOUNDARY_URL =
+  'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/LSOA_2021_EW_BSC_V4_RUC/FeatureServer/0/query';
 
 async function geocodePostcode(
   postcode: string
-): Promise<{ lat: number; lng: number; population: number; populationSource: string } | null> {
+): Promise<{ lat: number; lng: number; lsoa21cd: string } | null> {
   const compact = postcode.replace(/\s+/g, '');
   const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(compact)}`, {
     signal: AbortSignal.timeout(10000),
@@ -51,23 +73,13 @@ async function geocodePostcode(
   const data = await res.json();
   const lat = data?.result?.latitude;
   const lng = data?.result?.longitude;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-
-  // Prefer LSOA mid-year population when available via codes + ONS; else fallback.
-  // postcodes.io does not return population directly — use rural/urban heuristic + LSOA code log.
-  const rural = String(data?.result?.rural_urban || data?.result?.rural_urban_classification || '');
-  const lsoa = String(data?.result?.codes?.lsoa || data?.result?.lsoa || '');
-  let population = FALLBACK_LSOA_POP;
-  let populationSource = `fallback LSOA-scale ${FALLBACK_LSOA_POP}${lsoa ? ` (${lsoa})` : ''}`;
-  if (/urban|city|conurbation/i.test(rural)) {
-    population = 3200;
-    populationSource = `urban LSOA estimate 3200${lsoa ? ` (${lsoa})` : ''}`;
-  } else if (/rural|village|hamlet/i.test(rural)) {
-    population = 1500;
-    populationSource = `rural LSOA estimate 1500${lsoa ? ` (${lsoa})` : ''}`;
+  const lsoa21cd = String(data?.result?.codes?.lsoa || data?.result?.lsoa || '')
+    .trim()
+    .toUpperCase();
+  if (typeof lat !== 'number' || typeof lng !== 'number' || !/^E\d{8}$/.test(lsoa21cd)) {
+    return null;
   }
-
-  return { lat, lng, population, populationSource };
+  return { lat, lng, lsoa21cd };
 }
 
 async function latestCrimeMonth(): Promise<string | null> {
@@ -111,26 +123,192 @@ export function computeCrimeRate(
   return { rate, gate: 'ok' };
 }
 
-async function fetchMonthCount(lat: number, lng: number, month: string): Promise<number> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+/**
+ * Requires exactly 12 monthly rows; sums counts; rate = total / population * 1000.
+ * Fewer than 12 months → insufficient_data (never a rate).
+ */
+export function computeCrimeRateFromMonths(
+  monthlyData: { month: string; count: number }[],
+  population: number
+): CrimeRateFromMonths {
+  if (!Array.isArray(monthlyData) || monthlyData.length !== 12) {
+    return {
+      status: 'insufficient_data',
+      rate: null,
+      total: 0,
+      gate: 'insufficient_data',
+      reliable: false,
+      label: 'insufficient_data',
+    };
+  }
+  if (!population || population <= 0 || !Number.isFinite(population)) {
+    return {
+      status: 'insufficient_data',
+      rate: null,
+      total: 0,
+      gate: 'insufficient_data',
+      reliable: false,
+      label: 'insufficient_data',
+    };
+  }
+  const total = monthlyData.reduce((a, m) => a + (Number(m.count) || 0), 0);
+  const { rate, gate } = computeCrimeRate(total, population);
+  if (gate !== 'ok' || rate == null) {
+    return {
+      status: 'suppressed',
+      rate: null,
+      total,
+      gate,
+      reliable: false,
+      label: gate,
+    };
+  }
+  return {
+    status: 'ok',
+    rate,
+    total,
+    gate: 'ok',
+    reliable: true,
+    label: 'ok',
+  };
+}
+
+const MONTH_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/** e.g. 2025-12 → "Dec 2025" */
+export function formatCrimeMonthLabel(monthEnd: string): string {
+  const m = monthEnd.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return monthEnd;
+  const mon = MONTH_SHORT[Number(m[2]) - 1];
+  return mon ? `${mon} ${m[1]}` : monthEnd;
+}
+
+/** Single customer-facing rate line from the data object. */
+export function formatCrimeRateLabel(rate: number, monthEnd: string): string {
+  const incidentWord = rate === 1 ? 'incident' : 'incidents';
+  return `${rate} ${incidentWord} per 1,000 residents (12 months to ${formatCrimeMonthLabel(monthEnd)}, police.uk)`;
+}
+
+export function formatRecordedCrimes(count: number): string {
+  return count === 1 ? '1 recorded crime' : `${count} recorded crimes`;
+}
+
+function interpretationForRate(rate: number, crimeCountYear: number): string {
+  const recorded = formatRecordedCrimes(crimeCountYear);
+  if (rate <= 40) {
+    return `${recorded} in this LSOA over 12 months — levels appear low for a UK residential area on this metric.`;
+  }
+  if (rate <= 90) {
+    return `${recorded} in this LSOA over 12 months — levels appear typical for many UK residential areas on this metric.`;
+  }
+  return `${recorded} in this LSOA over 12 months — levels appear elevated relative to quieter UK residential areas on this metric.`;
+}
+
+/** Simplify ring to ≤ maxPts for police.uk poly URL limits. */
+function simplifyRing(ring: [number, number][], maxPts = 40): [number, number][] {
+  if (ring.length <= maxPts) return ring;
+  const step = Math.ceil(ring.length / (maxPts - 1));
+  const out: [number, number][] = [];
+  for (let i = 0; i < ring.length; i += step) out.push(ring[i]!);
+  const first = ring[0]!;
+  const last = out[out.length - 1]!;
+  if (first[0] !== last[0] || first[1] !== last[1]) out.push(first);
+  return out;
+}
+
+async function fetchLsoaPolygon(lsoa21cd: string): Promise<[number, number][] | null> {
+  const params = new URLSearchParams({
+    where: `LSOA21CD='${lsoa21cd}'`,
+    outFields: 'LSOA21CD',
+    returnGeometry: 'true',
+    outSR: '4326',
+    f: 'geojson',
+  });
+  const res = await fetch(`${LSOA_BOUNDARY_URL}?${params}`, {
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const geom = data?.features?.[0]?.geometry;
+  if (!geom) return null;
+  let ring: number[][] | null = null;
+  if (geom.type === 'Polygon') ring = geom.coordinates?.[0] || null;
+  else if (geom.type === 'MultiPolygon') ring = geom.coordinates?.[0]?.[0] || null;
+  if (!ring || ring.length < 3) return null;
+  // GeoJSON is [lng, lat]; police.uk poly wants lat,lng
+  const latLng = ring.map((c) => [c[1], c[0]] as [number, number]);
+  return simplifyRing(latLng);
+}
+
+async function fetchMonthCountInPoly(
+  poly: [number, number][],
+  month: string
+): Promise<number | null> {
+  const polyParam = poly.map(([lat, lng]) => `${lat},${lng}`).join(':');
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const url = `https://data.police.uk/api/crimes-street/all-crime?lat=${lat}&lng=${lng}&date=${month}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      if (!res.ok) {
-        await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+      const url = `https://data.police.uk/api/crimes-street/all-crime?poly=${encodeURIComponent(polyParam)}&date=${month}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(25000) });
+      if (res.status === 429 || res.status >= 500 || !res.ok) {
+        await new Promise((r) => setTimeout(r, 400 * Math.pow(2, attempt)));
         continue;
       }
       const crimes = await res.json();
       return Array.isArray(crimes) ? crimes.length : 0;
     } catch {
-      await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+      await new Promise((r) => setTimeout(r, 400 * Math.pow(2, attempt)));
     }
   }
-  return 0;
+  return null;
 }
 
 /** In-process cache so twin fixture runs share the same police.uk window. */
 const crimeCache = new Map<string, CrimeLookup>();
+
+function emptyDebug(): CrimeLookup['debug'] {
+  return {
+    monthlyCounts: [],
+    incidents12m: 0,
+    population: 0,
+    rate: null,
+    gate: 'missing',
+  };
+}
+
+function unreliableResult(
+  partial: Partial<CrimeLookup> & { postcode: string }
+): CrimeLookup {
+  return {
+    lat: null,
+    lng: null,
+    crimeCountYear: null,
+    monthEnd: null,
+    monthStart: null,
+    population: null,
+    populationSource: 'n/a',
+    incidentsPerThousand: null,
+    label: CRIME_UNRELIABLE,
+    interpretationHint: 'Local crime data unavailable for this address.',
+    sourceUrl: 'https://data.police.uk/',
+    reliable: false,
+    status: 'insufficient_data',
+    debug: emptyDebug(),
+    ...partial,
+  };
+}
 
 export async function lookupCrimeForAddress(address: string): Promise<CrimeLookup> {
   const postcode = extractPostcode(address) || '';
@@ -138,139 +316,159 @@ export async function lookupCrimeForAddress(address: string): Promise<CrimeLooku
   if (cacheKey && crimeCache.has(cacheKey)) return crimeCache.get(cacheKey)!;
 
   const sourceUrl = 'https://data.police.uk/';
-  const emptyDebug = {
-    monthlyCounts: [] as { month: string; count: number }[],
-    incidents12m: 0,
-    population: 0,
-    rate: null as number | null,
-    gate: 'missing' as const,
-  };
-
   const store = (result: CrimeLookup) => {
     if (cacheKey) crimeCache.set(cacheKey, result);
     return result;
   };
 
   if (!postcode) {
-    return store({
-      postcode: '',
-      lat: null,
-      lng: null,
-      crimeCountYear: null,
-      monthEnd: null,
-      monthStart: null,
-      population: null,
-      populationSource: 'n/a',
-      incidentsPerThousand: null,
-      label: UNRELIABLE,
-      interpretationHint: 'Local crime data unavailable for this address.',
-      sourceUrl,
-      reliable: false,
-      debug: emptyDebug,
-    });
+    return store(
+      unreliableResult({
+        postcode: '',
+        interpretationHint: 'Local crime data unavailable for this address.',
+      })
+    );
   }
 
   try {
     const geo = await geocodePostcode(postcode);
     if (!geo) {
-      return store({
-        postcode,
-        lat: null,
-        lng: null,
-        crimeCountYear: null,
-        monthEnd: null,
-        monthStart: null,
-        population: null,
-        populationSource: 'n/a',
-        incidentsPerThousand: null,
-        label: UNRELIABLE,
-        interpretationHint: 'Could not geocode postcode for crime lookup.',
-        sourceUrl,
-        reliable: false,
-        debug: emptyDebug,
-      });
+      return store(
+        unreliableResult({
+          postcode,
+          interpretationHint: 'Could not geocode postcode for crime lookup.',
+        })
+      );
+    }
+
+    const ons = await resolveOnsLsoaPopulation(geo.lsoa21cd);
+    if (!ons) {
+      emitOnsPopulationOperatorAction();
+      return store(
+        unreliableResult({
+          postcode,
+          lat: geo.lat,
+          lng: geo.lng,
+          lsoa21cd: geo.lsoa21cd,
+          population: null,
+          populationSource: 'unresolved',
+          interpretationHint: 'ONS LSOA population could not be resolved for this postcode.',
+          debug: { ...emptyDebug(), gate: 'insufficient_data' },
+        })
+      );
+    }
+
+    const poly = await fetchLsoaPolygon(geo.lsoa21cd);
+    if (!poly) {
+      return store(
+        unreliableResult({
+          postcode,
+          lat: geo.lat,
+          lng: geo.lng,
+          lsoa21cd: geo.lsoa21cd,
+          population: ons.population,
+          populationSource: ons.source,
+          interpretationHint: 'Could not load LSOA boundary for police.uk polygon query.',
+          debug: { ...emptyDebug(), population: ons.population, gate: 'insufficient_data' },
+        })
+      );
     }
 
     const end = (await latestCrimeMonth()) || new Date().toISOString().slice(0, 7);
     const months = last12Months(end);
+    if (months.length !== 12) {
+      return store(
+        unreliableResult({
+          postcode,
+          lat: geo.lat,
+          lng: geo.lng,
+          lsoa21cd: geo.lsoa21cd,
+          population: ons.population,
+          populationSource: ons.source,
+          interpretationHint: 'Could not build a complete 12-month crime window.',
+        })
+      );
+    }
+
     const monthlyCounts: { month: string; count: number }[] = [];
-    // Sequential batches of 4 to reduce flaky empty months
-    const counts: number[] = [];
-    for (let i = 0; i < months.length; i += 4) {
-      const batch = months.slice(i, i + 4);
-      const batchCounts = await Promise.all(batch.map((m) => fetchMonthCount(geo.lat, geo.lng, m)));
-      counts.push(...batchCounts);
+    for (const month of months) {
+      const count = await fetchMonthCountInPoly(poly, month);
+      if (count == null) {
+        console.warn(`[police.uk] ${postcode} month=${month} fetch failed — insufficient_data`);
+        return store(
+          unreliableResult({
+            postcode,
+            lat: geo.lat,
+            lng: geo.lng,
+            lsoa21cd: geo.lsoa21cd,
+            population: ons.population,
+            populationSource: ons.source,
+            monthEnd: months[months.length - 1] || end,
+            monthStart: months[0] || null,
+            interpretationHint: 'Incomplete police.uk monthly series — verify on police.uk.',
+            debug: {
+              monthlyCounts,
+              incidents12m: 0,
+              population: ons.population,
+              rate: null,
+              gate: 'insufficient_data',
+            },
+          })
+        );
+      }
+      monthlyCounts.push({ month, count });
+      console.log(`[police.uk] ${postcode} ${month}: ${count} crimes (LSOA ${geo.lsoa21cd})`);
     }
-    months.forEach((m, i) => monthlyCounts.push({ month: m, count: counts[i]! }));
-    const incidents12m = counts.reduce((a, b) => a + b, 0);
 
-    // Street-level API is ~1 mile radius — scale LSOA pop when counts imply a denser catchment
-    let population = geo.population;
-    let populationSource = geo.populationSource;
-    if (incidents12m > 400 && population < 8000) {
-      population = Math.max(population, Math.round(incidents12m / 0.08)); // assume ~80/1000 mid UK
-      populationSource = `${populationSource}; scaled catchment for dense street-crime radius`;
-    }
-
-    const { rate, gate } = computeCrimeRate(incidents12m, population);
-    const reliable = gate === 'ok' && rate != null;
+    const computed = computeCrimeRateFromMonths(monthlyCounts, ons.population);
+    const reliable = computed.status === 'ok' && computed.rate != null;
+    const monthEnd = months[months.length - 1]!;
+    const monthStart = months[0]!;
 
     console.log(
-      `[police.uk] ${postcode} incidents_12m=${incidents12m} (${months[0]}→${months[months.length - 1]}) population=${population} (${populationSource}) rate=${rate ?? 'n/a'} gate=${gate}`
+      `[police.uk] ${postcode} LSOA=${geo.lsoa21cd} incidents_12m=${computed.total} (${monthStart}→${monthEnd}) population=${ons.population} (${ons.source}) rate=${computed.rate ?? 'n/a'} status=${computed.status} gate=${computed.gate}`
     );
 
     const label = reliable
-      ? `${rate} incidents per 1,000 residents / year`
-      : UNRELIABLE;
+      ? formatCrimeRateLabel(computed.rate!, monthEnd)
+      : CRIME_UNRELIABLE;
 
     const interpretationHint = reliable
-      ? rate! <= 40
-        ? 'Crime levels appear low for a UK residential area on this metric.'
-        : rate! <= 90
-          ? 'Crime levels appear typical for many UK residential areas on this metric.'
-          : 'Crime levels appear elevated relative to quieter UK residential areas on this metric.'
+      ? interpretationForRate(computed.rate!, computed.total)
       : 'Treat local crime as needing a direct police.uk check before relying on a rate.';
 
     return store({
       postcode,
       lat: geo.lat,
       lng: geo.lng,
-      crimeCountYear: incidents12m,
-      monthEnd: months[months.length - 1] || end,
-      monthStart: months[0] || null,
-      population,
-      populationSource,
-      incidentsPerThousand: reliable ? rate : null,
+      lsoa21cd: geo.lsoa21cd,
+      crimeCountYear: computed.total,
+      monthEnd,
+      monthStart,
+      population: ons.population,
+      populationSource: ons.source,
+      incidentsPerThousand: reliable ? computed.rate : null,
       label,
       interpretationHint,
       sourceUrl,
       reliable,
+      status: computed.status,
       debug: {
         monthlyCounts,
-        incidents12m,
-        population,
-        rate,
-        gate,
+        incidents12m: computed.total,
+        population: ons.population,
+        rate: computed.rate,
+        gate: computed.gate,
       },
     });
   } catch (err: any) {
     console.warn('[police.uk]', err?.message || err);
-    return store({
-      postcode,
-      lat: null,
-      lng: null,
-      crimeCountYear: null,
-      monthEnd: null,
-      monthStart: null,
-      population: null,
-      populationSource: 'n/a',
-      incidentsPerThousand: null,
-      label: UNRELIABLE,
-      interpretationHint: 'Crime lookup failed — verify on police.uk.',
-      sourceUrl,
-      reliable: false,
-      debug: emptyDebug,
-    });
+    return store(
+      unreliableResult({
+        postcode,
+        interpretationHint: 'Crime lookup failed — verify on police.uk.',
+      })
+    );
   }
 }
 
@@ -284,4 +482,14 @@ export function stripCrimeRateFromProse(text: string): string {
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/\s+\./g, '.')
     .trim();
+}
+
+/** True when interpretation still embeds a per-1,000 figure or the numeric rate. */
+export function crimeInterpretationLeaksRate(text: string, rate: number | null): boolean {
+  if (!text) return false;
+  if (/per\s*1,?000/i.test(text)) return true;
+  if (rate != null && new RegExp(`(?<!\\d)${String(rate).replace('.', '\\.')}(?!\\d)`).test(text)) {
+    return true;
+  }
+  return false;
 }

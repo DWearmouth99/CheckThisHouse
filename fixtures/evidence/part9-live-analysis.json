@@ -1,0 +1,1102 @@
+{
+  "title": "Pentland, Cross Lane, Northallerton",
+  "price": "£672,400",
+  "bedrooms": "4",
+  "bathrooms": "Not on record — verify with a viewing or the listing",
+  "propertyType": "Detached",
+  "location": {
+    "address": "Pentland, Cross Lane, Ingleby Arncliffe",
+    "postcode": "DL6 3ND",
+    "town": "Northallerton"
+  },
+  "summary": "Pentland is a substantial four-bedroom detached house occupying a premium position in the rural village of Ingleby Arncliffe. The property recently transacted in April 2026 for £672,400, establishing a high benchmark for Cross Lane driven by its expansive 212 square metre footprint. Situated at the foot of the North York Moors, the location offers exceptional countryside access alongside rapid commuter links via the nearby A19 and A172. While the property benefits from a very low crime rate and freehold tenure, the EPC rating is capped at a potential Band D, suggesting inherent energy efficiency limitations. This report serves as an asset baseline for the current owners or intelligence for buyers monitoring the street for future listings.",
+  "specs": [
+    {
+      "label": "Floor area",
+      "value": "212 sqm · EPC register"
+    },
+    {
+      "label": "EPC rating",
+      "value": "D (potential D)"
+    },
+    {
+      "label": "Tenure",
+      "value": "Freehold"
+    },
+    {
+      "label": "Last Sold",
+      "value": "April 2026"
+    },
+    {
+      "label": "Bathrooms",
+      "value": "Not on record — verify with a viewing or the listing"
+    },
+    {
+      "label": "Bedrooms / rooms",
+      "value": "4"
+    }
+  ],
+  "valuation": {
+    "conservative": "£650,000",
+    "fair": "£672,400",
+    "optimistic": "£700,000",
+    "growthAssumptions": {
+      "lowPct": 0.5,
+      "centralPct": 2.5,
+      "highPct": 4.5,
+      "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 3 over 10 years (n=5, years=5)"
+    },
+    "forecast1y": "£689,000",
+    "forecast3y": "£724,000",
+    "forecast5y": "£761,000",
+    "forecast10y": "£861,000"
+  },
+  "investmentMetrics": {
+    "estimatedRent": "£1,800 pcm",
+    "netYield": "~2.40% estimated net yield (assuming 25% operational costs)",
+    "roi": "1.5% estimated annual ROI (unleveraged cash purchase)",
+    "cashflow": "£1,350 pcm estimated net cashflow before tax",
+    "stampDuty": "Est. SDLT £23,620 (England/NI). Confirm with a solicitor.",
+    "breakEven": "6.5 years estimated break-even on acquisition costs",
+    "irr": "4.2% projected IRR over 10 years",
+    "growthReasoning": "3% annual growth assumption based on historical resilience of premium detached rural properties in North Yorkshire and proximity to the North York Moors National Park."
+  },
+  "marketAndRental": {
+    "supplyDemand": "High demand for substantial detached family homes in North Yorkshire villages, constrained by very low turnover on premium streets like Cross Lane.",
+    "timeOnMarket": "Not currently on market; rural premium properties typically average 12 to 16 weeks to secure a buyer when listed.",
+    "priceTrend": "Upward trajectory for large footprint homes in the DL6 postcode, evidenced by the £672,400 achieved price in April 2026.",
+    "vacancyRates": "Extremely low in this rural sector; long-term family tenancies are the norm when properties enter the rental market.",
+    "tenantProfile": "Professional families, remote workers, or relocating executives seeking rural lifestyle with A19 commuter access.",
+    "airbnbPotential": "Moderate to high potential for holiday letting given the immediate proximity to the North York Moors and local walking routes, though the large footprint may make it less efficient than smaller cottages."
+  },
+  "riskAnalysis": {
+    "floodRisk": "rivers & sea: Very Low; surface water: not returned by open flood-risk-zone API — verify on GOV.UK; (Flood Zone 1; planning.data.gov.uk; fetched 2026-07-23)",
+    "subsidence": "No specific local alerts, but standard structural surveys are essential for older rural properties to check for historical movement.",
+    "planningDevelopments": "See Extensions, Planning & Works for exact-address planning history.",
+    "leaseholdIssues": "None. The property is Freehold.",
+    "fireSafety": "Standard detached residential risk profile. Verify the presence of compliant smoke and carbon monoxide alarms.",
+    "insuranceRisk": "Standard risk profile. The Flood Zone 1 designation should ensure competitive building insurance premiums."
+  },
+  "riskTones": {
+    "floodRisk": "positive",
+    "subsidence": "neutral",
+    "planningDevelopments": "positive",
+    "leaseholdIssues": "positive",
+    "fireSafety": "neutral",
+    "insuranceRisk": "positive"
+  },
+  "locationIntelligence": {
+    "plannedInfrastructure": "No major disruptive infrastructure planned in the immediate village; the A19 corridor remains the primary strategic route.",
+    "populationGrowth": "Stable, mature demographic with limited new-build expansion in the immediate Ingleby Arncliffe conservation area.",
+    "regenerationProjects": "None locally; the area relies on its established rural charm and proximity to the National Park rather than urban regeneration.",
+    "walkability": "Low walkability for major retail. Local walks and the village coffee shop are accessible on foot, but a car is essential for supermarkets and secondary schools."
+  },
+  "advanced": {
+    "undervaluedExplanation": "The property achieved a significant premium (£672,400) compared to the street average, accurately reflecting its expansive 212 sqm floor area rather than being undervalued.",
+    "renovationROI": "Limited ROI on standard cosmetic updates given the recent high-value transaction. Capital expenditure should focus on energy efficiency to push the EPC beyond Band D if technically feasible.",
+    "developmentOpportunity": "The large plot may offer scope for outbuildings or annexes, subject to North Yorkshire Council planning consent and National Park fringe restrictions."
+  },
+  "propertyWorks": {
+    "extensionsAndAlterations": "Not on record — verify with the local planning authority.",
+    "planningApplications": "Not on record — verify with the local planning authority.",
+    "valueImpact": "Any future extensions would need to be weighed against the already high ceiling price for the street.",
+    "certainty": "Low certainty on historical works due to lack of exact-address digital planning matches."
+  },
+  "dueDiligence": {
+    "epcAndEnergy": "EPC band D — potential D — 212 m² — View EPC certificate on gov.uk (gov.uk EPC certificate 2140-3052-0206-9665-0204)",
+    "broadbandAndMobile": "Rural location; verify ultrafast fibre availability and mobile signal strength across all networks via Ofcom.",
+    "tenureAndLegal": "Freehold. Verify exact boundary lines and any shared access rights on Cross Lane with a conveyancer.",
+    "councilTaxAndParking": "Council tax band not on record — verify with North Yorkshire Council. Ample off-street parking is expected for a property of this size.",
+    "environmentalOther": "Verify heating fuel type; rural properties in this area often rely on oil or LPG rather than mains gas.",
+    "ownershipAndChain": "Recently transacted in April 2026. Not currently on the market.",
+    "recommendedNextSteps": [
+      "Retain this report as a baseline valuation guide for remortgaging or future sale planning.",
+      "Verify the primary heating fuel source and the age of the boiler/tank.",
+      "Check the GOV.UK long-term flood risk service for surface water data, which was absent from the API.",
+      "Consult a local architect if considering works to understand why the EPC potential is capped at Band D."
+    ],
+    "purchaseCosts": "SDLT £23,620 (primary residence, standard rates); conveyancing ~£1,800; survey ~£650–£1,100.",
+    "epcCertificateUrl": "gov.uk EPC certificate 2140-3052-0206-9665-0204"
+  },
+  "marketEvidence": {
+    "askingVsSoldEvidence": "Land Registry: this property last sold for £672,400 on 2026-04-01 — previous LR sale £485,000 on 2006-04-07 — no live asking price supplied",
+    "competingSupply": "Extremely limited. Cross Lane sees infrequent sales, with the last detached transaction being Monks House at £310,000 in July 2025 (a much smaller footprint).",
+    "pricePerSqmOrSqft": "About £3,172/m² using last LR sale £672,400 ÷ EPC floor area 212 m² (indicative only)."
+  },
+  "pros": [
+    {
+      "title": "Substantial Floor Area",
+      "desc": "At 212 square metres, the property offers an exceptionally large footprint for a rural detached home.",
+      "category": "Space & Layout",
+      "text": "At 212 square metres, the property offers an exceptionally large footprint for a rural detached home."
+    },
+    {
+      "title": "Premium Street Position",
+      "desc": "Cross Lane is a highly desirable address in Ingleby Arncliffe with strong historical capital values.",
+      "category": "Location",
+      "text": "Cross Lane is a highly desirable address in Ingleby Arncliffe with strong historical capital values."
+    },
+    {
+      "title": "Very Low Crime Rate",
+      "desc": "The local area experiences exceptionally low crime levels, providing a highly secure environment for families.",
+      "category": "Safety",
+      "text": "The local area experiences exceptionally low crime levels, providing a highly secure environment for families."
+    },
+    {
+      "title": "Excellent Road Links",
+      "desc": "Immediate access to the A19 and A172 allows for rapid commuting to Teesside, York, and Northallerton.",
+      "category": "Transport",
+      "text": "Immediate access to the A19 and A172 allows for rapid commuting to Teesside, York, and Northallerton."
+    },
+    {
+      "title": "National Park Proximity",
+      "desc": "Situated at the foot of the North York Moors, offering immediate access to premium outdoor recreation.",
+      "category": "Lifestyle",
+      "text": "Situated at the foot of the North York Moors, offering immediate access to premium outdoor recreation."
+    },
+    {
+      "title": "Freehold Tenure",
+      "desc": "The property is freehold, avoiding ground rents, service charges, and leasehold restrictions.",
+      "category": "Legal",
+      "text": "The property is freehold, avoiding ground rents, service charges, and leasehold restrictions."
+    },
+    {
+      "title": "Flood Zone 1",
+      "desc": "Located in the lowest risk zone for river and sea flooding, ensuring straightforward insurance.",
+      "category": "Environmental",
+      "text": "Located in the lowest risk zone for river and sea flooding, ensuring straightforward insurance."
+    },
+    {
+      "title": "Good Local Schools",
+      "desc": "Catchment includes Osmotherley and Hutton Rudby Primary Schools, both rated Good by Ofsted.",
+      "category": "Education",
+      "text": "Catchment includes Osmotherley and Hutton Rudby Primary Schools, both rated Good by Ofsted."
+    }
+  ],
+  "cons": [
+    {
+      "title": "Capped EPC Potential",
+      "desc": "The EPC rating is currently Band D with a potential of only Band D, indicating structural barriers to improving energy efficiency.",
+      "category": "Energy",
+      "text": "The EPC rating is currently Band D with a potential of only Band D, indicating structural barriers to improving energy efficiency."
+    },
+    {
+      "title": "High Price Ceiling",
+      "desc": "At £672,400, the property sits at the very top of the local market, potentially limiting short-term capital appreciation.",
+      "category": "Financial",
+      "text": "At £672,400, the property sits at the very top of the local market, potentially limiting short-term capital appreciation."
+    },
+    {
+      "title": "Car Dependency",
+      "desc": "While local walks are excellent, a vehicle is mandatory for supermarkets, secondary schools, and major amenities.",
+      "category": "Location",
+      "text": "While local walks are excellent, a vehicle is mandatory for supermarkets, secondary schools, and major amenities."
+    },
+    {
+      "title": "Unknown Heating Fuel",
+      "desc": "Rural location suggests no mains gas; reliance on oil or LPG can mean higher and more volatile heating costs.",
+      "category": "Utilities",
+      "text": "Rural location suggests no mains gas; reliance on oil or LPG can mean higher and more volatile heating costs."
+    },
+    {
+      "title": "Missing Surface Water Data",
+      "desc": "The open API did not return surface water flood risk data, requiring manual verification by the owner.",
+      "category": "Environmental",
+      "text": "The open API did not return surface water flood risk data, requiring manual verification by the owner."
+    },
+    {
+      "title": "Distance to Rail",
+      "desc": "The nearest mainline stations (Yarm and Northallerton) are approximately 7 miles away.",
+      "category": "Transport",
+      "text": "The nearest mainline stations (Yarm and Northallerton) are approximately 7 miles away."
+    },
+    {
+      "title": "Unknown Bathroom Count",
+      "desc": "Public records do not confirm the number of bathrooms, which is critical for a 4-bedroom home of this size.",
+      "category": "Layout",
+      "text": "Public records do not confirm the number of bathrooms, which is critical for a 4-bedroom home of this size."
+    },
+    {
+      "title": "Rural Broadband Variability",
+      "desc": "Internet speeds in North Yorkshire villages can be inconsistent; dedicated fibre checks are required.",
+      "category": "Utilities",
+      "text": "Internet speeds in North Yorkshire villages can be inconsistent; dedicated fibre checks are required."
+    }
+  ],
+  "soldHistory": [
+    {
+      "year": "2026",
+      "price": "£672,400",
+      "source": "HM Land Registry Price Paid",
+      "description": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND — detached"
+    },
+    {
+      "year": "2006",
+      "price": "£485,000",
+      "source": "HM Land Registry Price Paid",
+      "description": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND — detached"
+    }
+  ],
+  "areaAnalysis": {
+    "crimeSafety": {
+      "rating": "33.5 incidents per 1,000 residents (12 months to May 2026, police.uk)",
+      "description": "Exceptionally safe compared to national residential averages, with very low recorded incidents in the immediate vicinity.",
+      "incidentsPerThousand": 33.5
+    },
+    "demographics": "A mature, affluent rural demographic comprising established families, professionals, and retirees drawn to the National Park lifestyle.",
+    "amenities": [
+      "The Joiners Shop Coffee & Kitchen (Ingleby Cross)",
+      "Local bus services (Routes 80 and M5)",
+      "Extensive walking routes into the North York Moors",
+      "Broader retail and medical facilities in Stokesley (7 miles)"
+    ],
+    "futureOutlook": "The area is highly protected from overdevelopment due to its proximity to the National Park. Capital values are expected to remain robust, driven by scarcity of supply and sustained demand for premium rural homes.",
+    "schools": [
+      {
+        "name": "Osmotherley Primary School",
+        "distance": "2.3 miles",
+        "rating": "Good (May 2023)",
+        "ofsted": "Good",
+        "ofstedDate": "25/05/2023",
+        "ofstedNewerDate": ""
+      },
+      {
+        "name": "Hutton Rudby Primary School",
+        "distance": "3.5 miles",
+        "rating": "Good (Sept 2023)",
+        "ofsted": "Good",
+        "ofstedDate": "19/09/2023",
+        "ofstedNewerDate": ""
+      },
+      {
+        "name": "Northallerton School & Sixth Form College",
+        "distance": "6.5 miles",
+        "rating": "Good (Jan 2022) · report card Mar 2026",
+        "ofsted": "Good",
+        "ofstedDate": "13/01/2022",
+        "ofstedNewerDate": "24/03/2026"
+      },
+      {
+        "name": "Conyers School",
+        "distance": "6.8 miles",
+        "rating": "Good (Sept 2023)",
+        "ofsted": "Good",
+        "ofstedDate": "27/09/2023",
+        "ofstedNewerDate": ""
+      }
+    ],
+    "transport": [
+      {
+        "type": "Rail",
+        "line": "Yarm Rail Station",
+        "time": "6.7 miles"
+      },
+      {
+        "type": "Rail",
+        "line": "Northallerton Rail Station",
+        "time": "7.0 miles"
+      },
+      {
+        "type": "Bus",
+        "line": "Hill Top",
+        "time": "0.1 miles"
+      },
+      {
+        "type": "Road",
+        "line": "A19",
+        "time": "1.5 miles"
+      },
+      {
+        "type": "Road",
+        "line": "A1(M)",
+        "time": "6.6 miles"
+      }
+    ]
+  },
+  "buyingSuitability": "As this property recently transacted in April 2026 and is not currently on the market, this report serves as an asset baseline for the current owners, a remortgage valuation guide, or intelligence for prospective buyers monitoring the street for future listings. The £672,400 achieved price establishes a high ceiling for Cross Lane, underpinned by the substantial 212 square metre footprint and prime rural location. Future purchasers should note the limited EPC potential (Band D) and budget for potential energy efficiency upgrades if it returns to market.",
+  "viewingChecks": [
+    "Inspect the primary heating system (oil tank, LPG, or heat pump) and check the boiler's service history.",
+    "Verify the number of bathrooms and their condition, as this is absent from public records.",
+    "Check the quality and age of the windows, given the EPC Band D rating.",
+    "Assess the roof condition and any recent maintenance, common requirements for older rural properties.",
+    "Test mobile phone reception across different networks while inside the property.",
+    "Review the boundary lines, fences, and any shared access points on the driveway.",
+    "Look for any signs of damp or condensation, particularly in ground-floor reception rooms.",
+    "Check the loft space for insulation depth and potential for further boarding or conversion.",
+    "Inspect the drainage system (mains sewer vs septic tank/cesspit) given the rural setting.",
+    "Assess the garden's orientation and natural light exposure throughout the day."
+  ],
+  "agentQuestions": [
+    "If valuing for a return to market, how does the £672,400 benchmark compare to current local demand?",
+    "What is the primary heating fuel, and when was the system last upgraded?",
+    "Are there any restrictive covenants or National Park fringe regulations affecting the title?",
+    "Is the property connected to mains drainage, or does it rely on a septic tank?",
+    "Can you confirm the exact number of bathrooms and en-suites?",
+    "Why is the EPC potential capped at Band D, and what specific barriers prevent a higher rating?",
+    "Have any structural alterations or extensions been completed since the 2026 purchase?",
+    "What are the current broadband speeds achieved at the property?",
+    "Are there any known surface water flooding issues in the immediate garden or driveway?",
+    "Who maintains the boundaries and any shared access routes on Cross Lane?"
+  ],
+  "sources": [
+    {
+      "title": "View EPC certificate on gov.uk (gov.uk EPC certificate 2140-3052-0206-9665-0204)",
+      "url": "gov.uk EPC certificate 2140-3052-0206-9665-0204"
+    },
+    {
+      "title": "HM Land Registry Price Paid Data",
+      "url": "https://landregistry.data.gov.uk/"
+    },
+    {
+      "title": "North Yorkshire planning portal",
+      "url": "https://publicaccess.northyorks.gov.uk/online-applications"
+    },
+    {
+      "title": "police.uk crime data",
+      "url": "https://data.police.uk/"
+    }
+  ],
+  "comparableSales": [
+    {
+      "address": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£485,000",
+      "soldDate": "2006-04-07",
+      "similarity": "This property's previous sale — Apr 2006",
+      "basis": "date",
+      "note": "This property's previous sale — Apr 2006",
+      "propertyType": "detached",
+      "isSubjectPriorSale": true
+    },
+    {
+      "address": "MONKS HOUSE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£310,000",
+      "soldDate": "2025-07-31",
+      "similarity": "191 sqm Semi-detached house, sold Jul 2025 (£1,623/sqm)",
+      "basis": "size",
+      "note": "191 sqm Semi-detached house, sold Jul 2025 (£1,623/sqm)",
+      "floorAreaSqm": "191",
+      "propertyType": "Semi-detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£450,000",
+      "soldDate": "2023-08-24",
+      "similarity": "153 sqm Detached house, sold Aug 2023 (£2,941/sqm)",
+      "basis": "size",
+      "note": "153 sqm Detached house, sold Aug 2023 (£2,941/sqm)",
+      "floorAreaSqm": "153",
+      "propertyType": "Detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£490,000",
+      "soldDate": "2021-05-19",
+      "similarity": "186 sqm Detached house, sold May 2021 (£2,634/sqm)",
+      "basis": "size",
+      "note": "186 sqm Detached house, sold May 2021 (£2,634/sqm)",
+      "floorAreaSqm": "186",
+      "propertyType": "Detached house",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "OAKLANDS, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£275,000",
+      "soldDate": "2020-03-11",
+      "similarity": "detached, sold Mar 2020",
+      "basis": "date",
+      "note": "detached, sold Mar 2020",
+      "propertyType": "detached",
+      "isSubjectPriorSale": false
+    },
+    {
+      "address": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND",
+      "price": "£330,000",
+      "soldDate": "2014-11-11",
+      "similarity": "153 sqm Detached house, sold Nov 2014 (£2,157/sqm)",
+      "basis": "size",
+      "note": "153 sqm Detached house, sold Nov 2014 (£2,157/sqm)",
+      "floorAreaSqm": "153",
+      "propertyType": "Detached house",
+      "isSubjectPriorSale": false
+    }
+  ],
+  "growthAssumptions": {
+    "lowPct": 0.5,
+    "centralPct": 2.5,
+    "highPct": 4.5,
+    "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 3 over 10 years (n=5, years=5)"
+  },
+  "verifiedSchools": [
+    {
+      "name": "Osmotherley Primary School",
+      "distance": "2.3 miles",
+      "rating": "Good (May 2023)",
+      "urn": "121310",
+      "phase": "Primary",
+      "miles": 2.3,
+      "ofsted": "Good",
+      "ofstedDate": "25/05/2023",
+      "ofstedNewerDate": ""
+    },
+    {
+      "name": "Hutton Rudby Primary School",
+      "distance": "3.5 miles",
+      "rating": "Good (Sept 2023)",
+      "urn": "121361",
+      "phase": "Primary",
+      "miles": 3.5,
+      "ofsted": "Good",
+      "ofstedDate": "19/09/2023",
+      "ofstedNewerDate": ""
+    },
+    {
+      "name": "Northallerton School & Sixth Form College",
+      "distance": "6.5 miles",
+      "rating": "Good (Jan 2022) · report card Mar 2026",
+      "urn": "146969",
+      "phase": "Secondary",
+      "miles": 6.5,
+      "ofsted": "Good",
+      "ofstedDate": "13/01/2022",
+      "ofstedNewerDate": "24/03/2026"
+    },
+    {
+      "name": "Conyers School",
+      "distance": "6.8 miles",
+      "rating": "Good (Sept 2023)",
+      "urn": "139318",
+      "phase": "Secondary",
+      "miles": 6.8,
+      "ofsted": "Good",
+      "ofstedDate": "27/09/2023",
+      "ofstedNewerDate": ""
+    }
+  ],
+  "verifiedTransport": [
+    {
+      "type": "Rail",
+      "line": "Yarm Rail Station",
+      "time": "6.7 miles",
+      "miles": 6.7,
+      "atco": "9100YAAM"
+    },
+    {
+      "type": "Rail",
+      "line": "Northallerton Rail Station",
+      "time": "7.0 miles",
+      "miles": 7,
+      "atco": "9100NLRTN"
+    },
+    {
+      "type": "Bus",
+      "line": "Hill Top",
+      "time": "0.1 miles",
+      "miles": 0.1,
+      "atco": "3200YNA97221"
+    },
+    {
+      "type": "Road",
+      "line": "A19",
+      "time": "1.5 miles",
+      "miles": 1.5
+    },
+    {
+      "type": "Road",
+      "line": "A1(M)",
+      "time": "6.6 miles",
+      "miles": 6.6
+    }
+  ],
+  "reportMode": "recently_sold",
+  "priceLabel": "Last Sold Price (Apr 2026)",
+  "showConfidence": false,
+  "recentlySoldPanel": {
+    "headline": "Recently sold — what this means",
+    "lastSoldLabel": "Last Sold Price (Apr 2026)",
+    "lastSoldPrice": "£672,400",
+    "lastSoldDate": "2026-04-01",
+    "bullets": [
+      "This property completed around Apr 2026 at £672,400. It is not currently available to purchase.",
+      "Treat £672,400 as the strongest recent signal for this exact address when judging street and area values.",
+      "If it returns to market, re-check EPC, planning, survey condition and fresh same-street solds before setting any offer band.",
+      "Ask how the previous sale was marketed, whether works completed after completion, and whether any survey issues surfaced.",
+      "Budget for stamp duty/LBTT (and ADS if relevant), solicitor, survey and moving costs on top of any future purchase price.",
+      "For remortgage or sale planning, instruct a local agent or valuer with this report and the Land Registry sale history."
+    ]
+  },
+  "verifiedCrime": {
+    "incidentsPerThousand": 33.5,
+    "crimeCountYear": 58,
+    "monthStart": "2025-06",
+    "monthEnd": "2026-05",
+    "population": 1732,
+    "populationSource": "ONS Census 2021 usual residents via Nomis (E01027627)",
+    "label": "33.5 incidents per 1,000 residents (12 months to May 2026, police.uk)",
+    "reliable": true,
+    "sourceUrl": "https://data.police.uk/",
+    "debug": {
+      "monthlyCounts": [
+        {
+          "month": "2025-06",
+          "count": 5
+        },
+        {
+          "month": "2025-07",
+          "count": 4
+        },
+        {
+          "month": "2025-08",
+          "count": 6
+        },
+        {
+          "month": "2025-09",
+          "count": 4
+        },
+        {
+          "month": "2025-10",
+          "count": 4
+        },
+        {
+          "month": "2025-11",
+          "count": 1
+        },
+        {
+          "month": "2025-12",
+          "count": 7
+        },
+        {
+          "month": "2026-01",
+          "count": 9
+        },
+        {
+          "month": "2026-02",
+          "count": 3
+        },
+        {
+          "month": "2026-03",
+          "count": 6
+        },
+        {
+          "month": "2026-04",
+          "count": 7
+        },
+        {
+          "month": "2026-05",
+          "count": 2
+        }
+      ],
+      "incidents12m": 58,
+      "population": 1732,
+      "rate": 33.5,
+      "gate": "ok"
+    },
+    "lsoa21cd": "E01027627"
+  },
+  "verifiedFlood": {
+    "riversAndSea": "Very Low",
+    "surfaceWater": null,
+    "floodZone": "1",
+    "sourceUrl": "https://www.planning.data.gov.uk/dataset/flood-risk-zone",
+    "fetchedAt": "2026-07-23",
+    "llmContext": "VERIFIED EA/PLANNING FLOOD BANDINGS ONLY (do not invent rivers, becks, or place-names):\nrivers & sea: Very Low; surface water: not returned by open flood-risk-zone API — verify on GOV.UK; (Flood Zone 1; planning.data.gov.uk; fetched 2026-07-23)\nEntity refs: none (Zone 1)"
+  },
+  "growthSinceLastSale": {
+    "fromPrice": "£485,000",
+    "toPrice": "£672,400",
+    "fromDate": "2006-04-07",
+    "toDate": "2026-04-01",
+    "percent": 38.6,
+    "label": "+38.6% from £485,000 (2006-04-07) to £672,400 (2026-04-01)"
+  },
+  "forecastMilestones": {
+    "baseValue": 672400,
+    "assumptions": {
+      "lowPct": 0.5,
+      "centralPct": 2.5,
+      "highPct": 4.5,
+      "basis": "Fallback 2.5% a year — fewer than 8 detached sales in sector DL6 3 over 10 years (n=5, years=5)"
+    },
+    "forecast1y": 689210,
+    "forecast3y": 724101,
+    "forecast5y": 760759,
+    "forecast10y": 860729,
+    "bands": {
+      "y1": {
+        "low": 675762,
+        "central": 689210,
+        "high": 702658
+      },
+      "y3": {
+        "low": 682537,
+        "central": 724101,
+        "high": 767320
+      },
+      "y5": {
+        "low": 689379,
+        "central": 760759,
+        "high": 837933
+      },
+      "y10": {
+        "low": 706787,
+        "central": 860729,
+        "high": 1044217
+      }
+    }
+  },
+  "compEpcHitRate": 0.8,
+  "scores": {
+    "overall": 62,
+    "valueForMoney": 40,
+    "locationRating": 72,
+    "conditionRating": 65,
+    "investmentScore": 57,
+    "marketScore": 70,
+    "rentalScore": 61,
+    "growthPotential": "Medium",
+    "riskLevel": "Low",
+    "confidenceScore": 93
+  },
+  "livingHere": {
+    "foodDrink": [
+      {
+        "name": "The Joiners Shop",
+        "category": "cafe",
+        "lat": 54.3994726,
+        "lng": -1.309347,
+        "distanceMiles": 0.1,
+        "source": "fsa",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2024-09-17T00:00:00",
+        "fhrsId": "1851492"
+      },
+      {
+        "name": "The Blue Bell Inn",
+        "category": "pub",
+        "lat": 54.3990024,
+        "lng": -1.3088466,
+        "distanceMiles": 0.2,
+        "source": "fsa",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2025-05-21T00:00:00",
+        "fhrsId": "1851093"
+      },
+      {
+        "name": "The Orchard Cafe",
+        "category": "cafe",
+        "lat": 54.3798073,
+        "lng": -1.3108976,
+        "distanceMiles": 1.4,
+        "source": "fsa",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2026-06-18T00:00:00",
+        "fhrsId": "1851150"
+      },
+      {
+        "name": "Cote Ghyll Mill (YHA)",
+        "category": "restaurant",
+        "lat": 54.3765165,
+        "lng": -1.2902882,
+        "distanceMiles": 1.9,
+        "source": "fsa",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2024-08-28T00:00:00",
+        "fhrsId": "1850996"
+      },
+      {
+        "name": "The Rusty Bike",
+        "category": "cafe",
+        "lat": 54.41329,
+        "lng": -1.2702394,
+        "distanceMiles": 1.9,
+        "source": "fsa",
+        "hygieneRating": "5",
+        "hygieneRatingDate": "2026-07-14T00:00:00",
+        "fhrsId": "1851216"
+      }
+    ],
+    "walksOutdoors": [
+      {
+        "name": "Cleveland Way",
+        "category": "trail",
+        "lat": 54.3916338,
+        "lng": -1.2933262,
+        "distanceMiles": 1,
+        "source": "osm",
+        "isNationalTrail": true
+      },
+      {
+        "name": "Swinegar Plantation",
+        "category": "wood",
+        "lat": 54.4124223,
+        "lng": -1.3130097,
+        "distanceMiles": 0.8,
+        "source": "osm"
+      },
+      {
+        "name": "Pity Me Wood",
+        "category": "wood",
+        "lat": 54.4009023,
+        "lng": -1.3408013,
+        "distanceMiles": 1.2,
+        "source": "osm"
+      },
+      {
+        "name": "Wiske Bank Plantation",
+        "category": "wood",
+        "lat": 54.4141342,
+        "lng": -1.346094,
+        "distanceMiles": 1.7,
+        "source": "osm"
+      },
+      {
+        "name": "Old Lane Plantation",
+        "category": "wood",
+        "lat": 54.4252105,
+        "lng": -1.3245605,
+        "distanceMiles": 1.8,
+        "source": "osm"
+      },
+      {
+        "name": "Hungry Hill Plantation",
+        "category": "wood",
+        "lat": 54.4181178,
+        "lng": -1.3480987,
+        "distanceMiles": 1.9,
+        "source": "osm"
+      }
+    ],
+    "everyday": [
+      {
+        "name": "Londis",
+        "category": "supermarket",
+        "lat": 54.4048129,
+        "lng": -1.3203875,
+        "distanceMiles": 0.5,
+        "source": "osm"
+      },
+      {
+        "name": "Texaco",
+        "category": "petrol",
+        "lat": 54.3482898,
+        "lng": -1.4320559,
+        "distanceMiles": 6,
+        "source": "osm"
+      },
+      {
+        "name": "North Yorkshire Dental Care Service",
+        "category": "dentist",
+        "lat": 54.3418299,
+        "lng": -1.4313394,
+        "distanceMiles": 6.3,
+        "source": "osm"
+      },
+      {
+        "name": "Tesco Pharmacy",
+        "category": "pharmacy",
+        "lat": 54.3379065,
+        "lng": -1.4316896,
+        "distanceMiles": 6.5,
+        "source": "osm"
+      },
+      {
+        "name": "Mayford House Surgery",
+        "category": "gp",
+        "lat": 54.3283568,
+        "lng": -1.4465364,
+        "distanceMiles": 7.4,
+        "source": "osm"
+      }
+    ],
+    "placesEnabled": false,
+    "groundingLog": [
+      {
+        "at": "2026-07-23T23:00:10.876Z",
+        "decision": "pass",
+        "detail": "attempt 1: all names grounded"
+      }
+    ],
+    "vignette": "A Saturday morning in Cross Lane often begins with a short walk to pick up everyday essentials from the nearby Londis. From there, residents can head outdoors for a walk through Swinegar Plantation or join the Cleveland Way national trail just a mile from home. Afterwards, it is a brief stroll to The Joiners Shop for a morning coffee, or slightly further to The Rusty Bike. For a more substantial weekend lunch, locals might gather at The Blue Bell Inn, located just a fifth of a mile away."
+  },
+  "proseGroundingLog": [
+    {
+      "at": "2026-07-23T23:00:10.879Z",
+      "decision": "pass",
+      "detail": "areaAnalysis.crimeSafety.description: grounded",
+      "field": "areaAnalysis.crimeSafety.description"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "summary: grounded",
+      "field": "summary"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "buyingSuitability: grounded",
+      "field": "buyingSuitability"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "pros[0].body: grounded",
+      "field": "pros[0].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "pros[0].title: grounded",
+      "field": "pros[0].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.881Z",
+      "decision": "pass",
+      "detail": "pros[1].body: grounded",
+      "field": "pros[1].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.881Z",
+      "decision": "pass",
+      "detail": "pros[1].title: grounded",
+      "field": "pros[1].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.881Z",
+      "decision": "pass",
+      "detail": "pros[2].body: grounded",
+      "field": "pros[2].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[2].title: grounded",
+      "field": "pros[2].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[3].body: grounded",
+      "field": "pros[3].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[3].title: grounded",
+      "field": "pros[3].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[4].body: grounded",
+      "field": "pros[4].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[4].title: grounded",
+      "field": "pros[4].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[5].body: grounded",
+      "field": "pros[5].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[5].title: grounded",
+      "field": "pros[5].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[6].body: grounded",
+      "field": "pros[6].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "pros[6].title: grounded",
+      "field": "pros[6].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "pros[7].body: grounded",
+      "field": "pros[7].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "pros[7].title: grounded",
+      "field": "pros[7].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "cons[0].body: grounded",
+      "field": "cons[0].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "cons[0].title: grounded",
+      "field": "cons[0].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "cons[1].body: grounded",
+      "field": "cons[1].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[1].title: grounded",
+      "field": "cons[1].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[2].body: grounded",
+      "field": "cons[2].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[2].title: grounded",
+      "field": "cons[2].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[3].body: grounded",
+      "field": "cons[3].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[3].title: grounded",
+      "field": "cons[3].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[4].body: grounded",
+      "field": "cons[4].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[4].title: grounded",
+      "field": "cons[4].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[5].body: grounded",
+      "field": "cons[5].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[5].title: grounded",
+      "field": "cons[5].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[6].body: grounded",
+      "field": "cons[6].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[6].title: grounded",
+      "field": "cons[6].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[7].body: grounded",
+      "field": "cons[7].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[7].title: grounded",
+      "field": "cons[7].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.886Z",
+      "decision": "pass",
+      "detail": "areaAnalysis.demographics: grounded",
+      "field": "areaAnalysis.demographics"
+    },
+    {
+      "at": "2026-07-23T23:00:10.886Z",
+      "decision": "pass",
+      "detail": "areaAnalysis.futureOutlook: grounded",
+      "field": "areaAnalysis.futureOutlook"
+    }
+  ],
+  "dataCoverage": {
+    "sources": [
+      {
+        "id": "landRegistry",
+        "label": "HM Land Registry",
+        "status": "ok"
+      },
+      {
+        "id": "epc",
+        "label": "EPC register",
+        "status": "ok"
+      },
+      {
+        "id": "crime",
+        "label": "police.uk",
+        "status": "ok"
+      },
+      {
+        "id": "flood",
+        "label": "Flood risk",
+        "status": "ok"
+      },
+      {
+        "id": "planning",
+        "label": "Planning portal",
+        "status": "suppressed",
+        "detail": "no matched applications"
+      },
+      {
+        "id": "schools",
+        "label": "GIAS / Ofsted",
+        "status": "ok"
+      },
+      {
+        "id": "naptan",
+        "label": "NaPTAN",
+        "status": "ok"
+      },
+      {
+        "id": "livingHere",
+        "label": "Living Here POIs",
+        "status": "ok"
+      },
+      {
+        "id": "compsEpc",
+        "label": "Comps EPC match",
+        "status": "ok"
+      }
+    ],
+    "ok": 8,
+    "total": 9,
+    "summaryLine": "8 of 9 official sources returned data",
+    "failedLine": "Planning portal: no matched applications"
+  },
+  "finalizedBy": "finalizeReport",
+  "finalizeWarnings": []
+}

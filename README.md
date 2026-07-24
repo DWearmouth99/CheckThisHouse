@@ -4,14 +4,14 @@ Rightmove property & area analyzer with a multi-page PDF investment report.
 
 ## AI provider
 
-**Primary:** Gemini + Google Search (set `GEMINI_API_KEY` in `.env.local`)  
+**Provider:** Gemini + Google Search only (set `GEMINI_API_KEY` in `.env.local`)  
 Default model: `gemini-3.1-pro-preview` (override with `GEMINI_MODEL`)
 
 Analysis runs in two steps (required by the Gemini API):
 1. Google Search research brief
 2. Structured JSON valuation report
 
-**Optional fallback:** `OPENAI_API_KEY`
+OpenAI is disabled — Gemini failures surface as generation errors (no silent provider fallback).
 
 ## Run locally
 

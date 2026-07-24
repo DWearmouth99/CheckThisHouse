@@ -1,0 +1,290 @@
+{
+  "reportMode": "recently_sold",
+  "dataCoverage": {
+    "sources": [
+      {
+        "id": "landRegistry",
+        "label": "HM Land Registry",
+        "status": "ok"
+      },
+      {
+        "id": "epc",
+        "label": "EPC register",
+        "status": "ok"
+      },
+      {
+        "id": "crime",
+        "label": "police.uk",
+        "status": "ok"
+      },
+      {
+        "id": "flood",
+        "label": "Flood risk",
+        "status": "ok"
+      },
+      {
+        "id": "planning",
+        "label": "Planning portal",
+        "status": "suppressed",
+        "detail": "no matched applications"
+      },
+      {
+        "id": "schools",
+        "label": "GIAS / Ofsted",
+        "status": "ok"
+      },
+      {
+        "id": "naptan",
+        "label": "NaPTAN",
+        "status": "ok"
+      },
+      {
+        "id": "livingHere",
+        "label": "Living Here POIs",
+        "status": "ok"
+      },
+      {
+        "id": "compsEpc",
+        "label": "Comps EPC match",
+        "status": "ok"
+      }
+    ],
+    "ok": 8,
+    "total": 9,
+    "summaryLine": "8 of 9 official sources returned data",
+    "failedLine": "Planning portal: no matched applications"
+  },
+  "coverageFooter": "8 of 9 official sources returned data (Planning portal: no matched applications)",
+  "proseGroundingLog": [
+    {
+      "at": "2026-07-23T23:00:10.879Z",
+      "decision": "pass",
+      "detail": "areaAnalysis.crimeSafety.description: grounded",
+      "field": "areaAnalysis.crimeSafety.description"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "summary: grounded",
+      "field": "summary"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "buyingSuitability: grounded",
+      "field": "buyingSuitability"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "pros[0].body: grounded",
+      "field": "pros[0].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.880Z",
+      "decision": "pass",
+      "detail": "pros[0].title: grounded",
+      "field": "pros[0].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.881Z",
+      "decision": "pass",
+      "detail": "pros[1].body: grounded",
+      "field": "pros[1].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.881Z",
+      "decision": "pass",
+      "detail": "pros[1].title: grounded",
+      "field": "pros[1].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.881Z",
+      "decision": "pass",
+      "detail": "pros[2].body: grounded",
+      "field": "pros[2].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[2].title: grounded",
+      "field": "pros[2].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[3].body: grounded",
+      "field": "pros[3].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[3].title: grounded",
+      "field": "pros[3].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[4].body: grounded",
+      "field": "pros[4].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[4].title: grounded",
+      "field": "pros[4].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[5].body: grounded",
+      "field": "pros[5].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[5].title: grounded",
+      "field": "pros[5].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.882Z",
+      "decision": "pass",
+      "detail": "pros[6].body: grounded",
+      "field": "pros[6].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "pros[6].title: grounded",
+      "field": "pros[6].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "pros[7].body: grounded",
+      "field": "pros[7].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "pros[7].title: grounded",
+      "field": "pros[7].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "cons[0].body: grounded",
+      "field": "cons[0].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "cons[0].title: grounded",
+      "field": "cons[0].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.883Z",
+      "decision": "pass",
+      "detail": "cons[1].body: grounded",
+      "field": "cons[1].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[1].title: grounded",
+      "field": "cons[1].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[2].body: grounded",
+      "field": "cons[2].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[2].title: grounded",
+      "field": "cons[2].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[3].body: grounded",
+      "field": "cons[3].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[3].title: grounded",
+      "field": "cons[3].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[4].body: grounded",
+      "field": "cons[4].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[4].title: grounded",
+      "field": "cons[4].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[5].body: grounded",
+      "field": "cons[5].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.884Z",
+      "decision": "pass",
+      "detail": "cons[5].title: grounded",
+      "field": "cons[5].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[6].body: grounded",
+      "field": "cons[6].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[6].title: grounded",
+      "field": "cons[6].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[7].body: grounded",
+      "field": "cons[7].body"
+    },
+    {
+      "at": "2026-07-23T23:00:10.885Z",
+      "decision": "pass",
+      "detail": "cons[7].title: grounded",
+      "field": "cons[7].title"
+    },
+    {
+      "at": "2026-07-23T23:00:10.886Z",
+      "decision": "pass",
+      "detail": "areaAnalysis.demographics: grounded",
+      "field": "areaAnalysis.demographics"
+    },
+    {
+      "at": "2026-07-23T23:00:10.886Z",
+      "decision": "pass",
+      "detail": "areaAnalysis.futureOutlook: grounded",
+      "field": "areaAnalysis.futureOutlook"
+    }
+  ],
+  "crime": {
+    "reliable": true,
+    "rate": 33.5
+  },
+  "compsWithSqm": 4,
+  "class1HitsInPdf": [],
+  "pdfHasDataSources": true,
+  "pdfExcerptCoverage": "Data sources: 8 of 9 official sources returned data (Planning portal: no matched applications)\nFull Property Intelligence Report\nPentland, Cross Lane, Ingleby Arncliffe, Northallerton, DL6 3ND\nPaid report\n3/10\n2. Pros & cons\nBalanced strengths and watch"
+}

@@ -1,5 +1,6 @@
 import { PropertyAnalysis } from '../types';
 import { GraduationCap, Train, ShieldCheck, HelpCircle, Users, Store, Zap } from 'lucide-react';
+import { renderSchoolRatingForDisplay } from '../lib/notOnRecordRules';
 
 interface SchoolsAndTransportProps {
   analysis: PropertyAnalysis;
@@ -19,6 +20,9 @@ export default function SchoolsAndTransport({ analysis }: SchoolsAndTransportPro
     }
     if (r.includes('requires improvement') || r.includes('satisfactory')) {
       return 'bg-amber-50 text-amber-700 border border-amber-200';
+    }
+    if (r.includes('not yet inspected') || r.includes('see ofsted')) {
+      return 'bg-slate-100 text-slate-600 border border-slate-200';
     }
     return 'bg-slate-100 text-slate-600 border border-slate-200';
   };
@@ -50,17 +54,20 @@ export default function SchoolsAndTransport({ analysis }: SchoolsAndTransportPro
 
           {schools && schools.length > 0 ? (
             <div className="space-y-3">
-              {schools.map((school, i) => (
+              {schools.map((school, i) => {
+                const rating = renderSchoolRatingForDisplay(school);
+                return (
                 <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all border border-slate-200">
                   <div className="min-w-0 pr-2">
                     <p className="font-sans font-semibold text-xs text-slate-800 truncate">{school.name}</p>
                     <p className="text-[10px] text-slate-500 mt-0.5 font-mono">Distance: {school.distance}</p>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${getOfstedBadge(school.rating)}`}>
-                    {school.rating}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${getOfstedBadge(rating)}`}>
+                    {rating}
                   </span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-xs text-slate-500">School lookup statistics not available for this area.</p>

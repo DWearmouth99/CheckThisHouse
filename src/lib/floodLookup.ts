@@ -32,6 +32,12 @@ function riversBandFromZone(zone: string): string {
   return 'Very Low';
 }
 
+function formatCheckedDate(iso: string): string {
+  const d = new Date(iso.slice(0, 10) + 'T12:00:00Z');
+  if (!Number.isFinite(d.getTime())) return iso.slice(0, 10);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 async function geocode(postcode: string): Promise<{ lat: number; lng: number } | null> {
   const compact = postcode.replace(/\s+/g, '');
   const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(compact)}`, {
@@ -59,7 +65,7 @@ export async function lookupFloodForAddress(address: string): Promise<FloodLooku
       floodZone: 'unknown',
       sourceUrl: govCheck,
       fetchedAt,
-      bandingLabel: 'Flood bandings not on record — verify on GOV.UK long-term flood risk.',
+      bandingLabel: 'Flood bandings not available from official records at the time of this report — check the GOV.UK long-term flood risk service.',
       llmContext: 'No postcode available for flood lookup.',
       raw: emptyRaw,
     };
@@ -74,7 +80,7 @@ export async function lookupFloodForAddress(address: string): Promise<FloodLooku
         floodZone: 'unknown',
         sourceUrl: govCheck,
         fetchedAt,
-        bandingLabel: 'Flood bandings not on record — verify on GOV.UK long-term flood risk.',
+        bandingLabel: 'Flood bandings not available from official records at the time of this report — check the GOV.UK long-term flood risk service.',
         llmContext: 'Geocode failed for flood lookup.',
         raw: { postcode },
       };
@@ -96,12 +102,13 @@ export async function lookupFloodForAddress(address: string): Promise<FloodLooku
     const surfaceWater: string | null = null;
 
     const bandingLabel = [
-      `rivers & sea: ${riversAndSea}`,
-      surfaceWater ? `surface water: ${surfaceWater}` : 'surface water: not returned by open flood-risk-zone API — verify on GOV.UK',
-      `(Flood Zone ${highest}; planning.data.gov.uk; fetched ${fetchedAt})`,
-    ].join('; ');
+      `Rivers & sea: ${riversAndSea} (Flood Zone ${highest} — planning.data.gov.uk, checked ${formatCheckedDate(fetchedAt)})`,
+      surfaceWater
+        ? `Surface water: ${surfaceWater}`
+        : 'Surface water: not available from official records at the time of this report — check the GOV.UK long-term flood risk service',
+    ].join('. ');
 
-    const llmContext = `VERIFIED EA/PLANNING FLOOD BANDINGS ONLY (do not invent rivers, becks, or place-names):\n${bandingLabel}\nEntity refs: ${entities
+    const llmContext = `VERIFIED FLOOD BANDINGS ONLY (do not invent rivers, becks, or place-names):\n${bandingLabel}\nEntity refs: ${entities
       .map((e) => e.reference)
       .filter(Boolean)
       .slice(0, 8)
@@ -127,7 +134,7 @@ export async function lookupFloodForAddress(address: string): Promise<FloodLooku
       floodZone: 'unknown',
       sourceUrl: govCheck,
       fetchedAt,
-      bandingLabel: 'Flood bandings not on record — verify on GOV.UK long-term flood risk.',
+      bandingLabel: 'Flood bandings not available from official records at the time of this report — check the GOV.UK long-term flood risk service.',
       llmContext: 'Flood lookup failed.',
       raw: { error: String(err?.message || err) },
     };

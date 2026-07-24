@@ -1,0 +1,51 @@
+{
+  "lat": 54.400483,
+  "lng": -1.311641,
+  "schools": [
+    {
+      "name": "Osmotherley Primary School",
+      "distance": "2.3 miles",
+      "rating": "Good (May 2023)",
+      "urn": "121310",
+      "phase": "Primary",
+      "miles": 2.3,
+      "ofsted": "Good",
+      "ofstedDate": "25/05/2023",
+      "ofstedNewerDate": ""
+    },
+    {
+      "name": "Hutton Rudby Primary School",
+      "distance": "3.5 miles",
+      "rating": "Good (Sept 2023)",
+      "urn": "121361",
+      "phase": "Primary",
+      "miles": 3.5,
+      "ofsted": "Good",
+      "ofstedDate": "19/09/2023",
+      "ofstedNewerDate": ""
+    },
+    {
+      "name": "Northallerton School & Sixth Form College",
+      "distance": "6.5 miles",
+      "rating": "Good (Jan 2022) · report card Mar 2026",
+      "urn": "146969",
+      "phase": "Secondary",
+      "miles": 6.5,
+      "ofsted": "Good",
+      "ofstedDate": "13/01/2022",
+      "ofstedNewerDate": "24/03/2026"
+    },
+    {
+      "name": "Conyers School",
+      "distance": "6.8 miles",
+      "rating": "Good (Sept 2023)",
+      "urn": "139318",
+      "phase": "Secondary",
+      "miles": 6.8,
+      "ofsted": "Good",
+      "ofstedDate": "27/09/2023",
+      "ofstedNewerDate": ""
+    }
+  ],
+  "poolSize": 20121
+}

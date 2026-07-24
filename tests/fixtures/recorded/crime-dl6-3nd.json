@@ -1,0 +1,73 @@
+{
+  "postcode": "DL63ND",
+  "lat": 54.400483,
+  "lng": -1.311641,
+  "lsoa21cd": "E01027627",
+  "crimeCountYear": 58,
+  "monthEnd": "2026-05",
+  "monthStart": "2025-06",
+  "population": 1732,
+  "populationSource": "ONS Census 2021 usual residents via Nomis (E01027627)",
+  "incidentsPerThousand": 33.5,
+  "label": "33.5 incidents per 1,000 residents (12 months to May 2026, police.uk)",
+  "interpretationHint": "58 recorded crimes in this LSOA over 12 months — levels appear low for a UK residential area on this metric.",
+  "sourceUrl": "https://data.police.uk/",
+  "reliable": true,
+  "status": "ok",
+  "debug": {
+    "monthlyCounts": [
+      {
+        "month": "2025-06",
+        "count": 5
+      },
+      {
+        "month": "2025-07",
+        "count": 4
+      },
+      {
+        "month": "2025-08",
+        "count": 6
+      },
+      {
+        "month": "2025-09",
+        "count": 4
+      },
+      {
+        "month": "2025-10",
+        "count": 4
+      },
+      {
+        "month": "2025-11",
+        "count": 1
+      },
+      {
+        "month": "2025-12",
+        "count": 7
+      },
+      {
+        "month": "2026-01",
+        "count": 9
+      },
+      {
+        "month": "2026-02",
+        "count": 3
+      },
+      {
+        "month": "2026-03",
+        "count": 6
+      },
+      {
+        "month": "2026-04",
+        "count": 7
+      },
+      {
+        "month": "2026-05",
+        "count": 2
+      }
+    ],
+    "incidents12m": 58,
+    "population": 1732,
+    "rate": 33.5,
+    "gate": "ok"
+  }
+}

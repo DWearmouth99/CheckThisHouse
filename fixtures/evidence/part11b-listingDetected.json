@@ -1,0 +1,50 @@
+{
+  "modeA": {
+    "hasLiveAsking": true,
+    "priceLabel": "Asking price",
+    "listingDetected": {
+      "listingDetected": true,
+      "askingPrice": "£265,000",
+      "portalUrl": null,
+      "portal": "listing scrap",
+      "evidence": "scrap.price=£265,000",
+      "queried": [
+        "\"3A Gypsy Lane, Nunthorpe, Middlesbrough, TS7 0GY\" site:rightmove.co.uk",
+        "\"3A Gypsy Lane, Nunthorpe, Middlesbrough, TS7 0GY\" site:zoopla.co.uk",
+        "\"3A Gypsy Lane, Nunthorpe, Middlesbrough, TS7 0GY\" site:onthemarket.com",
+        "\"3A Gypsy Lane Nunthorpe\" Rightmove",
+        "\"3A Gypsy Lane Nunthorpe\" for sale",
+        "\"3A\" \"Gypsy Lane Nunthorpe\" TS7 0GY for sale"
+      ]
+    },
+    "offerStrategy": {
+      "lowOffer": "£260,000",
+      "fairOffer": "£265,000",
+      "premiumOffer": "£268,000",
+      "negotiationTips": [
+        "Open below asking only with comps evidence in hand.",
+        "Use survey findings and time-on-market as levers.",
+        "Confirm chain position before stretching to walk-away."
+      ]
+    }
+  },
+  "modeC": {
+    "hasLiveAsking": false,
+    "priceLabel": "Estimated value",
+    "listingDetected": {
+      "listingDetected": false,
+      "askingPrice": null,
+      "portalUrl": null,
+      "portal": null,
+      "evidence": "no scrap.price — Estimated value mode",
+      "queried": [
+        "\"3A Gypsy Lane, Nunthorpe, Middlesbrough, TS7 0GY\" site:rightmove.co.uk",
+        "\"3A Gypsy Lane, Nunthorpe, Middlesbrough, TS7 0GY\" site:zoopla.co.uk",
+        "\"3A Gypsy Lane, Nunthorpe, Middlesbrough, TS7 0GY\" site:onthemarket.com",
+        "\"3A Gypsy Lane Nunthorpe\" Rightmove",
+        "\"3A Gypsy Lane Nunthorpe\" for sale",
+        "\"3A\" \"Gypsy Lane Nunthorpe\" TS7 0GY for sale"
+      ]
+    }
+  }
+}

@@ -6,6 +6,8 @@
  * (was 6% before that date). Source: Revenue Scotland.
  */
 
+import { resolveReportRegion } from './ukCoverage';
+
 export type UkNation = 'scotland' | 'england_ni' | 'wales' | 'unknown';
 
 export type BuyerGoalLike = string;
@@ -14,7 +16,7 @@ function parseMoney(raw?: string): number | null {
   if (!raw) return null;
   const pound = raw.match(/£\s*([\d,]+(?:\.\d+)?)/);
   if (pound) {
-    const n = parseFloat(pound[1].replace(/,/g, ''));
+    const n = parseFloat(pound[1]!.replace(/,/g, ''));
     return Number.isFinite(n) ? n : null;
   }
   const digits = raw.replace(/[^0-9.]/g, '');
@@ -39,42 +41,15 @@ function bandedTax(price: number, bands: { upTo: number; rate: number }[]): numb
   return tax;
 }
 
-/** Scottish postcode area prefixes (outward code start). */
-const SCOTLAND_AREAS = new Set([
-  'AB',
-  'DD',
-  'DG',
-  'EH',
-  'FK',
-  'G',
-  'HS',
-  'IV',
-  'KA',
-  'KW',
-  'KY',
-  'ML',
-  'PA',
-  'PH',
-  'TD',
-  'ZE',
-]);
-
-const WALES_AREAS = new Set(['CF', 'LD', 'LL', 'NP', 'SA']);
-
 export function detectUkNation(postcode?: string, placeText?: string): UkNation {
-  const pc = (postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
-  const match = pc.match(/^([A-Z]{1,2})\d/);
-  if (match) {
-    const area = match[1];
-    if (SCOTLAND_AREAS.has(area)) return 'scotland';
-    if (WALES_AREAS.has(area)) return 'wales';
-    // SY straddles England/Wales — leave unknown unless place hints
-    if (area !== 'SY') return 'england_ni';
-  }
+  const region = resolveReportRegion(postcode);
+  if (region === 'scotland') return 'scotland';
+  if (region === 'wales') return 'wales';
+  if (region === 'northern_ireland' || region === 'england') return 'england_ni';
 
   const place = (placeText || '').toLowerCase();
   if (
-    /\b(scotland|edinburgh|glasgow|aberdeen|dundee|inverness|fife|lothian|highland|stirling|perth)\b/.test(
+    /\b(scotland|edinburgh|glasgow|aberdeen|dundee|inverness|fife|lothian|highland|stirling|perth|dalkeith)\b/.test(
       place
     )
   ) {
@@ -124,15 +99,6 @@ function scotlandAds(price: number): number {
 
 /** England & NI SDLT from 1 Apr 2025 (standard residential). */
 function englandSdlt(price: number, additional: boolean): number {
-  const surcharge = additional ? 0.05 : 0;
-  const bands = [
-    { upTo: 125_000, rate: 0 + surcharge },
-    { upTo: 250_000, rate: 0.02 + surcharge },
-    { upTo: 925_000, rate: 0.05 + surcharge },
-    { upTo: 1_500_000, rate: 0.1 + surcharge },
-    { upTo: Number.POSITIVE_INFINITY, rate: 0.12 + surcharge },
-  ];
-  // Higher rates for additional dwellings: nil band also charged at surcharge
   if (additional) {
     return bandedTax(price, [
       { upTo: 125_000, rate: 0.05 },
@@ -142,7 +108,29 @@ function englandSdlt(price: number, additional: boolean): number {
       { upTo: Number.POSITIVE_INFINITY, rate: 0.17 },
     ]);
   }
-  return bandedTax(price, bands);
+  return bandedTax(price, [
+    { upTo: 125_000, rate: 0 },
+    { upTo: 250_000, rate: 0.02 },
+    { upTo: 925_000, rate: 0.05 },
+    { upTo: 1_500_000, rate: 0.1 },
+    { upTo: Number.POSITIVE_INFINITY, rate: 0.12 },
+  ]);
+}
+
+/**
+ * England & NI First-Time Buyers’ Relief (from 1 Apr 2025):
+ * 0% to £300k, 5% £300k–£500k; unavailable above £500k (standard rates apply).
+ */
+function englandSdltFtb(price: number): { total: number; reliefApplied: boolean } {
+  if (price > 500_000) {
+    return { total: englandSdlt(price, false), reliefApplied: false };
+  }
+  const total = bandedTax(price, [
+    { upTo: 300_000, rate: 0 },
+    { upTo: 500_000, rate: 0.05 },
+    { upTo: Number.POSITIVE_INFINITY, rate: 0.05 },
+  ]);
+  return { total, reliefApplied: true };
 }
 
 /** Wales LTT residential (simplified current schedule). */
@@ -202,6 +190,16 @@ export function estimateTransactionTax(opts: {
   }
 
   if (nation === 'england_ni') {
+    if (ftb && !additional) {
+      const { total, reliefApplied } = englandSdltFtb(price);
+      return {
+        nation,
+        total,
+        summary: reliefApplied
+          ? `Est. SDLT ${formatGbp(total)} (England/NI, first-time buyer relief). Confirm with a solicitor.`
+          : `Est. SDLT ${formatGbp(total)} (England/NI; first-time buyer relief unavailable above £500k — standard rates). Confirm with a solicitor.`,
+      };
+    }
     const total = englandSdlt(price, additional);
     return {
       nation,

@@ -4,21 +4,29 @@ import {
   lookupPlanningApplications,
   planningSources,
 } from "./planningLookup";
-import { applyStampDutyEstimate, UK_PROPERTY_TAX_RULES_PROMPT } from "./ukPropertyTax";
-import { sanitizeOfferStrategy } from "./sanitizeOfferStrategy";
-import { refineRiskTones } from "./refineRiskTones";
-import { applyPropertyFactLocks, gatherPropertyFacts } from "./propertyFacts";
+import { UK_PROPERTY_TAX_RULES_PROMPT } from "./ukPropertyTax";
+import { gatherPropertyFacts } from "./propertyFacts";
 import {
   REPORT_WRITING_ENGINE_SYSTEM,
-  applyReportWritingEngine,
   buildReportWritingRequirements,
   detectReportMode,
 } from "./reportWritingEngine";
 import { extractPostcode, assertPayloadHasNoForeignTokens } from "./addressMatch";
 import { lookupCrimeForAddress } from "./policeUkLookup";
 import { lookupFloodForAddress } from "./floodLookup";
-import { enforceReportPipeline } from "./enforceReportPipeline";
 import { scrubEpcUrlsInText } from "./epcLinkFormat";
+import { finalizeReport } from "./finalizeReport";
+import {
+  detectListingFromResearch,
+  logListingDetection,
+  buildListingSearchQueries,
+} from "./listingDetect";
+import { assertReportCoverage, resolveReportRegion } from "./ukCoverage";
+import {
+  GROUNDED_FACTS_JSON_INSTRUCTION,
+  nationResearchSourceGuide,
+} from "./nationResearch";
+import { extractGroundedWebFacts } from "./groundedWebFacts";
 
 export type ScrapContext = {
   url?: string;
@@ -109,18 +117,8 @@ export const geminiAnalysisSchema = {
         conservative: { type: Type.STRING },
         fair: { type: Type.STRING },
         optimistic: { type: Type.STRING },
-        growthAssumptions: {
-          type: Type.OBJECT,
-          properties: {
-            lowPct: { type: Type.NUMBER },
-            centralPct: { type: Type.NUMBER },
-            highPct: { type: Type.NUMBER },
-            basis: { type: Type.STRING },
-          },
-          required: ["lowPct", "centralPct", "highPct", "basis"],
-        },
       },
-      required: ["conservative", "fair", "optimistic", "growthAssumptions"],
+      required: ["conservative", "fair", "optimistic"],
     },
     investmentMetrics: {
       type: Type.OBJECT,
@@ -262,7 +260,6 @@ export const geminiAnalysisSchema = {
         broadbandAndMobile: { type: Type.STRING },
         tenureAndLegal: { type: Type.STRING },
         councilTaxAndParking: { type: Type.STRING },
-        purchaseCosts: { type: Type.STRING },
         environmentalOther: { type: Type.STRING },
         ownershipAndChain: { type: Type.STRING },
         recommendedNextSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -272,7 +269,6 @@ export const geminiAnalysisSchema = {
         "broadbandAndMobile",
         "tenureAndLegal",
         "councilTaxAndParking",
-        "purchaseCosts",
         "environmentalOther",
         "ownershipAndChain",
         "recommendedNextSteps",
@@ -315,51 +311,9 @@ export const geminiAnalysisSchema = {
         required: ["year", "price", "source", "description"],
       },
     },
-    comparableSales: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          address: { type: Type.STRING },
-          price: { type: Type.STRING },
-          soldDate: { type: Type.STRING },
-          similarity: { type: Type.STRING },
-          basis: {
-            type: Type.STRING,
-            enum: ["size", "date", "planning", "listing", "unknown"],
-          },
-          note: { type: Type.STRING },
-        },
-        required: ["address", "price", "soldDate", "similarity", "basis", "note"],
-      },
-    },
     areaAnalysis: {
       type: Type.OBJECT,
       properties: {
-        schools: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              distance: { type: Type.STRING },
-              rating: { type: Type.STRING },
-            },
-            required: ["name", "distance", "rating"],
-          },
-        },
-        transport: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              type: { type: Type.STRING },
-              line: { type: Type.STRING },
-              time: { type: Type.STRING },
-            },
-            required: ["type", "line", "time"],
-          },
-        },
         crimeSafety: {
           type: Type.OBJECT,
           properties: {
@@ -372,14 +326,7 @@ export const geminiAnalysisSchema = {
         amenities: { type: Type.ARRAY, items: { type: Type.STRING } },
         futureOutlook: { type: Type.STRING },
       },
-      required: [
-        "schools",
-        "transport",
-        "crimeSafety",
-        "demographics",
-        "amenities",
-        "futureOutlook",
-      ],
+      required: ["crimeSafety", "demographics", "amenities", "futureOutlook"],
     },
     buyingSuitability: { type: Type.STRING },
     viewingChecks: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -417,7 +364,6 @@ export const geminiAnalysisSchema = {
     "pros",
     "cons",
     "soldHistory",
-    "comparableSales",
     "areaAnalysis",
     "buyingSuitability",
     "viewingChecks",
@@ -445,7 +391,7 @@ export function buildGeminiResponseSchema(mode: "on_market" | "recently_sold") {
 
 export function hasGeminiKey() {
   const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  return Boolean(key && key !== "MY_GEMINI_API_KEY" && key !== "PLACEHOLDER_REPLACE_OR_USE_OPENAI");
+  return Boolean(key && key !== "MY_GEMINI_API_KEY");
 }
 
 function getClient() {
@@ -546,11 +492,15 @@ function scrubResearchNotesForSubject(
  * 2) Structured JSON report from listing + research notes
  */
 export async function analyzeWithGemini(input: AnalyzeInput): Promise<AnalyzeResult> {
+  const addressForFacts =
+    input.manualAddress || input.scrap.address || "";
+  // Loud refusal for waitlisted regions (none currently — whole UK supported)
+  assertReportCoverage(addressForFacts);
+
   const ai = getClient();
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const listingBrief = buildListingBrief(input);
-  const addressForFacts =
-    input.manualAddress || input.scrap.address || "";
+  const reportRegion = resolveReportRegion(addressForFacts);
 
   console.log("[ai] Verified facts (EPC + Land Registry) + planning + crime + flood...");
   const [facts, planning, crime, flood] = await Promise.all([
@@ -604,14 +554,14 @@ export async function analyzeWithGemini(input: AnalyzeInput): Promise<AnalyzeRes
     ? `\nVERIFIED FACTS — FLOOD (EA / planning.data). Print these bandings verbatim in floodRisk. You may add ONE interpretation sentence that introduces NO geographic claims (no river/beck/place names) absent from this block.\n${flood.llmContext}\n`
     : "";
 
-  console.log(`[ai] Gemini phase 1: Google Search research (${model})...`);
+  console.log(`[ai] Gemini phase 1: Google Search research (${model}, region=${reportRegion})...`);
   const researchFocus = input.manualAddress
-    ? `This is an ADDRESS-ONLY lookup for: "${input.manualAddress}". There may be no live listing. Prefer VERIFIED FACTS (EPC + Land Registry) below over web guesses. Research the exact address and local area thoroughly.`
+    ? `This is an ADDRESS-ONLY lookup for: "${input.manualAddress}". There may be no live listing. Prefer VERIFIED FACTS blocks below when present. When verified registers are empty for this nation, search the nation-appropriate public sources thoroughly for the exact address.`
     : `Research this property listing:`;
 
   const phase1Contents = `You are a UK property research analyst. Use Google Search aggressively to find factual, recent information for an internal research brief (not customer-facing).
 
-Prefer: Land Registry / sold prices, Rightmove, Zoopla, Ofsted, police.uk, GOV.UK flood maps, EPC register, local council planning portals, and reputable local news.
+${nationResearchSourceGuide(reportRegion)}
 
 ${researchFocus}
 
@@ -622,20 +572,27 @@ ${planningBlock ? `\n${planningBlock}\n` : ""}
 ${crimeBlock}
 ${floodBlock}
 
-Search for planning and works at this exact address / postcode ${subjectPostcode || ""}. Cover:
-1. Sold prices — prefer VERIFIED Land Registry facts; do not invent different prices for matched addresses
-2. Nearby comps (extended vs unextended if known)
-3. Schools (with inspection year), transport, crime (use VERIFIED per-1,000 figure)
-4. Flood / regeneration
-5. Planning & works — prefer VERIFIED council matches for this exact property only; never include other postcodes
-6. Rents/yields if relevant
-7. Leasehold / fire-safety flags
-8. EPC / energy — prefer VERIFIED EPC; never invent bathroom counts or lettered EPC ranges
-9. Purchase cost stack (SDLT/LBTT+ADS)
-10. Competing listings / DOM if on market
+Search for planning and works at this exact address / postcode ${subjectPostcode || ""}. Cover EVERY item — leave gaps only when nothing public exists:
+1. Past listings for this EXACT address (Rightmove / Zoopla / OnTheMarket archives, sold/SSTC) — bedrooms, bathrooms, receptions, property type, tenure, floor area, last asking
+2. Sold prices — prefer VERIFIED Land Registry / nation register facts; do not invent different prices for matched addresses
+3. Nearby comps on the same street / postcode (extended vs unextended if known)
+4. Schools (with inspection year if known), transport, crime level for the neighbourhood (articles / police pages OK when official rates missing)
+5. Flood / regeneration
+6. Planning & works — prefer VERIFIED council matches for this exact property only; never include other postcodes
+7. Rents/yields if relevant
+8. Leasehold / fire-safety flags
+9. EPC / energy — prefer VERIFIED EPC; never invent bathroom counts or lettered EPC ranges without a source page
+10. Competing listings / DOM if on market — explicitly search Google using ALL of these queries (and include any portal URL + asking price you find):
+${buildListingSearchQueries(addressForFacts || 'this address')
+  .map((q) => `   - ${q}`)
+  .join('\n')}
+   If you find a live listing, include the full portal URL and asking price in the brief.
+   (SDLT/LBTT purchase-cost stack is computed in code — do not invent figures)
 11. £/sqm when floor area known
 
-Return a dense research brief (not JSON) with figures, place names, planning refs, and source names. Do not write customer-facing prose.`;
+Return a dense research brief (not JSON) with figures, place names, planning refs, and source names. Do not write customer-facing prose. Fill the grounded-facts JSON maximally.
+
+${GROUNDED_FACTS_JSON_INSTRUCTION}`;
 
   // Soften D2 hard-fail: scrub foreign tokens from payload instead of throwing when only council name leaked
   if (subjectPostcode?.startsWith("DL6")) {
@@ -662,6 +619,7 @@ Return a dense research brief (not JSON) with figures, place names, planning ref
     model,
     contents: phase1Contents,
     config: {
+      temperature: 0,
       tools: [{ googleSearch: {} }],
       systemInstruction:
         "You are a meticulous UK property researcher preparing internal notes. VERIFIED FACTS blocks override web guesses. Never invent bathroom counts, sold prices, or planning refs. Only attribute planning to the exact subject address. Never mention discarded or discounted records.",
@@ -670,6 +628,39 @@ Return a dense research brief (not JSON) with figures, place names, planning ref
 
   const researchNotesRaw = research.text || "No web research returned.";
   const researchNotes = scrubResearchNotesForSubject(researchNotesRaw, subjectPostcode);
+  const groundedWebFacts = extractGroundedWebFacts(researchNotes);
+  const listingDetection = detectListingFromResearch(
+    researchNotes,
+    addressForFacts,
+    input.scrap.price
+  );
+  logListingDetection(listingDetection);
+
+  // If scrap had no asking but Phase 1 found a portal URL + asking, treat as live asking for Mode A
+  const effectiveScrap = { ...input.scrap };
+  if (
+    !effectiveScrap.price &&
+    listingDetection.listingDetected &&
+    listingDetection.askingPrice &&
+    listingDetection.portalUrl
+  ) {
+    effectiveScrap.price = listingDetection.askingPrice;
+    console.log(
+      `[listingDetected] promoting Phase 1 asking ${listingDetection.askingPrice} → Mode A`
+    );
+  }
+
+  const modeCtxAfterListing = detectReportMode({
+    liveAsking: effectiveScrap.price,
+    thisPropertySales: facts?.landRegistry.thisProperty,
+  });
+  if (modeCtxAfterListing.mode !== modeCtx.mode || modeCtxAfterListing.hasLiveAsking !== modeCtx.hasLiveAsking) {
+    console.log(
+      `[ai] Report mode updated after listing detect: ${modeCtxAfterListing.mode} (${modeCtxAfterListing.priceLabel})`
+    );
+  }
+  const modeForSchema = modeCtxAfterListing;
+
   const sources = [
     ...extractSources(research),
     ...(facts ? facts.sources : []),
@@ -677,14 +668,14 @@ Return a dense research brief (not JSON) with figures, place names, planning ref
     ...(crime?.sourceUrl ? [{ title: "police.uk crime data", url: crime.sourceUrl }] : []),
   ];
 
-  const responseSchema = buildGeminiResponseSchema(modeCtx.mode);
+  const responseSchema = buildGeminiResponseSchema(modeForSchema.mode);
 
-  console.log(`[ai] Gemini phase 2: structured valuation JSON (${model}, mode=${modeCtx.mode})...`);
+  console.log(`[ai] Gemini phase 2: structured valuation JSON (${model}, mode=${modeForSchema.mode})...`);
   const phase2Contents = `Produce the full property analysis JSON for CheckThisHouse.
 
 Buyer goal: ${input.buyerGoal}
 
-${buildReportWritingRequirements(modeCtx.mode)}
+${buildReportWritingRequirements(modeForSchema.mode)}
 
 LISTING / SUBJECT:
 ${listingBrief}
@@ -700,16 +691,19 @@ ${UK_PROPERTY_TAX_RULES_PROMPT}
 
 Fill every schema field. Extra content rules:
 - Pros/cons: at least 7–8 each, evidence-backed, consistent with summary; every risk needs a so-what
-- comparableSales: prefer VERIFIED Land Registry; each note MUST set basis to size|date|planning|listing|unknown — if unknown, note must not speculate
-- bathrooms: never invent; if unknown use Not on record — verify with a viewing or the listing
+- comparableSales are selected in code from Land Registry when available (do not invent comps not in research notes)
+- bathrooms: never invent; if unknown use a short "confirm at viewing" style note — avoid long "Not on record — verify with…" boilerplate
 - Viewing checklist (10+) and agent/professional questions (10+)
-- Do NOT invent numeric scores or forecast milestone £ — propose growthAssumptions only
+- Do NOT invent numeric scores, forecast milestone £, growthAssumptions rates, school lists, or transport links — those are computed in code
 - summary: 4–6 dense sentences; buyingSuitability multi-sentence for the buyer goal and report mode
 - riskTones for every risk field; dueDiligence thorough
 - propertyWorks only from exact-address planning matches; interpret /LBC /FUL /OUT /TPO correctly
-- Yields must include rent assumption; SDLT/LBTT must state residence assumption
+- Yields must include rent assumption; stamp duty figures are computed in code (do not invent SDLT in dueDiligence)
 - Never invent EPC letter ranges (e.g. D to F)
-- Comp notes: set basis honestly; never invent structural explanations without planning/listing facts`;
+- Do NOT populate areaAnalysis.schools or areaAnalysis.transport (removed from schema — GIAS/NaPTAN own them)
+- Customer tone: prefer a clear estimate labelled as an estimate when research supports it. Do NOT paste URLs. Do NOT litter fields with "unavailable / unknown / Not on record / N/A" when the research notes already give a usable answer. If uncertain, one short "estimate — confirm officially" clause is enough.
+- Nation=${reportRegion}: when England/Wales official registers are empty, lean on the research notes (and any grounded-facts JSON) rather than empty placeholders
+- If Nation=scotland: Scottish houses are Absolute Ownership by default — NEVER invent an English leasehold "anomaly" from portal scrap. Prefer Absolute Ownership unless a title page says leasehold. Prefer Scottish EPC register / Home Report wording over gov.uk EPC.`;
 
   if (subjectPostcode?.startsWith("DL6")) {
     const check2 = assertPayloadHasNoForeignTokens(phase2Contents, [
@@ -733,6 +727,7 @@ Fill every schema field. Extra content rules:
     model,
     contents: phase2Contents,
     config: {
+      temperature: 0,
       responseMimeType: "application/json",
       responseSchema,
       systemInstruction: REPORT_WRITING_ENGINE_SYSTEM,
@@ -764,8 +759,6 @@ Fill every schema field. Extra content rules:
       broadbandAndMobile: "Confirm broadband availability and mobile coverage on Ofcom / provider checkers for this postcode.",
       tenureAndLegal: "Confirm freehold/leasehold, remaining term, ground rent and any title restrictions with a conveyancer.",
       councilTaxAndParking: "Verify council tax band and any parking permit or controlled-parking zone rules with the local authority.",
-      purchaseCosts:
-        "Budget for stamp duty/LBTT (and ADS if relevant), solicitor fees, survey and moving costs on top of the deposit.",
       environmentalOther: "Ask your surveyor about radon, mining, conservation constraints and other local environmental factors.",
       ownershipAndChain: "Ask how long the seller has owned the property and whether the sale is part of a chain.",
       recommendedNextSteps: [
@@ -795,82 +788,6 @@ Fill every schema field. Extra content rules:
       pricePerSqmOrSqft: "Confirm floor area from the EPC or measured survey before relying on £/sqft comparisons.",
     };
   }
-  // If the model still under-reported but we have portal matches, backfill propertyWorks.
-  if (planning && planning.matchedToProperty.length > 0) {
-    const pw = analysis.propertyWorks as Record<string, string>;
-    const thin =
-      !pw.planningApplications ||
-      /no (structured )?planning|none found|no data|not summarised|not found/i.test(
-        `${pw.extensionsAndAlterations || ""} ${pw.planningApplications || ""}`
-      );
-    if (thin) {
-      const ext = planning.matchedToProperty.filter((a) =>
-        /extension|loft|alteration|conservatory|outbuilding|garage|conversion/i.test(a.proposal)
-      );
-      pw.extensionsAndAlterations =
-        ext.length > 0
-          ? ext
-              .map((a) => `${a.proposal} (${a.reference}, ${a.status})`)
-              .join("; ")
-          : planning.matchedToProperty.map((a) => `${a.proposal} (${a.reference})`).join("; ");
-      pw.planningApplications = planning.matchedToProperty
-        .map(
-          (a) =>
-            `${a.reference}: ${a.proposal} — ${a.status}${a.received ? ` (received ${a.received})` : ""} [${planning.council}]`
-        )
-        .join(" | ");
-      if (!pw.certainty || /low until|manually confirm/i.test(pw.certainty)) {
-        pw.certainty = `Planning refs listed were matched to this address on the ${planning.council} portal. Confirm build quality and building control with a surveyor.`;
-      }
-      if (!pw.valueImpact || /confirm any completed/i.test(pw.valueImpact)) {
-        pw.valueImpact =
-          ext.length > 0
-            ? "Council records show extension/alteration applications at this address — fair value and forecasts should reflect the improved dwelling versus unextended street comps, pending survey confirmation that works were completed as approved."
-            : "Council planning history exists for this address; weigh decided applications when comparing to unextended comps.";
-      }
-      analysis.propertyWorks = pw;
-    }
-  }
-  applyStampDutyEstimate(analysis, input.buyerGoal);
-  refineRiskTones(analysis);
-  if (facts) {
-    applyPropertyFactLocks(analysis, facts, {
-      bedrooms: input.scrap.bedrooms,
-      bathrooms: input.scrap.bathrooms,
-      propertyType: input.scrap.propertyType,
-      price: input.scrap.price,
-    });
-  }
-
-  if (modeCtx.mode === "on_market") {
-    const valuation = analysis.valuation as
-      | { fair?: string; conservative?: string; optimistic?: string }
-      | undefined;
-    analysis.offerStrategy = sanitizeOfferStrategy(
-      analysis.offerStrategy as {
-        lowOffer: string;
-        fairOffer: string;
-        premiumOffer: string;
-        negotiationTips: string[];
-      },
-      {
-        asking: String(analysis.price || input.scrap.price || ""),
-        fairValue: valuation?.fair,
-        conservative: valuation?.conservative,
-        optimistic: valuation?.optimistic,
-      }
-    );
-  } else {
-    delete analysis.offerStrategy;
-  }
-
-  applyReportWritingEngine(analysis, {
-    modeCtx,
-    scrapBathrooms: input.scrap.bathrooms,
-    scrapBedrooms: input.scrap.bedrooms,
-    hasVerifiedEpc: Boolean(facts?.epc.matched),
-    hasVerifiedSoldHistory: Boolean(facts?.landRegistry.thisProperty.length),
-  });
 
   const rewriteField = async (path: string, value: string, hits: string[]) => {
     const rewrite = await ai.models.generateContent({
@@ -882,6 +799,7 @@ Field path: ${path}
 Original:
 ${value}`,
       config: {
+        temperature: 0,
         systemInstruction:
           "You rewrite UK property report prose. Remove banned terms without changing factual meaning. Never invent data.",
       },
@@ -889,19 +807,53 @@ ${value}`,
     return (rewrite.text || value).trim();
   };
 
-  const { warnings } = await enforceReportPipeline(analysis, {
-    modeCtx,
-    scrapPrice: input.scrap.price,
-    crime,
-    epc: facts?.epc,
-    landRegistry: facts?.landRegistry,
-    flood,
-    hasVerifiedPlanning: Boolean(planning?.matchedToProperty?.length),
+  const { livingHereGeminiPrompt } = await import("./livingHere");
+  const livingHereLlm = async ({
+    poiContext,
+    reviewSnippets,
+    attempt,
+  }: {
+    poiContext: string;
+    reviewSnippets?: Record<string, string[]>;
+    attempt: number;
+  }) => {
+    const hasSnips = Boolean(reviewSnippets && Object.keys(reviewSnippets).length);
+    const extra = hasSnips
+      ? `\nReview snippets (distil themes only — never quote):\n${JSON.stringify(reviewSnippets)}`
+      : "";
+    const resp = await ai.models.generateContent({
+      model,
+      contents: `${livingHereGeminiPrompt(poiContext, hasSnips)}${extra}\n(Attempt ${attempt + 1})`,
+      config: {
+        temperature: 0,
+        responseMimeType: "application/json",
+      },
+    });
+    const raw = (resp.text || "{}").trim();
+    const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, "")) as {
+      vignette?: string;
+      themeLines?: Record<string, string>;
+    };
+    return {
+      vignette: String(parsed.vignette || "").trim(),
+      themeLines: parsed.themeLines || {},
+    };
+  };
+
+  const finalized = await finalizeReport(analysis, {
+    buyerGoal: input.buyerGoal,
+    scrap: effectiveScrap,
+    facts,
+    lookups: { crime, flood, planning },
+    listingDetection,
+    groundedWebFacts,
     rewriteField,
+    livingHereLlm,
   });
-  if (warnings.length) {
-    console.warn("[ai] Enforcement warnings:", warnings.slice(0, 20));
+  const finalizeWarnings = (finalized.finalizeWarnings as string[] | undefined) || [];
+  if (finalizeWarnings.length) {
+    console.warn("[ai] Enforcement warnings:", finalizeWarnings.slice(0, 20));
   }
 
-  return { analysis, sources, provider: "gemini" };
+  return { analysis: finalized, sources, provider: "gemini" };
 }

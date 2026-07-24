@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Lock, Loader2, X } from 'lucide-react';
+import { PriceDisplay } from './PriceDisplay';
 
 type EmbeddedCheckoutHandle = {
   mount: (el: HTMLElement) => void;
@@ -12,6 +13,8 @@ type Props = {
   clientSecret: string | null;
   publishableKey: string | null;
   priceLabel: string;
+  compareAtLabel?: string | null;
+  promoCaption?: string | null;
   onClose: () => void;
 };
 
@@ -20,6 +23,8 @@ export function EmbeddedCheckoutModal({
   clientSecret,
   publishableKey,
   priceLabel,
+  compareAtLabel = null,
+  promoCaption = null,
   onClose,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -108,9 +113,22 @@ export function EmbeddedCheckoutModal({
             <p id="checkout-title" className="font-display font-bold text-lg text-brand-navy mt-0.5">
               Pay for your report
             </p>
-            <p className="text-[12px] text-brand-muted mt-1 leading-snug">
-              Single listing property report · {priceLabel} · card payment via Stripe
-            </p>
+            <div className="mt-2 rounded-lg border border-brand-green/20 bg-emerald-50/70 px-3 py-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-green">
+                {compareAtLabel ? 'July sale · one-off payment' : 'One-off paid PDF'}
+              </p>
+              <PriceDisplay
+                priceLabel={priceLabel}
+                compareAtLabel={compareAtLabel}
+                variant="hero"
+                className="mt-0.5"
+              />
+              {promoCaption ? (
+                <p className="text-[11px] text-brand-muted mt-1 leading-snug">{promoCaption}</p>
+              ) : (
+                <p className="text-[11px] text-brand-muted mt-1">Card payment via Stripe</p>
+              )}
+            </div>
           </div>
           <button
             type="button"

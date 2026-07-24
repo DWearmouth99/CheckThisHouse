@@ -58,6 +58,12 @@ export interface PropertyScores {
   growthPotential: 'Low' | 'Medium' | 'High';
   riskLevel: 'Low' | 'Medium' | 'High';
   confidenceScore: number;
+  valueForMoneyStatus?: 'scored' | 'insufficient';
+  locationRatingStatus?: 'scored' | 'insufficient';
+  conditionRatingStatus?: 'scored' | 'insufficient';
+  marketScoreStatus?: 'scored' | 'insufficient';
+  scoredComponentCount?: number;
+  overallBasis?: string;
 }
 
 export interface Valuation {
@@ -223,6 +229,17 @@ export interface PropertyAnalysis {
   /** Set by report-writing engine post-process */
   reportMode?: 'on_market' | 'recently_sold';
   priceLabel?: string;
+  /** True only when a live asking price was supplied (Mode A) */
+  hasLiveAsking?: boolean;
+  /** Phase 1 / scrap listing detection evidence */
+  listingDetected?: {
+    listingDetected: boolean;
+    askingPrice?: string | null;
+    portalUrl?: string | null;
+    portal?: string | null;
+    evidence?: string;
+    queried?: string[];
+  };
   showConfidence?: boolean;
   /** Mode B panel — replaces offerStrategy figures */
   recentlySoldPanel?: {
@@ -243,6 +260,83 @@ export interface PropertyAnalysis {
     incidentsPerThousand: number | null;
     label: string;
   };
+  /** Living Here — code-selected POIs + optional grounded vignette */
+  livingHere?: {
+    foodDrink: Array<{
+      name: string;
+      category: string;
+      lat: number;
+      lng: number;
+      distanceMiles: number;
+      source: string;
+      hygieneRating?: string;
+      hygieneRatingDate?: string;
+      rating?: number;
+      reviewCount?: number;
+      reviewTheme?: string;
+      isNationalTrail?: boolean;
+    }>;
+    walksOutdoors: Array<{
+      name: string;
+      category: string;
+      lat: number;
+      lng: number;
+      distanceMiles: number;
+      source: string;
+      isNationalTrail?: boolean;
+    }>;
+    everyday: Array<{
+      name: string;
+      category: string;
+      lat: number;
+      lng: number;
+      distanceMiles: number;
+      source: string;
+    }>;
+    vignette?: string;
+    placesEnabled: boolean;
+    groundingLog: Array<{
+      at: string;
+      decision: string;
+      detail: string;
+      unknownNames?: string[];
+    }>;
+  };
+  /** Interpretation layer — Class 1/2/3 */
+  frontPageInsights?: Array<{
+    id: string;
+    insightClass: 1 | 2 | 3;
+    headline: string;
+    text: string;
+    derivedFrom?: string[];
+    statId?: string;
+  }>;
+  eraProfile?: {
+    ageBand: string | null;
+    propertyType: string | null;
+    title: string | null;
+    issues: Array<{
+      id: string;
+      issue: string;
+      check: string;
+      fabricJoin?: string;
+      confirmedByEpc?: boolean;
+    }>;
+  };
+  sectionCallouts?: Partial<
+    Record<
+      string,
+      { id: string; insightClass: 1 | 2 | 3; headline: string; text: string } | null
+    >
+  >;
+  comparativeStats?: Array<{
+    id: string;
+    value: number;
+    displayValue: string;
+    comparator: string;
+    basis: string;
+    sampleSize: number;
+  }>;
 }
 
 export interface SavedAnalysis {

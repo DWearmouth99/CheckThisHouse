@@ -42,6 +42,12 @@ export function formatGbpFull(n: number): string {
   return `£${Math.round(n).toLocaleString('en-GB')}`;
 }
 
+/** Display formatter for forecast milestone cards + chart point labels (nearest £1k). */
+export function formatGbpNearest1k(n: number): string {
+  const rounded = Math.round(n / 1000) * 1000;
+  return `£${rounded.toLocaleString('en-GB')}`;
+}
+
 export function compound(base: number, annualPct: number, years: number): number {
   return base * Math.pow(1 + annualPct / 100, years);
 }
@@ -92,8 +98,22 @@ export function parseGrowthAssumptions(raw: unknown): GrowthAssumptions {
   };
 }
 
-export function resolveBaseValue(analysis: Record<string, unknown>, scrapPrice?: string): number {
+export function resolveBaseValue(
+  analysis: Record<string, unknown>,
+  scrapPrice?: string,
+  opts?: { preferFairEstimate?: boolean }
+): number {
   const valuation = analysis.valuation as Record<string, string> | undefined;
+  // Mode C: chart / cover / cards share the central (fair) estimate as base
+  if (opts?.preferFairEstimate) {
+    return (
+      parseMoney(valuation?.fair) ||
+      parseMoney(scrapPrice) ||
+      parseMoney(String(analysis.price || '')) ||
+      parseMoney(valuation?.conservative) ||
+      300_000
+    );
+  }
   return (
     parseMoney(scrapPrice) ||
     parseMoney(String(analysis.price || '')) ||
@@ -112,26 +132,45 @@ export function applyDeterministicForecasts(
     (analysis as { growthAssumptions?: unknown }).growthAssumptions ||
       (analysis.valuation as { growthAssumptions?: unknown } | undefined)?.growthAssumptions
   );
-  const base = resolveBaseValue(analysis, scrapPrice);
+  const preferFair =
+    Boolean((analysis as { reportMode?: string }).reportMode === 'on_market') &&
+    !(analysis as { hasLiveAsking?: boolean }).hasLiveAsking &&
+    !parseMoney(scrapPrice);
+  const base = resolveBaseValue(analysis, scrapPrice, { preferFairEstimate: preferFair });
   const milestones = computeForecastMilestones(base, assumptions);
   const valuation = {
     ...((analysis.valuation as object) || {}),
-    forecast1y: formatGbpFull(milestones.forecast1y),
-    forecast3y: formatGbpFull(milestones.forecast3y),
-    forecast5y: formatGbpFull(milestones.forecast5y),
-    forecast10y: formatGbpFull(milestones.forecast10y),
+    forecast1y: formatGbpNearest1k(milestones.forecast1y),
+    forecast3y: formatGbpNearest1k(milestones.forecast3y),
+    forecast5y: formatGbpNearest1k(milestones.forecast5y),
+    forecast10y: formatGbpNearest1k(milestones.forecast10y),
     growthAssumptions: milestones.assumptions,
   };
   analysis.valuation = valuation;
   analysis.forecastMilestones = milestones;
+  // Mode C: one fact — headline price = fair (central) estimate
+  if (preferFair && valuation && typeof (valuation as { fair?: string }).fair === 'string') {
+    analysis.price = (valuation as { fair: string }).fair;
+  }
   return milestones;
 }
+
+export type RentEstimate = {
+  /** Monthly rent in pounds */
+  monthlyPcm: number;
+  /** Stated source — required for yield to render */
+  source: string;
+};
 
 export function computeGrossYield(opts: {
   annualRent?: number | null;
   monthlyRent?: number | null;
+  /** Required — without a stated source, yield is omitted */
+  rentSource?: string | null;
   propertyValue: number;
 }): { grossYieldPct: number; rentMonthly: number; label: string } | null {
+  const source = String(opts.rentSource || '').trim();
+  if (!source) return null;
   const monthly =
     opts.monthlyRent ??
     (opts.annualRent != null && Number.isFinite(opts.annualRent) ? opts.annualRent / 12 : null);
@@ -140,22 +179,44 @@ export function computeGrossYield(opts: {
   }
   const annual = monthly * 12;
   const pct = (annual / opts.propertyValue) * 100;
+  const rentRounded = Math.round(monthly);
   return {
     grossYieldPct: Math.round(pct * 100) / 100,
-    rentMonthly: Math.round(monthly),
-    label: `~${formatGbpFull(monthly)} pcm estimated rent → ${pct.toFixed(2)}% gross yield`,
+    rentMonthly: rentRounded,
+    label: `est. £${rentRounded.toLocaleString('en-GB')} pcm (${source}) → ${pct.toFixed(2)}% gross`,
   };
 }
 
+/**
+ * Gross yield only when rentEstimate (or estimatedRent + estimatedRentSource) exists.
+ * Otherwise clears grossYield so UI omits the line.
+ */
 export function applyDeterministicYield(analysis: Record<string, unknown>): void {
   const im = (analysis.investmentMetrics || {}) as Record<string, unknown>;
-  const rentRaw = String(im.estimatedRent || '');
-  const monthly = parseMoney(rentRaw);
+  const rentObj =
+    im.rentEstimate && typeof im.rentEstimate === 'object'
+      ? (im.rentEstimate as Partial<RentEstimate>)
+      : null;
+  const monthly =
+    (typeof rentObj?.monthlyPcm === 'number' && Number.isFinite(rentObj.monthlyPcm)
+      ? rentObj.monthlyPcm
+      : null) ?? parseMoney(String(im.estimatedRent || ''));
+  const source =
+    String(rentObj?.source || im.estimatedRentSource || '').trim() || null;
   const value = resolveBaseValue(analysis);
-  const computed = computeGrossYield({ monthlyRent: monthly, propertyValue: value });
+  const computed = computeGrossYield({
+    monthlyRent: monthly,
+    rentSource: source,
+    propertyValue: value,
+  });
   if (computed) {
-    im.grossYield = `${computed.grossYieldPct.toFixed(2)}%`;
+    im.grossYield = computed.label;
     im.grossYieldBasis = computed.label;
+    im.estimatedRent = formatGbpFull(computed.rentMonthly);
+    analysis.investmentMetrics = im;
+  } else {
+    delete im.grossYield;
+    delete im.grossYieldBasis;
     analysis.investmentMetrics = im;
   }
 }

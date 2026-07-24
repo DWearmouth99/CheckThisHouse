@@ -86,7 +86,7 @@ export function buildReportWritingRequirements(mode: ReportMode): string {
   return `REPORT MODE: on_market
 - Include commercially realistic offerStrategy (opener, fair target, walk-away) and negotiation tips grounded in evidence
 - If there is a live asking price, treat price as asking; if address-only with no asking, price should be estimated value band language from comps — never invent a fake listing ask
-- Propose growthAssumptions (lowPct/centralPct/highPct + basis) only — do NOT invent forecast1y/10y milestone £ figures (computed in code)
+- Do NOT invent forecast1y/10y milestone £ figures or growthAssumptions rates (both computed in code from Land Registry)
 - Do NOT invent numeric scores (computed in code)`;
 }
 
@@ -114,7 +114,11 @@ export function detectReportMode(opts: {
   thisPropertySales?: LandRegistrySale[];
   reportDate?: Date;
 }): ReportModeContext {
-  const hasLiveAsking = Boolean(opts.liveAsking && /£|\d/.test(opts.liveAsking) && !/unknown|estimat|n\/a/i.test(opts.liveAsking));
+  const hasLiveAsking = Boolean(
+    opts.liveAsking &&
+      /£|\d/.test(opts.liveAsking) &&
+      !/unknown|estimat|n\/a|last\s*sold|sold\s+price|sale\s+price/i.test(opts.liveAsking)
+  );
   const sales = [...(opts.thisPropertySales || [])].sort((a, b) => b.date.localeCompare(a.date));
   const latest = sales[0];
   const latestDate = latest ? parseIsoDate(latest.date) : null;
@@ -225,7 +229,12 @@ export function applyReportWritingEngine(
   if (modeCtx.mode === 'recently_sold') {
     // offerStrategy must not exist — enforceReportPipeline owns Mode B panel
     delete analysis.offerStrategy;
+  } else if (modeCtx.mode === 'on_market' && !modeCtx.hasLiveAsking) {
+    // Mode C — Estimated value: no Mode A offer shell
+    delete analysis.offerStrategy;
   }
+
+  analysis.hasLiveAsking = modeCtx.hasLiveAsking;
 
   // Confidence badge rule: hide when headline facts are missing/estimated
   const bathsMissing = /not on record|unknown|confirm/i.test(String(analysis.bathrooms || ''));

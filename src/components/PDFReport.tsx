@@ -4,12 +4,15 @@ import { formatChartAxisLabel } from '../lib/reportWritingEngine';
 import {
   chartAxisTicks,
   formatGbpFull,
+  formatGbpNearest1k,
   forecastAssumptionsSentence,
   type ForecastMilestones,
 } from '../lib/deterministicForecasts';
 import { modeLabels } from '../lib/reportModeLabels';
-import { ratingOrBlank } from '../lib/notOnRecordRules';
+import { renderSchoolRatingForDisplay } from '../lib/notOnRecordRules';
 import { scrubEpcUrlsInText } from '../lib/epcLinkFormat';
+import { formatDistanceMiles } from '../lib/poiLookup';
+import { formatDataCoverageFooter, type DataCoverage } from '../lib/dataCoverage';
 
 interface PDFReportProps {
   analysis: PropertyAnalysis;
@@ -70,6 +73,48 @@ function formatGbp(n: number): string {
   if (n >= 10_000) return `£${Math.round(n / 1000)}k`;
   if (n >= 1000) return `£${(n / 1000).toFixed(1)}k`;
   return `£${Math.round(n)}`;
+}
+
+function everydayLabel(category: string): string {
+  const map: Record<string, string> = {
+    supermarket: 'Supermarket',
+    gp: 'GP',
+    dentist: 'Dentist',
+    pharmacy: 'Pharmacy',
+    petrol: 'Petrol',
+    playground: 'Playground',
+  };
+  return map[category] || category;
+}
+
+function shortTypeForEra(propertyType?: string | null): string {
+  if (!propertyType) return 'home';
+  return propertyType.replace(/\s+house$/i, '').toLowerCase();
+}
+
+function WorthKnowing({ headline, text }: { headline: string; text: string }) {
+  return (
+    <div
+      className="rounded-lg px-3 py-2.5 mb-3"
+      style={{
+        border: '1px solid #f0d9a8',
+        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+      }}
+    >
+      <p
+        className="text-[8px] uppercase tracking-[0.18em] font-bold mb-1"
+        style={{ color: '#92400e' }}
+      >
+        Worth knowing
+      </p>
+      <p className="text-[12px] font-bold leading-snug mb-0.5" style={{ color: NAVY }}>
+        {headline}
+      </p>
+      <p className="text-[11px] leading-relaxed" style={{ color: '#334155' }}>
+        {text}
+      </p>
+    </div>
+  );
 }
 
 function scoreColor(score: number) {
@@ -216,9 +261,9 @@ function AppreciationChart({
 }) {
   const w = 720;
   const h = 168;
-  const padL = 48;
-  const padR = 12;
-  const padT = 12;
+  const padL = 52;
+  const padR = 36;
+  const padT = 22;
   const padB = 28;
   const vals = points.map((p) => p.value).filter((v) => Number.isFinite(v) && v > 0);
   if (vals.length < 2) {
@@ -260,39 +305,80 @@ function AppreciationChart({
   }
 
   const yTicks = ticks;
+  // Suppress the bottom axis tick label when it collides with the base-value ("Now") point label
+  const suppressBottomTick =
+    yTicks.length > 0 &&
+    Math.abs((coords[0]?.value ?? 0) - (yTicks[0] ?? 0)) < span * 0.08;
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
       {yTicks.map((t, i) => {
         const y = padT + innerH - ((t - axisMin) / span) * innerH;
+        const hideTickLabel = suppressBottomTick && i === 0;
         return (
           <g key={i}>
             <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#eef2f6" strokeWidth={1} />
-            <text x={padL - 6} y={y + 3} textAnchor="end" fontSize={9} fill={MUTED} fontFamily="Manrope, sans-serif">
-              {formatChartAxisLabel(t)}
-            </text>
+            {!hideTickLabel ? (
+              <text
+                x={padL - 6}
+                y={y + 3}
+                textAnchor="end"
+                fontSize={9}
+                fill={MUTED}
+                fontFamily="Manrope, sans-serif"
+              >
+                {formatChartAxisLabel(t)}
+              </text>
+            ) : null}
           </g>
         );
       })}
       {bandPath ? <path d={bandPath} fill={GREEN} fillOpacity={0.08} /> : null}
       <path d={area} fill={GREEN} fillOpacity={0.12} />
       <path d={path} fill="none" stroke={GREEN} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-      {coords.map((c, i) => (
-        <g key={i}>
-          <circle cx={c.x} cy={c.y} r={3.5} fill={NAVY} />
-          <text x={c.x} y={h - 8} textAnchor="middle" fontSize={9} fill={MUTED} fontFamily="Manrope, sans-serif">
-            {c.label}
-          </text>
-          <text x={c.x} y={c.y - 8} textAnchor="middle" fontSize={8} fill={NAVY} fontWeight={700} fontFamily="Manrope, sans-serif">
-            {c.display}
-          </text>
-        </g>
-      ))}
+      {coords.map((c, i) => {
+        const isFirst = i === 0;
+        const isLast = i === coords.length - 1;
+        const valueAnchor = isLast ? 'end' : isFirst ? 'start' : 'middle';
+        const valueX = isLast ? c.x : isFirst ? c.x : c.x;
+        // Offset first point label upward so it clears the axis tick / "Now" x-label
+        const valueY = isFirst ? c.y - 14 : c.y - 8;
+        return (
+          <g key={i}>
+            <circle cx={c.x} cy={c.y} r={3.5} fill={NAVY} />
+            <text
+              x={c.x}
+              y={h - 8}
+              textAnchor={isLast ? 'end' : isFirst ? 'start' : 'middle'}
+              fontSize={9}
+              fill={MUTED}
+              fontFamily="Manrope, sans-serif"
+            >
+              {c.label}
+            </text>
+            <text
+              x={valueX}
+              y={valueY}
+              textAnchor={valueAnchor}
+              fontSize={8}
+              fill={NAVY}
+              fontWeight={700}
+              fontFamily="Manrope, sans-serif"
+            >
+              {c.display}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
 
-function ScoreBars({ items }: { items: { label: string; value: number }[] }) {
+function ScoreBars({
+  items,
+}: {
+  items: { label: string; value: number; insufficient?: boolean }[];
+}) {
   return (
     <div className="space-y-2.5">
       {items.map((item) => (
@@ -300,18 +386,32 @@ function ScoreBars({ items }: { items: { label: string; value: number }[] }) {
           <span className="w-[92px] text-[10px] font-semibold uppercase tracking-wide text-slate-600 shrink-0 truncate">
             {item.label}
           </span>
-          <div className="flex-1 h-[12px] rounded-sm bg-slate-100 overflow-hidden">
-            <div
-              className="h-full rounded-sm"
-              style={{
-                width: `${Math.min(100, Math.max(0, item.value || 0))}%`,
-                backgroundColor: scoreColor(item.value || 0),
-              }}
-            />
-          </div>
-          <span className="w-7 text-right text-[12px] font-bold tabular-nums" style={{ color: NAVY }}>
-            {Math.round(item.value || 0)}
-          </span>
+          {item.insufficient ? (
+            <>
+              <div className="flex-1 h-[12px] rounded-sm bg-slate-100 overflow-hidden" />
+              <span
+                className="min-w-[7.5rem] text-right text-[10px] font-semibold leading-tight"
+                style={{ color: MUTED }}
+              >
+                — insufficient data
+              </span>
+            </>
+          ) : (
+            <>
+              <div className="flex-1 h-[12px] rounded-sm bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full rounded-sm"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, item.value || 0))}%`,
+                    backgroundColor: scoreColor(item.value || 0),
+                  }}
+                />
+              </div>
+              <span className="w-7 text-right text-[12px] font-bold tabular-nums" style={{ color: NAVY }}>
+                {Math.round(item.value || 0)}
+              </span>
+            </>
+          )}
         </div>
       ))}
     </div>
@@ -325,6 +425,7 @@ function PageShell({
   children,
   cover,
   fitContent,
+  coverageLine,
 }: {
   page: number;
   total: number;
@@ -332,6 +433,8 @@ function PageShell({
   children: React.ReactNode;
   cover?: boolean;
   fitContent?: boolean;
+  /** Optional data-sources line from dataCoverage */
+  coverageLine?: string;
 }) {
   return (
     <div
@@ -370,11 +473,18 @@ function PageShell({
       </div>
       {!cover && (
         <div
-          className="px-7 py-2 border-t flex items-center justify-between text-[9px] shrink-0"
+          className="px-7 py-2 border-t flex flex-col gap-0.5 text-[9px] shrink-0"
           style={{ borderColor: LINE, color: MUTED }}
         >
-          <span>CheckThisHouse · Advisory only · Confirm with survey, solicitor & lender</span>
-          <span className="font-mono">checkthishouse.co.uk</span>
+          <div className="flex items-center justify-between">
+            <span>CheckThisHouse · Advisory only · Confirm with survey, solicitor & lender</span>
+            <span className="font-mono">checkthishouse.co.uk</span>
+          </div>
+          {coverageLine ? (
+            <p className="leading-snug" style={{ color: MUTED }}>
+              Data sources: {coverageLine}
+            </p>
+          ) : null}
         </div>
       )}
     </div>
@@ -437,13 +547,19 @@ function ProConCard({
 }
 
 function KV({ label, value }: { label: string; value?: string }) {
+  const v = String(value || '').trim();
+  const l = String(label || '').trim();
+  // Never render a value that is just the field label (e.g. "Main heating: Main heating")
+  if (!v || /^n\/?a$/i.test(v) || v.toLowerCase() === l.toLowerCase()) {
+    return null;
+  }
   return (
     <div className="flex gap-2 text-[11px] leading-snug border-b border-slate-100 py-1.5">
       <span className="w-[118px] shrink-0 font-semibold" style={{ color: MUTED }}>
         {label}
       </span>
       <span className="flex-1 font-medium" style={{ color: NAVY }}>
-        {value || 'N/A'}
+        {v}
       </span>
     </div>
   );
@@ -491,13 +607,19 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
     generatedAt ||
     new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const basePrice = parseMoney(price) || parseMoney(valuation?.fair) || 300000;
+  const milestoneBase = (analysis as { forecastMilestones?: { baseValue?: number } }).forecastMilestones
+    ?.baseValue;
+  const basePrice =
+    (typeof milestoneBase === 'number' && milestoneBase > 0 ? milestoneBase : 0) ||
+    parseMoney(valuation?.fair) ||
+    parseMoney(price) ||
+    300000;
   const milestones = (analysis as { forecastMilestones?: ForecastMilestones }).forecastMilestones;
 
   const mkPoint = (label: string, value: number) => ({
     label,
     value,
-    display: formatGbpFull(value),
+    display: formatGbpNearest1k(value),
   });
 
   const chartPoints = milestones
@@ -531,16 +653,38 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
     : null;
 
   const scoreItems = [
-    { label: 'Value', value: scores?.valueForMoney ?? 0 },
-    { label: 'Location', value: scores?.locationRating ?? 0 },
-    { label: 'Condition', value: scores?.conditionRating ?? 0 },
+    {
+      label: 'Value',
+      value: scores?.valueForMoney ?? 0,
+      insufficient: scores?.valueForMoneyStatus === 'insufficient',
+    },
+    {
+      label: 'Location',
+      value: scores?.locationRating ?? 0,
+      insufficient: scores?.locationRatingStatus === 'insufficient',
+    },
+    {
+      label: 'Condition',
+      value: scores?.conditionRating ?? 0,
+      insufficient: scores?.conditionRatingStatus === 'insufficient',
+    },
     ...(showInvestment
       ? [
-          { label: 'Invest', value: scores?.investmentScore ?? 0 },
-          { label: 'Market', value: scores?.marketScore ?? 0 },
-          { label: 'Rental', value: scores?.rentalScore ?? 0 },
+          { label: 'Invest', value: scores?.investmentScore ?? 0, insufficient: false },
+          {
+            label: 'Market',
+            value: scores?.marketScore ?? 0,
+            insufficient: scores?.marketScoreStatus === 'insufficient',
+          },
+          { label: 'Rental', value: scores?.rentalScore ?? 0, insufficient: false },
         ]
-      : [{ label: 'Market', value: scores?.marketScore ?? 0 }]),
+      : [
+          {
+            label: 'Market',
+            value: scores?.marketScore ?? 0,
+            insufficient: scores?.marketScoreStatus === 'insufficient',
+          },
+        ]),
   ];
 
   const planningRiskText = [
@@ -608,7 +752,8 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
   const consList = (cons || []).slice(0, 8);
   const nextSteps = dueDiligence?.recommendedNextSteps?.filter(Boolean).slice(0, 10) || [];
   const reportMode = analysis.reportMode;
-  const labels = modeLabels(reportMode || 'on_market');
+  const hasLiveAsking = Boolean((analysis as { hasLiveAsking?: boolean }).hasLiveAsking);
+  const labels = modeLabels(reportMode || 'on_market', hasLiveAsking);
   const priceLabel =
     analysis.priceLabel || labels.priceCoverLabel;
   const showConfidence = analysis.showConfidence === true;
@@ -621,6 +766,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       bullets: string[];
     };
   }).recentlySoldPanel;
+  // Mode C cover: one valuation struct → range view; Mode A: live asking
+  const coverPrice =
+    !recentlySold && !hasLiveAsking && valuation?.conservative && valuation?.optimistic
+      ? `${valuation.conservative}–${valuation.optimistic}`
+      : price || valuation?.fair || '—';
   const displayBaths = /not on record|unknown|confirm|not specified/i.test(String(bathrooms || ''))
     ? ''
     : bathrooms;
@@ -628,16 +778,43 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
     ? ''
     : bedrooms;
 
-  // 1 cover + summary + pros + valuation + [investor] + risks + area + diligence + comps + offer
-  const TOTAL = showInvestment ? 10 : 9;
+  // 1 cover + summary + pros + valuation + [investor] + risks + area + [living] + diligence + comps + offer
+  const livingHere = analysis.livingHere;
+  const showLivingHere = Boolean(
+    livingHere &&
+      ((livingHere.foodDrink?.length ?? 0) > 0 ||
+        (livingHere.walksOutdoors?.length ?? 0) > 0 ||
+        (livingHere.everyday?.length ?? 0) > 0)
+  );
+  const extraLiving = showLivingHere ? 1 : 0;
+  const overall = scores?.overall ?? 0;
+  const coverageLine = formatDataCoverageFooter(
+    (analysis as { dataCoverage?: DataCoverage }).dataCoverage
+  );
+  const specsForDisplay = (specs || []).filter((s) => {
+    const l = String(s.label || '').trim();
+    const v = String(s.value || '').trim();
+    if (!l || !v) return false;
+    return l.toLowerCase() !== v.toLowerCase();
+  });
+  const hasOfferFigures =
+    hasLiveAsking &&
+    Boolean(offerStrategy?.lowOffer || offerStrategy?.fairOffer || offerStrategy?.premiumOffer);
+  const frontPageInsights = (analysis.frontPageInsights || []).slice(0, 3);
+  const eraProfile = analysis.eraProfile;
+  const showEra = Boolean(eraProfile?.ageBand && (eraProfile.issues?.length ?? 0) > 0);
+  const callouts = analysis.sectionCallouts || {};
+  const extraEra = showEra ? 1 : 0;
+  const TOTAL = (showInvestment ? 10 : 9) + extraLiving + extraEra;
   const pageValuation = 4;
   const pageInvest = 5;
   const pageRisk = showInvestment ? 6 : 5;
   const pageArea = showInvestment ? 7 : 6;
-  const pageDiligence = showInvestment ? 8 : 7;
-  const pageComps = showInvestment ? 9 : 8;
-  const pageOffer = showInvestment ? 10 : 9;
-  const overall = scores?.overall ?? 0;
+  const pageLivingHere = pageArea + 1;
+  const pageDiligence = (showInvestment ? 8 : 7) + extraLiving;
+  const pageEra = pageDiligence + 1;
+  const pageComps = (showInvestment ? 9 : 8) + extraLiving + extraEra;
+  const pageOffer = (showInvestment ? 10 : 9) + extraLiving + extraEra;
 
   return (
     <div
@@ -647,7 +824,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       aria-hidden
     >
       {/* ========== 1 COVER ========== */}
-      <PageShell page={1} total={TOTAL} address={addressLine} cover>
+      <PageShell coverageLine={coverageLine} page={1} total={TOTAL} address={addressLine} cover>
         <div className="h-full flex flex-col bg-white">
           <div className="px-8 pt-7 flex items-start justify-between shrink-0">
             <img src={LOGO} alt="CheckThisHouse" className="h-14 w-auto object-contain" />
@@ -675,7 +852,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
             >
               {(
                 [
-                  [priceLabel, price],
+                  [priceLabel, coverPrice],
                   ['Overall score', `${overall}/100`],
                   ['Risk level', scores?.riskLevel || '—'],
                   ...(showConfidence
@@ -723,6 +900,32 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                 </div>
               ))}
             </div>
+
+            {frontPageInsights.length > 0 && (
+              <div className="mt-4 rounded-xl px-4 py-3" style={{ background: '#0b1f3a' }}>
+                <p
+                  className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
+                  style={{ color: '#86efac' }}
+                >
+                  Three things worth knowing
+                </p>
+                <ol className="space-y-2">
+                  {frontPageInsights.map((ins, i) => (
+                    <li key={ins.id || i} className="flex gap-2.5">
+                      <span
+                        className="shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center mt-0.5"
+                        style={{ background: GREEN, color: '#fff' }}
+                      >
+                        {i + 1}
+                      </span>
+                      <p className="text-[12px] leading-snug font-semibold" style={{ color: '#f8fafc' }}>
+                        {ins.headline}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
           </div>
 
           <div className="px-8 flex-1 min-h-0 pb-3 flex flex-col items-center justify-center">
@@ -739,8 +942,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       </PageShell>
 
       {/* ========== 2 EXEC + SCORES ========== */}
-      <PageShell page={2} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={2} total={TOTAL} address={addressLine}>
         <SectionTitle>1. Summary & scores</SectionTitle>
+        {callouts.summary && (
+          <WorthKnowing headline={callouts.summary.headline} text={callouts.summary.text} />
+        )}
         <p className="text-[12px] leading-[1.55] mb-4" style={{ color: '#1e293b' }}>
           {summary}
         </p>
@@ -756,6 +962,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
             <p className="text-[9px] uppercase tracking-wider mt-1.5" style={{ color: MUTED }}>
               Overall / 100
             </p>
+            {scores?.overallBasis && (
+              <p className="text-[9px] mt-1 text-center px-1" style={{ color: MUTED }}>
+                {scores.overallBasis}
+              </p>
+            )}
             <p className="text-[10px] font-bold mt-2.5" style={{ color: NAVY }}>
               Growth: {scores?.growthPotential}
             </p>
@@ -776,11 +987,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
           </p>
         </div>
 
-        {(specs?.length ?? 0) > 0 && (
+        {(specsForDisplay.length ?? 0) > 0 && (
           <div>
             <SubHead>Property details</SubHead>
             <div className="grid grid-cols-2 gap-x-4">
-              {specs!.slice(0, 16).map((s, i) => (
+              {specsForDisplay.slice(0, 16).map((s, i) => (
                 <React.Fragment key={i}>
                   <KV label={s.label} value={s.value} />
                 </React.Fragment>
@@ -791,7 +1002,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       </PageShell>
 
       {/* ========== 3 PROS & CONS (own page — prevents footer clipping) ========== */}
-      <PageShell page={3} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={3} total={TOTAL} address={addressLine}>
         <SectionTitle>2. Pros & cons</SectionTitle>
           <p className="text-[11px] leading-relaxed mb-3" style={{ color: MUTED }}>
             Balanced strengths and watch-outs grounded in research for this buyer goal — use as talking points with your
@@ -832,8 +1043,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       </PageShell>
 
       {/* ========== 4 VALUATION ========== */}
-      <PageShell page={pageValuation} total={TOTAL} address={addressLine} fitContent>
+      <PageShell coverageLine={coverageLine} page={pageValuation} total={TOTAL} address={addressLine} fitContent>
         <SectionTitle>3. What is it worth?</SectionTitle>
+        {callouts.valuation && (
+          <WorthKnowing headline={callouts.valuation.headline} text={callouts.valuation.text} />
+        )}
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           {[
@@ -946,13 +1160,18 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
 
       {/* ========== FINANCIALS (investors only) ========== */}
       {showInvestment && (
-      <PageShell page={pageInvest} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={pageInvest} total={TOTAL} address={addressLine}>
         <SectionTitle>4. Rental & investment numbers</SectionTitle>
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           {[
             ['Est. monthly rent', investmentMetrics?.estimatedRent],
-            ['Gross yield', investmentMetrics?.grossYield],
+            [
+              'Gross yield',
+              (investmentMetrics as { grossYieldBasis?: string; grossYield?: string } | undefined)
+                ?.grossYieldBasis ||
+                (investmentMetrics as { grossYield?: string } | undefined)?.grossYield,
+            ],
             ['Net yield', investmentMetrics?.netYield],
             ['Cashflow', investmentMetrics?.cashflow],
             ['ROI', investmentMetrics?.roi],
@@ -960,7 +1179,12 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
             ['Stamp duty (est.)', investmentMetrics?.stampDuty],
             ['Break-even', investmentMetrics?.breakEven],
             ['Vacancy rates', marketAndRental?.vacancyRates],
-          ].map(([l, v]) => (
+          ]
+            .filter(([l, v]) => {
+              if (l === 'Gross yield') return Boolean(v);
+              return true;
+            })
+            .map(([l, v]) => (
             <div key={String(l)} className="rounded border px-3 py-2.5" style={{ borderColor: LINE }}>
               <p className="text-[9px] font-bold uppercase tracking-wide" style={{ color: MUTED }}>
                 {l}
@@ -1002,8 +1226,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       )}
 
       {/* ========== RISKS ========== */}
-      <PageShell page={pageRisk} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={pageRisk} total={TOTAL} address={addressLine}>
         <SectionTitle>{showInvestment ? '5' : '4'}. Risks & red flags</SectionTitle>
+        {callouts.risks && (
+          <WorthKnowing headline={callouts.risks.headline} text={callouts.risks.text} />
+        )}
 
         <div className="grid grid-cols-2 gap-2.5 mb-4">
           {riskRows.map((row) => {
@@ -1074,8 +1301,11 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
       </PageShell>
 
       {/* ========== LOCAL AREA ========== */}
-      <PageShell page={pageArea} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={pageArea} total={TOTAL} address={addressLine}>
         <SectionTitle>{showInvestment ? '6' : '5'}. Schools, transport & amenities</SectionTitle>
+        {callouts.area && (
+          <WorthKnowing headline={callouts.area.headline} text={callouts.area.text} />
+        )}
 
         <div className="grid grid-cols-2 gap-3.5 mb-3">
           <div>
@@ -1096,14 +1326,15 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                       {s.distance}
                     </td>
                     <td className="px-2 py-1.5 border-b border-slate-100">
-                      {ratingOrBlank(s.rating) || '—'}
+                      {renderSchoolRatingForDisplay(s)}
                     </td>
                   </tr>
                 ))}
                 {!(areaAnalysis?.schools?.length) && (
                   <tr>
                     <td colSpan={3} className="px-2 py-2.5" style={{ color: MUTED }}>
-                      No school rows returned
+                      {(areaAnalysis as { schoolsEmptyMessage?: string } | undefined)
+                        ?.schoolsEmptyMessage || 'No school rows returned'}
                     </td>
                   </tr>
                 )}
@@ -1131,7 +1362,8 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                 {!(areaAnalysis?.transport?.length) && (
                   <tr>
                     <td colSpan={3} className="px-2 py-2.5" style={{ color: MUTED }}>
-                      No transport rows returned
+                      {(areaAnalysis as { transportEmptyMessage?: string } | undefined)
+                        ?.transportEmptyMessage || 'No transport rows returned'}
                     </td>
                   </tr>
                 )}
@@ -1168,9 +1400,113 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
         )}
       </PageShell>
 
+      {/* ========== LIVING HERE ========== */}
+      {showLivingHere && livingHere && (
+        <PageShell coverageLine={coverageLine} page={pageLivingHere} total={TOTAL} address={addressLine}>
+          <SectionTitle>Living Here</SectionTitle>
+          <p className="text-[11px] leading-relaxed mb-3" style={{ color: MUTED }}>
+            A flavour of the area — not a survey.
+          </p>
+
+          {(livingHere.foodDrink?.length ?? 0) > 0 && (
+            <div className="mb-3">
+              <SubHead>Food & drink nearby</SubHead>
+              <ul className="space-y-1.5">
+                {livingHere.foodDrink.slice(0, 5).map((p, i) => (
+                  <li key={i} className="text-[11px] leading-snug" style={{ color: '#1e293b' }}>
+                    <span className="font-semibold">{p.name}</span>
+                    <span style={{ color: MUTED }}> · {formatDistanceMiles(p.distanceMiles)}</span>
+                    {p.hygieneRating != null && p.hygieneRating !== '' && (
+                      <span
+                        className="ml-1.5 inline-block text-[9px] font-bold px-1.5 py-0.5 rounded"
+                        style={{ background: GREEN_SOFT, color: GREEN }}
+                      >
+                        FSA {p.hygieneRating}
+                      </span>
+                    )}
+                    {livingHere.placesEnabled && p.rating != null && (
+                      <span style={{ color: MUTED }}>
+                        {' '}
+                        · {p.rating.toFixed(1)}
+                        {p.reviewCount != null ? ` (${p.reviewCount} reviews)` : ''}
+                      </span>
+                    )}
+                    {livingHere.placesEnabled && p.reviewTheme ? (
+                      <span className="block text-[10px] mt-0.5" style={{ color: MUTED }}>
+                        {p.reviewTheme}
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(livingHere.walksOutdoors?.length ?? 0) > 0 && (
+            <div className="mb-3">
+              <SubHead>Walks & outdoors</SubHead>
+              <ul className="space-y-1">
+                {livingHere.walksOutdoors.map((p, i) => (
+                  <li key={i} className="text-[11px] leading-snug" style={{ color: '#1e293b' }}>
+                    <span className="font-semibold">{p.name}</span>
+                    {p.isNationalTrail ? (
+                      <span className="text-[9px] ml-1 font-semibold" style={{ color: GREEN }}>
+                        National trail
+                      </span>
+                    ) : null}
+                    <span style={{ color: MUTED }}>
+                      {' '}
+                      · {formatDistanceMiles(p.distanceMiles)}
+                      {p.category === 'trail' ? ' to access' : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(livingHere.everyday?.length ?? 0) > 0 && (
+            <div className="mb-3">
+              <SubHead>Everyday essentials</SubHead>
+              <ul className="space-y-1">
+                {livingHere.everyday.map((p, i) => (
+                  <li key={i} className="text-[11px] leading-snug" style={{ color: '#1e293b' }}>
+                    <span className="font-medium" style={{ color: MUTED }}>
+                      {everydayLabel(p.category)}:{' '}
+                    </span>
+                    <span className="font-semibold">{p.name}</span>
+                    <span style={{ color: MUTED }}> · {formatDistanceMiles(p.distanceMiles)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {livingHere.vignette ? (
+            <div
+              className="rounded-lg border px-3.5 py-3 mt-2"
+              style={{ borderColor: '#c5d4e8', background: '#f4f7fb' }}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: NAVY }}>
+                A Saturday morning here
+              </p>
+              <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
+                {livingHere.vignette}
+              </p>
+            </div>
+          ) : null}
+        </PageShell>
+      )}
+
       {/* ========== DUE DILIGENCE ========== */}
-      <PageShell page={pageDiligence} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={pageDiligence} total={TOTAL} address={addressLine}>
         <SectionTitle>{showInvestment ? '7' : '6'}. Due diligence deep dive</SectionTitle>
+        {callouts.dueDiligence && (
+          <WorthKnowing
+            headline={callouts.dueDiligence.headline}
+            text={callouts.dueDiligence.text}
+          />
+        )}
         <p className="text-[11px] leading-relaxed mb-3" style={{ color: MUTED }}>
           Practical checks buyers often miss — energy, connectivity, tenure, cash needed beyond deposit, and what to do next.
         </p>
@@ -1223,9 +1559,51 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
         </div>
       </PageShell>
 
+      {/* ========== ERA / THIS ERA OF HOUSE ========== */}
+      {showEra && eraProfile && (
+        <PageShell coverageLine={coverageLine} page={pageEra} total={TOTAL} address={addressLine}>
+          <SectionTitle>
+            {showInvestment ? '8' : '7'}. {eraProfile.title || 'This era of house'}
+          </SectionTitle>
+          <p className="text-[11px] leading-relaxed mb-3" style={{ color: MUTED }}>
+            What is typical for a {eraProfile.ageBand} {shortTypeForEra(eraProfile.propertyType)} — and
+            what to check. Where the EPC certificate confirms or softens a typical issue, we say so.
+          </p>
+          <div className="space-y-2.5">
+            {(eraProfile.issues || []).map((iss) => (
+              <div
+                key={iss.id}
+                className="rounded-lg px-3 py-2.5"
+                style={{ border: `1px solid ${LINE}`, background: '#fff' }}
+              >
+                <p className="text-[12px] font-semibold leading-snug mb-1" style={{ color: NAVY }}>
+                  {iss.issue}
+                </p>
+                {iss.fabricJoin && (
+                  <p
+                    className="text-[11px] leading-snug mb-1.5 px-2 py-1 rounded"
+                    style={{ background: GREEN_SOFT, color: '#14532d' }}
+                  >
+                    {iss.fabricJoin}
+                  </p>
+                )}
+                <p className="text-[11px] leading-snug" style={{ color: MUTED }}>
+                  <span className="font-bold" style={{ color: NAVY }}>
+                    Check:{' '}
+                  </span>
+                  {iss.check}
+                </p>
+              </div>
+            ))}
+          </div>
+        </PageShell>
+      )}
+
       {/* ========== COMPS ========== */}
-      <PageShell page={pageComps} total={TOTAL} address={addressLine}>
-        <SectionTitle>{showInvestment ? '8' : '7'}. Sold prices nearby</SectionTitle>
+      <PageShell coverageLine={coverageLine} page={pageComps} total={TOTAL} address={addressLine}>
+        <SectionTitle>
+          {showInvestment ? (showEra ? '9' : '8') : showEra ? '8' : '7'}. Sold prices nearby
+        </SectionTitle>
 
         <SubHead>Similar homes sold nearby</SubHead>
         <table className="w-full text-[10px] mb-4">
@@ -1292,38 +1670,45 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
         <div className="rounded-lg border px-3.5 py-2.5" style={{ borderColor: LINE, background: '#fafbfc' }}>
           <SubHead>How to use these sold prices</SubHead>
           <p className="text-[11px] leading-relaxed" style={{ color: '#1e293b' }}>
-            Focus first on homes on the same street (or very nearby) with a similar number of bedrooms. Adjust your view of
-            the asking price if this property is in better or worse condition, has a larger garden, parking, or a shorter
-            lease. If this exact address has sold before, treat that as your best guide. Listing prices are what sellers
-            hope for — use them as a starting point for negotiation, not the true market value.
+            {recentlySold
+              ? 'Focus first on homes on the same street (or very nearby) with a similar number of bedrooms. Adjust your view of the last sold price if this property is in better or worse condition, has a larger garden, parking, or a shorter lease. If this exact address has sold before, treat that as your best guide for comparable value — not as a live listing price.'
+              : 'Focus first on homes on the same street (or very nearby) with a similar number of bedrooms. Adjust your view of the asking price if this property is in better or worse condition, has a larger garden, parking, or a shorter lease. If this exact address has sold before, treat that as your best guide. Listing prices are what sellers hope for — use them as a starting point for negotiation, not the true market value.'}
           </p>
         </div>
       </PageShell>
 
       {/* ========== OFFERS ========== */}
-      <PageShell page={pageOffer} total={TOTAL} address={addressLine}>
+      <PageShell coverageLine={coverageLine} page={pageOffer} total={TOTAL} address={addressLine}>
         <SectionTitle>
-          {showInvestment ? '9' : '8'}.{' '}
-          {recentlySold ? 'Recently sold — what this means' : 'What to offer & what to check'}
+          {showInvestment ? (showEra ? '10' : '9') : showEra ? '9' : '8'}.{' '}
+          {recentlySold
+            ? 'Recently Sold — What This Means'
+            : hasLiveAsking
+              ? 'What to offer & what to check'
+              : 'If it comes to market — what to check'}
         </SectionTitle>
+        {callouts.offer && (
+          <WorthKnowing headline={callouts.offer.headline} text={callouts.offer.text} />
+        )}
 
         {recentlySold ? (
+          recentlySoldPanel ? (
           <>
             <div className="rounded-lg border-2 px-4 py-4 mb-3" style={{ borderColor: GREEN, background: GREEN_SOFT }}>
               <p className="text-[9px] font-bold uppercase tracking-wide" style={{ color: GREEN }}>
-                {recentlySoldPanel?.lastSoldLabel || priceLabel}
+                {recentlySoldPanel.lastSoldLabel || priceLabel}
               </p>
               <p className="text-[28px] font-bold mt-1 leading-tight" style={{ color: NAVY }}>
-                {recentlySoldPanel?.lastSoldPrice || price || '—'}
+                {recentlySoldPanel.lastSoldPrice || price || '—'}
               </p>
               <p className="text-[11px] mt-2 leading-relaxed" style={{ color: '#1e293b' }}>
-                {recentlySoldPanel?.headline ||
+                {recentlySoldPanel.headline ||
                   'This property recently completed and is not a live purchase opportunity.'}
               </p>
             </div>
             <SubHead>What this means</SubHead>
             <ul className="mb-3 space-y-1.5">
-              {(recentlySoldPanel?.bullets || []).map((tip, i) => (
+              {(recentlySoldPanel.bullets || []).map((tip, i) => (
                 <li key={i} className="flex gap-2.5 text-[10.5px] leading-relaxed items-start">
                   <span className="font-mono shrink-0" style={{ color: GREEN }}>
                     •
@@ -1340,13 +1725,14 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
               </div>
             )}
           </>
-        ) : (
+          ) : null
+        ) : hasOfferFigures ? (
           <>
             <div className="grid grid-cols-3 gap-2.5 mb-3">
               <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-3">
                 <p className="text-[9px] font-bold uppercase leading-snug text-rose-700">Opening offer</p>
                 <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
-                  {offerStrategy?.lowOffer || 'N/A'}
+                  {offerStrategy!.lowOffer}
                 </p>
                 <p className="text-[8px] mt-1 leading-snug text-rose-800/80">Realistic opener — not a lowball</p>
               </div>
@@ -1355,7 +1741,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
                   Fair market target
                 </p>
                 <p className="text-[22px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
-                  {offerStrategy?.fairOffer || 'N/A'}
+                  {offerStrategy!.fairOffer}
                 </p>
                 <p className="text-[8px] mt-1 leading-snug" style={{ color: MUTED }}>
                   What a patient buyer should expect to pay
@@ -1364,7 +1750,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
                 <p className="text-[9px] font-bold uppercase leading-snug text-amber-800">Walk-away max</p>
                 <p className="text-[20px] font-bold mt-1.5 leading-tight" style={{ color: NAVY }}>
-                  {offerStrategy?.premiumOffer || 'N/A'}
+                  {offerStrategy!.premiumOffer}
                 </p>
                 <p className="text-[8px] mt-1 leading-snug text-amber-900/80">
                   Stop above this unless strategy changes
@@ -1398,7 +1784,7 @@ export function PDFReport({ analysis, generatedAt, buyerGoal }: PDFReportProps) 
               ))}
             </ol>
           </>
-        )}
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3.5 mb-3">
           <div>

@@ -13,12 +13,17 @@ import {
 import { applyDeterministicScores, type ScoreInputs } from './deterministicScores';
 import { dedupeAnalysisText } from './textDedup';
 import type { ReportModeContext } from './reportWritingEngine';
-import { stripCrimeRateFromProse, type CrimeLookup } from './policeUkLookup';
+import {
+  CRIME_UNRELIABLE,
+  crimeInterpretationLeaksRate,
+  stripCrimeRateFromProse,
+  type CrimeLookup,
+} from './policeUkLookup';
 import type { EpcLookup } from './epcLookup';
 import type { LandRegistryLookup } from './landRegistryLookup';
 import { formatGbpAmount } from './landRegistryLookup';
 import type { FloodLookup } from './floodLookup';
-import { resolveSpecsRows, enforceSchoolDistances } from './notOnRecordRules';
+import { resolveSpecsRows } from './notOnRecordRules';
 import { scrubEpcUrlsInText } from './epcLinkFormat';
 
 export type EnforceOpts = {
@@ -30,6 +35,8 @@ export type EnforceOpts = {
   flood?: FloodLookup | null;
   /** Verified exact-address planning hits (not LLM prose) */
   hasVerifiedPlanning?: boolean;
+  /** For nation-aware empty EPC copy */
+  reportRegion?: string | null;
   rewriteField?: (path: string, value: string, hits: string[]) => Promise<string>;
 };
 
@@ -89,8 +96,34 @@ function applySoldMode(analysis: Record<string, unknown>, modeCtx: ReportModeCon
   analysis.marketEvidence = me;
 }
 
-function applyCrimeFact(analysis: Record<string, unknown>, crime?: CrimeLookup | null): void {
-  if (!crime) return;
+function applyCrimeFactSync(analysis: Record<string, unknown>, crime?: CrimeLookup | null): void {
+  const area =
+    analysis.areaAnalysis && typeof analysis.areaAnalysis === 'object'
+      ? ({ ...(analysis.areaAnalysis as Record<string, unknown>) } as Record<string, unknown>)
+      : {};
+  const existing = (area.crimeSafety && typeof area.crimeSafety === 'object'
+    ? { ...(area.crimeSafety as Record<string, unknown>) }
+    : {}) as Record<string, unknown>;
+
+  // Missing lookup → safe suppression (never leave unvalidated LLM rates)
+  if (!crime) {
+    console.warn(
+      '[enforceReportPipeline] crime lookup missing — suppressing LLM crime figures'
+    );
+    analysis.verifiedCrime = {
+      incidentsPerThousand: null,
+      label: CRIME_UNRELIABLE,
+      reliable: false,
+    };
+    existing.rating = CRIME_UNRELIABLE;
+    existing.description =
+      'Local crime data was unavailable for this address — verify on police.uk.';
+    delete existing.incidentsPerThousand;
+    area.crimeSafety = existing;
+    analysis.areaAnalysis = area;
+    return;
+  }
+
   analysis.verifiedCrime = {
     incidentsPerThousand: crime.incidentsPerThousand,
     crimeCountYear: crime.crimeCountYear,
@@ -102,7 +135,28 @@ function applyCrimeFact(analysis: Record<string, unknown>, crime?: CrimeLookup |
     reliable: crime.reliable,
     sourceUrl: crime.sourceUrl,
     debug: crime.debug,
+    lsoa21cd: crime.lsoa21cd,
   };
+
+  // Stat once from data object; description = interpretation only (scrubbed below)
+  existing.rating = crime.label;
+  existing.description = String(existing.description || crime.interpretationHint || '');
+  existing.incidentsPerThousand = crime.incidentsPerThousand;
+  area.crimeSafety = existing;
+  analysis.areaAnalysis = area;
+}
+
+/**
+ * Rate renders once from verifiedCrime / crimeSafety.rating.
+ * Interpretation is regenerated up to 2 times if it leaks per-1,000 / the numeric rate;
+ * on failure the sentence is dropped and the stat stands alone.
+ */
+async function scrubCrimeInterpretation(
+  analysis: Record<string, unknown>,
+  crime: CrimeLookup | null | undefined,
+  rewriteField?: EnforceOpts['rewriteField']
+): Promise<void> {
+  if (!crime) return;
   const area =
     analysis.areaAnalysis && typeof analysis.areaAnalysis === 'object'
       ? ({ ...(analysis.areaAnalysis as Record<string, unknown>) } as Record<string, unknown>)
@@ -111,21 +165,58 @@ function applyCrimeFact(analysis: Record<string, unknown>, crime?: CrimeLookup |
     ? { ...(area.crimeSafety as Record<string, unknown>) }
     : {}) as Record<string, unknown>;
 
-  // Stat once from data object; description = interpretation only
-  existing.rating = crime.label;
-  existing.description = stripCrimeRateFromProse(
+  let desc = stripCrimeRateFromProse(
     String(existing.description || crime.interpretationHint || '')
   );
-  if (!existing.description || /\d+(\.\d+)?\s*(per|\/)\s*1,?000/i.test(existing.description)) {
-    existing.description = crime.interpretationHint;
+  const rate = crime.incidentsPerThousand;
+
+  for (let attempt = 0; attempt < 2 && crimeInterpretationLeaksRate(desc, rate); attempt++) {
+    if (rewriteField) {
+      try {
+        desc = stripCrimeRateFromProse(
+          await rewriteField('areaAnalysis.crimeSafety.description', desc, [
+            'per 1,000',
+            'per 1000',
+            rate != null ? String(rate) : 'rate numeral',
+          ])
+        );
+      } catch {
+        desc = stripCrimeRateFromProse(desc);
+      }
+    } else {
+      desc = stripCrimeRateFromProse(desc);
+      break;
+    }
   }
-  existing.incidentsPerThousand = crime.incidentsPerThousand;
+
+  const remnantOnly = !desc || desc.length < 12 || /^(about|approximately)\.?$/i.test(desc);
+  if (crimeInterpretationLeaksRate(desc, rate) || remnantOnly) {
+    // Prefer clean hint; if that also leaks, drop interpretation entirely
+    const hint = stripCrimeRateFromProse(crime.interpretationHint || '');
+    desc = crimeInterpretationLeaksRate(hint, rate) || !hint ? '' : hint;
+  }
+
+  existing.rating = crime.label;
+  existing.description = desc;
   area.crimeSafety = existing;
   analysis.areaAnalysis = area;
 }
 
 function applyFloodFact(analysis: Record<string, unknown>, flood?: FloodLookup | null): void {
-  if (!flood) return;
+  if (!flood) {
+    console.warn(
+      '[enforceReportPipeline] flood lookup missing — suppressing unverified LLM flood bandings'
+    );
+    const risk =
+      analysis.riskAnalysis && typeof analysis.riskAnalysis === 'object'
+        ? ({ ...(analysis.riskAnalysis as Record<string, unknown>) } as Record<string, unknown>)
+        : {};
+    risk.floodRisk =
+      'Flood risk could not be verified from Environment Agency / planning.data — check GOV.UK flood maps.';
+    analysis.riskAnalysis = risk;
+    analysis.verifiedFlood = { reliable: false };
+    return;
+  }
   analysis.verifiedFlood = {
     riversAndSea: flood.riversAndSea,
     surfaceWater: flood.surfaceWater,
@@ -162,14 +253,22 @@ function applyFloodFact(analysis: Record<string, unknown>, flood?: FloodLookup |
   analysis.riskTones = tones;
 }
 
-function applyEpcNoMatchGuard(analysis: Record<string, unknown>, epc?: EpcLookup | null): void {
+function applyEpcNoMatchGuard(
+  analysis: Record<string, unknown>,
+  epc?: EpcLookup | null,
+  region?: string | null
+): void {
   if (epc?.matched) return;
   const dd =
     analysis.dueDiligence && typeof analysis.dueDiligence === 'object'
       ? ({ ...(analysis.dueDiligence as Record<string, unknown>) } as Record<string, unknown>)
       : {};
   dd.epcAndEnergy =
-    'No EPC on register — request from vendor. Verify on gov.uk Find an energy certificate.';
+    region === 'scotland'
+      ? 'No Scottish EPC linked for this address — request the Home Report / Energy Performance Certificate from the seller and check the Scottish EPC register.'
+      : region === 'northern_ireland'
+        ? 'No EPC linked for this address — request the certificate from the seller and check the NI EPC register.'
+        : 'No EPC on register — request from vendor. Verify on gov.uk Find an energy certificate.';
   analysis.dueDiligence = dd;
 
   if (Array.isArray(analysis.specs)) {
@@ -245,15 +344,39 @@ function buildScoreInputs(analysis: Record<string, unknown>, opts: EnforceOpts):
   const priceVsCompsPct =
     price != null && avgComp != null && avgComp > 0 ? ((price - avgComp) / avgComp) * 100 : null;
 
-  // Score inputs from verified sources only so twin generations produce identical scores (P9).
+  // Prefer verified registers; transport/schools from finalize-selected entities when present.
+  const transportRows = (
+    (analysis.verifiedTransport as { type?: string; miles?: number; time?: string }[] | undefined) ||
+    (analysis.areaAnalysis as { transport?: { type?: string; miles?: number; time?: string }[] } | undefined)
+      ?.transport ||
+    []
+  );
+  const railMiles = transportRows
+    .filter((r) => /rail/i.test(String(r.type || '')))
+    .map((r) => {
+      if (typeof r.miles === 'number') return r.miles;
+      const m = String(r.time || '').match(/([\d.]+)\s*miles?/i);
+      return m ? parseFloat(m[1]!) : NaN;
+    })
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b)[0];
+  const schools = (
+    (analysis.areaAnalysis as { schools?: { rating?: string }[] } | undefined)?.schools || []
+  );
+  const schoolOutstandingOrGood =
+    schools.length === 0
+      ? null
+      : schools.some((s) => /good|outstanding|positive|excellent/i.test(String(s.rating || '')));
+
   return {
     epcBand,
     floodTone: riskTones.floodRisk || null,
     crimePerThousand: opts.crime?.incidentsPerThousand ?? null,
     priceVsCompsPct,
     hasPlanningMatch: Boolean(opts.hasVerifiedPlanning),
-    transportMinutesToStation: null,
-    schoolOutstandingOrGood: null,
+    transportMinutesToStation:
+      railMiles != null && Number.isFinite(railMiles) ? Math.round(railMiles * 12) : null,
+    schoolOutstandingOrGood,
   };
 }
 
@@ -285,15 +408,16 @@ export async function enforceReportPipeline(
   const warnings: string[] = [];
 
   applySoldMode(analysis, opts.modeCtx);
-  applyCrimeFact(analysis, opts.crime);
+  applyCrimeFactSync(analysis, opts.crime);
+  await scrubCrimeInterpretation(analysis, opts.crime, opts.rewriteField);
   applyFloodFact(analysis, opts.flood);
-  applyEpcNoMatchGuard(analysis, opts.epc);
+  applyEpcNoMatchGuard(analysis, opts.epc, opts.reportRegion);
   applyGrowthSinceLastSale(analysis, opts.landRegistry);
 
   const milestones = applyDeterministicForecasts(analysis, opts.scrapPrice);
   applyDeterministicYield(analysis);
 
-  // P3 mechanical comps (EPC floor area notes)
+  // Mechanical comps notes (EPC floor area) — selection already code-owned
   const subjectFloor = opts.epc?.matched?.floorAreaSqm || null;
   const subjectAddress =
     String(
@@ -312,6 +436,7 @@ export async function enforceReportPipeline(
       subjectAddress,
       subjectFloorAreaSqm: subjectFloor,
       subjectPriorSales: priorSales,
+      postcode: opts.epc?.postcode || opts.landRegistry?.postcode || null,
     });
     analysis.comparableSales = comps;
     analysis.compEpcHitRate = epcHitRate;
@@ -319,24 +444,8 @@ export async function enforceReportPipeline(
     warnings.push(`comps: ${err?.message || err}`);
   }
 
-  // P5 schools distances
-  const area =
-    analysis.areaAnalysis && typeof analysis.areaAnalysis === 'object'
-      ? ({ ...(analysis.areaAnalysis as Record<string, unknown>) } as Record<string, unknown>)
-      : {};
-  if (opts.crime?.lat != null && opts.crime?.lng != null) {
-    const schools = await enforceSchoolDistances(
-      area.schools as { name: string; distance: string; rating: string }[] | undefined,
-      {
-        lat: opts.crime.lat,
-        lng: opts.crime.lng,
-        postcode: opts.crime.postcode,
-        town: String((analysis.location as { town?: string } | undefined)?.town || ''),
-      }
-    );
-    area.schools = schools;
-    analysis.areaAnalysis = area;
-  }
+  // Schools / transport selected in finalizeReport from GIAS / NaPTAN — do not
+  // re-geocode LLM school names here.
 
   // P5 specs resolution
   if (Array.isArray(analysis.specs)) {
@@ -354,7 +463,7 @@ export async function enforceReportPipeline(
   }
 
   applySoldMode(analysis, opts.modeCtx);
-  applyCrimeFact(analysis, opts.crime);
+  applyCrimeFactSync(analysis, opts.crime);
   applyFloodFact(analysis, opts.flood);
   applyDeterministicScores(analysis, buildScoreInputs(analysis, opts));
   applyDeterministicForecasts(analysis, opts.scrapPrice);
@@ -368,6 +477,13 @@ export async function enforceReportPipeline(
     delete analysis.offerStrategy;
     analysis.reportMode = 'recently_sold';
     analysis.priceLabel = opts.modeCtx.priceLabel;
+  } else if (opts.modeCtx.mode === 'on_market' && !opts.modeCtx.hasLiveAsking) {
+    delete analysis.offerStrategy;
+    analysis.reportMode = 'on_market';
+    analysis.priceLabel = opts.modeCtx.priceLabel || 'Estimated value';
+    analysis.hasLiveAsking = false;
+  } else {
+    analysis.hasLiveAsking = opts.modeCtx.hasLiveAsking;
   }
 
   if (Array.isArray(analysis.specs)) {
@@ -383,8 +499,9 @@ export async function enforceReportPipeline(
     );
   }
 
-  // Final crime strip after banned-term rewrite
-  applyCrimeFact(analysis, opts.crime);
+  // Final crime apply + interpretation scrub after banned-term rewrite
+  applyCrimeFactSync(analysis, opts.crime);
+  await scrubCrimeInterpretation(analysis, opts.crime, opts.rewriteField);
 
   return { analysis, warnings, milestones };
 }

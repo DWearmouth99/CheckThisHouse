@@ -1,0 +1,48 @@
+{
+  "postcode": "TS7 0GY",
+  "certificates": [
+    {
+      "address": "3A Gypsy Lane, Nunthorpe, MIDDLESBROUGH",
+      "postcode": "TS7 0GY",
+      "currentRating": "D",
+      "potentialRating": "C",
+      "propertyType": "Semi-detached house",
+      "builtForm": "Semi-Detached",
+      "floorAreaSqm": "92",
+      "habitableRooms": "5",
+      "heating": "Boiler and radiators, mains gas",
+      "mainFuel": "mains gas",
+      "improvements": "",
+      "lodgementDate": "2022-04-14",
+      "certificateUrl": "https://find-energy-certificate.service.gov.uk/energy-certificate/0000-gypsy-lane-fixture",
+      "source": "api",
+      "constructionAgeBand": "1930-1949",
+      "wallsDescription": "Cavity wall, as built, no insulation (assumed)",
+      "roofDescription": "Pitched, no insulation (assumed)",
+      "windowsDescription": "Partial double glazing",
+      "floorDescription": "Suspended, no insulation (assumed)"
+    }
+  ],
+  "subjectMatch": {
+    "address": "3A Gypsy Lane, Nunthorpe, MIDDLESBROUGH",
+    "postcode": "TS7 0GY",
+    "currentRating": "D",
+    "potentialRating": "C",
+    "propertyType": "Semi-detached house",
+    "builtForm": "Semi-Detached",
+    "floorAreaSqm": "92",
+    "habitableRooms": "5",
+    "heating": "Boiler and radiators, mains gas",
+    "mainFuel": "mains gas",
+    "improvements": "",
+    "lodgementDate": "2022-04-14",
+    "certificateUrl": "https://find-energy-certificate.service.gov.uk/energy-certificate/0000-gypsy-lane-fixture",
+    "source": "api",
+    "constructionAgeBand": "1930-1949",
+    "wallsDescription": "Cavity wall, as built, no insulation (assumed)",
+    "roofDescription": "Pitched, no insulation (assumed)",
+    "windowsDescription": "Partial double glazing",
+    "floorDescription": "Suspended, no insulation (assumed)"
+  },
+  "subjectError": null
+}

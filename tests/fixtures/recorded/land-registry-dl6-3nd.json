@@ -1,0 +1,407 @@
+{
+  "postcode": "DL6 3ND",
+  "thisProperty": [
+    {
+      "paon": "PENTLAND",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 672400,
+      "date": "2026-04-01",
+      "propertyType": "detached",
+      "addressLabel": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "PENTLAND",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 485000,
+      "date": "2006-04-07",
+      "propertyType": "detached",
+      "addressLabel": "PENTLAND, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    }
+  ],
+  "nearbySameStreet": [
+    {
+      "paon": "MONKS HOUSE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 310000,
+      "date": "2025-07-31",
+      "propertyType": "detached",
+      "addressLabel": "MONKS HOUSE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "INGLENOOK COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 450000,
+      "date": "2023-08-24",
+      "propertyType": "detached",
+      "addressLabel": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "STILL POINT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 490000,
+      "date": "2021-05-19",
+      "propertyType": "detached",
+      "addressLabel": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "OAKLANDS",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 275000,
+      "date": "2020-03-11",
+      "propertyType": "detached",
+      "addressLabel": "OAKLANDS, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "INGLENOOK COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 330000,
+      "date": "2014-11-11",
+      "propertyType": "detached",
+      "addressLabel": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "GREEN WOODS",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 382500,
+      "date": "2013-10-04",
+      "propertyType": "detached",
+      "addressLabel": "GREEN WOODS, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "MOUNT PLEASANT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 262000,
+      "date": "2012-11-30",
+      "propertyType": "detached",
+      "addressLabel": "MOUNT PLEASANT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "STILL POINT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 410000,
+      "date": "2011-10-27",
+      "propertyType": "detached",
+      "addressLabel": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "ROSE LEA",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 223000,
+      "date": "2011-09-30",
+      "propertyType": "detached",
+      "addressLabel": "ROSE LEA, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "MOUNT PLEASANT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 235000,
+      "date": "2007-04-20",
+      "propertyType": "detached",
+      "addressLabel": "MOUNT PLEASANT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "LANTERN COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 150000,
+      "date": "2006-04-26",
+      "propertyType": "semi-detached",
+      "addressLabel": "LANTERN COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "FAIRVIEW",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 275000,
+      "date": "2006-04-07",
+      "propertyType": "detached",
+      "addressLabel": "FAIRVIEW, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "ROSE LEA",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 182000,
+      "date": "2004-07-12",
+      "propertyType": "detached",
+      "addressLabel": "ROSE LEA, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "INGLENOOK COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 237000,
+      "date": "2002-05-31",
+      "propertyType": "detached",
+      "addressLabel": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "ROSE LEA",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 90000,
+      "date": "2002-03-15",
+      "propertyType": "detached",
+      "addressLabel": "ROSE LEA, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "GREENWOODS",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 150000,
+      "date": "1996-12-13",
+      "propertyType": "detached",
+      "addressLabel": "GREENWOODS, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "MOUNT PLEASANT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 59995,
+      "date": "1996-10-11",
+      "propertyType": "detached",
+      "addressLabel": "MOUNT PLEASANT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    }
+  ],
+  "nearbyPostcode": [],
+  "nearby": [
+    {
+      "paon": "MONKS HOUSE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 310000,
+      "date": "2025-07-31",
+      "propertyType": "detached",
+      "addressLabel": "MONKS HOUSE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "INGLENOOK COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 450000,
+      "date": "2023-08-24",
+      "propertyType": "detached",
+      "addressLabel": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "STILL POINT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 490000,
+      "date": "2021-05-19",
+      "propertyType": "detached",
+      "addressLabel": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "OAKLANDS",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 275000,
+      "date": "2020-03-11",
+      "propertyType": "detached",
+      "addressLabel": "OAKLANDS, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "INGLENOOK COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 330000,
+      "date": "2014-11-11",
+      "propertyType": "detached",
+      "addressLabel": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "GREEN WOODS",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 382500,
+      "date": "2013-10-04",
+      "propertyType": "detached",
+      "addressLabel": "GREEN WOODS, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "MOUNT PLEASANT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 262000,
+      "date": "2012-11-30",
+      "propertyType": "detached",
+      "addressLabel": "MOUNT PLEASANT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "STILL POINT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 410000,
+      "date": "2011-10-27",
+      "propertyType": "detached",
+      "addressLabel": "STILL POINT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "ROSE LEA",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 223000,
+      "date": "2011-09-30",
+      "propertyType": "detached",
+      "addressLabel": "ROSE LEA, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "MOUNT PLEASANT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 235000,
+      "date": "2007-04-20",
+      "propertyType": "detached",
+      "addressLabel": "MOUNT PLEASANT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "LANTERN COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 150000,
+      "date": "2006-04-26",
+      "propertyType": "semi-detached",
+      "addressLabel": "LANTERN COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "FAIRVIEW",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 275000,
+      "date": "2006-04-07",
+      "propertyType": "detached",
+      "addressLabel": "FAIRVIEW, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "ROSE LEA",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 182000,
+      "date": "2004-07-12",
+      "propertyType": "detached",
+      "addressLabel": "ROSE LEA, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "INGLENOOK COTTAGE",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 237000,
+      "date": "2002-05-31",
+      "propertyType": "detached",
+      "addressLabel": "INGLENOOK COTTAGE, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "ROSE LEA",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 90000,
+      "date": "2002-03-15",
+      "propertyType": "detached",
+      "addressLabel": "ROSE LEA, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "GREENWOODS",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 150000,
+      "date": "1996-12-13",
+      "propertyType": "detached",
+      "addressLabel": "GREENWOODS, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    },
+    {
+      "paon": "MOUNT PLEASANT",
+      "saon": "",
+      "street": "CROSS LANE",
+      "town": "NORTHALLERTON",
+      "postcode": "DL6 3ND",
+      "amount": 59995,
+      "date": "1996-10-11",
+      "propertyType": "detached",
+      "addressLabel": "MOUNT PLEASANT, CROSS LANE, NORTHALLERTON, DL6 3ND"
+    }
+  ],
+  "sourceUrl": "https://landregistry.data.gov.uk/"
+}

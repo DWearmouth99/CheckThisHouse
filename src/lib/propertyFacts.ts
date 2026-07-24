@@ -3,7 +3,7 @@
  * AI may narrate; it must not invent beds/baths/solds when facts are missing.
  */
 
-import { lookupEpc, formatEpcBrief, epcSources, type EpcLookup } from './epcLookup';
+import { lookupEpc, formatEpcBrief, epcSources, formatAgeBandDisplay, normalizeConstructionAgeBand, type EpcLookup } from './epcLookup';
 import {
   lookupLandRegistrySales,
   formatLandRegistryBrief,
@@ -12,6 +12,7 @@ import {
   type LandRegistryLookup,
 } from './landRegistryLookup';
 import { shortenEpcCertificateUrl } from './epcLinkFormat';
+import { applySelectedComps } from './selectComps';
 
 export type ScrapFacts = {
   bedrooms?: string;
@@ -64,11 +65,6 @@ export function applyPropertyFactLocks(
 ): void {
   const epc = facts.epc.matched;
   const lrThis = facts.landRegistry.thisProperty;
-  const lrNearby =
-    facts.landRegistry.nearbySameStreet.length > 0
-      ? facts.landRegistry.nearbySameStreet
-      : facts.landRegistry.nearbyPostcode;
-  const compsAreSameStreet = facts.landRegistry.nearbySameStreet.length > 0;
 
   // --- Specs: scrape wins, else EPC type / rooms, else unknown (never keep naked invented baths) ---
   if (scrap.bedrooms?.trim()) {
@@ -107,15 +103,35 @@ export function applyPropertyFactLocks(
     if (i >= 0) specs[i] = { label, value };
     else specs.push({ label, value });
   };
+  if (epc) {
+    // Scrub invalid age bands (e.g. cert-number fragments) before they reach specs/insights
+    if (epc.constructionAgeBand && !normalizeConstructionAgeBand(epc.constructionAgeBand)) {
+      epc.constructionAgeBand = '';
+    } else if (epc.constructionAgeBand) {
+      epc.constructionAgeBand = normalizeConstructionAgeBand(epc.constructionAgeBand) || '';
+    }
+  }
   if (epc?.currentRating) {
     upsert(
       'EPC rating',
       epc.potentialRating ? `${epc.currentRating} (potential ${epc.potentialRating})` : epc.currentRating
     );
   }
-  if (epc?.floorAreaSqm) upsert('Floor area', `${epc.floorAreaSqm} m² (EPC)`);
+  if (epc?.floorAreaSqm) upsert('Floor area', `${epc.floorAreaSqm} sqm · EPC register`);
+  if (epc?.constructionAgeBand) {
+    upsert('Construction age', formatAgeBandDisplay(epc.constructionAgeBand));
+  }
+  if (epc?.wallsDescription) upsert('Walls (EPC)', epc.wallsDescription);
+  if (epc?.roofDescription) upsert('Roof (EPC)', epc.roofDescription);
+  if (epc?.windowsDescription) upsert('Windows (EPC)', epc.windowsDescription);
+  if (epc?.floorDescription) upsert('Floor (EPC)', epc.floorDescription);
   if (epc?.heating || epc?.mainFuel) {
-    upsert('Main heating', [epc.heating, epc.mainFuel].filter(Boolean).join(' / '));
+    const heat = [epc.heating, epc.mainFuel]
+      .filter(Boolean)
+      .map((s) => String(s).replace(/\s+/g, ' ').trim())
+      .filter((s) => s && !/^main heating$/i.test(s))
+      .join(' / ');
+    if (heat) upsert('Main heating', heat);
   }
   if (epc?.improvements) upsert('EPC improvements', epc.improvements);
   if (epc?.lodgementDate) upsert('EPC lodged', epc.lodgementDate);
@@ -132,8 +148,14 @@ export function applyPropertyFactLocks(
     dd.epcAndEnergy = [
       `EPC band ${epc.currentRating || 'unknown'}`,
       epc.potentialRating ? `potential ${epc.potentialRating}` : null,
+      epc.constructionAgeBand
+        ? `age band ${formatAgeBandDisplay(epc.constructionAgeBand)}`
+        : null,
       epc.floorAreaSqm ? `${epc.floorAreaSqm} m²` : null,
-      epc.heating ? `heating: ${epc.heating}` : null,
+      epc.wallsDescription ? `walls: ${epc.wallsDescription}` : null,
+      epc.heating && !/^main heating$/i.test(String(epc.heating).trim())
+        ? `heating: ${epc.heating}`
+        : null,
       epc.certificateUrl
         ? `View EPC certificate on gov.uk (${shortenEpcCertificateUrl(epc.certificateUrl)})`
         : null,
@@ -145,6 +167,41 @@ export function applyPropertyFactLocks(
     dd.epcAndEnergy =
       'No EPC on register — request from vendor. Verify on gov.uk Find an energy certificate.';
   }
+
+  // --- tenure from Land Registry Price Paid estateType (10.8b) ---
+  const estate = lrThis.find((s) => s.estateType)?.estateType;
+  if (estate === 'freehold' || estate === 'leasehold') {
+    const label = estate.charAt(0).toUpperCase() + estate.slice(1);
+    dd.tenureAndLegal =
+      estate === 'freehold'
+        ? `Freehold (HM Land Registry Price Paid). Confirm title restrictions with a conveyancer.`
+        : `Leasehold (HM Land Registry Price Paid). Confirm remaining term, ground rent and service charge with a conveyancer.`;
+    upsert('Tenure', label);
+
+    // Structural lock — risk/leasehold card must not say "not on record" when tenure is known
+    const risk =
+      analysis.riskAnalysis && typeof analysis.riskAnalysis === 'object'
+        ? ({ ...(analysis.riskAnalysis as Record<string, unknown>) } as Record<string, unknown>)
+        : {};
+    risk.leaseholdIssues =
+      estate === 'freehold'
+        ? 'Freehold title (HM Land Registry Price Paid) — no leasehold ground rent or service charge applies. Confirm any title restrictions with a conveyancer.'
+        : 'Leasehold (HM Land Registry Price Paid) — confirm remaining term, ground rent and service charge with a conveyancer before offering.';
+    analysis.riskAnalysis = risk;
+    const tones =
+      analysis.riskTones && typeof analysis.riskTones === 'object'
+        ? ({ ...(analysis.riskTones as Record<string, unknown>) } as Record<string, unknown>)
+        : {};
+    tones.leaseholdIssues = estate === 'freehold' ? 'positive' : 'caution';
+    analysis.riskTones = tones;
+  } else if (
+    !dd.tenureAndLegal ||
+    /confirm freehold|not on record|verify with a conveyancer/i.test(String(dd.tenureAndLegal))
+  ) {
+    dd.tenureAndLegal =
+      'Not on record — confirm freehold/leasehold, remaining term and title restrictions with a conveyancer.';
+  }
+
   analysis.dueDiligence = dd;
 
   // --- sold history for this property from LR ---
@@ -171,21 +228,8 @@ export function applyPropertyFactLocks(
     }
   }
 
-  // --- comps from nearby LR sales (prefer over invented) ---
-  if (lrNearby.length > 0) {
-    analysis.comparableSales = lrNearby.slice(0, 10).map((s) => ({
-      address: s.addressLabel,
-      price: formatGbpAmount(s.amount),
-      soldDate: s.date,
-      similarity: compsAreSameStreet
-        ? s.propertyType
-          ? `Same street · ${s.propertyType} (Land Registry)`
-          : 'Same street (Land Registry)'
-        : s.propertyType
-          ? `Same postcode only · ${s.propertyType} (Land Registry — different street)`
-          : 'Same postcode only (Land Registry — different street)',
-    }));
-  }
+  // --- comps from LR: same street → postcode; max 6; include subject priors ---
+  applySelectedComps(analysis, facts.landRegistry);
 
   // --- market evidence nudge when we have LR this-property sales ---
   const me =
@@ -198,7 +242,7 @@ export function applyPropertyFactLocks(
     me.askingVsSoldEvidence = [
       `Land Registry: this property last sold for ${formatGbpAmount(latest.amount)} on ${latest.date}`,
       prior ? `previous LR sale ${formatGbpAmount(prior.amount)} on ${prior.date}` : null,
-      scrap.price ? `current asking context: ${scrap.price}` : 'no live asking price supplied',
+      scrap.price ? `current asking context: ${scrap.price}` : 'no live asking price on record for this run',
     ]
       .filter(Boolean)
       .join(' — ');
